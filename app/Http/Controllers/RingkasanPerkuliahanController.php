@@ -87,10 +87,11 @@ class RingkasanPerkuliahanController extends Controller
         ]);
 
         $user = auth()->user();
+        $isOwner = $ringkasanPerkuliahan->input_by === $user->id;
         $isPublished = $ringkasanPerkuliahan->status !== 'draft';
-        $visible = ($user->hasAnyRole(['ketua-gkm', 'koordinator-prodi']) && $isPublished)
-            || ($user->hasRole('anggota-gkm') && $ringkasanPerkuliahan->input_by === $user->id)
-            || ($user->hasRole('dosen') && $isPublished && $ringkasanPerkuliahan->perkuliahan->pengajars->contains('dosen_id', $user->dosen_id));
+        $visible = $isOwner
+            || ($user->hasAnyRole(['ketua-gkm', 'koordinator-prodi']) && $isPublished)
+            || ($user->hasRole('dosen') && $isPublished && $ringkasanPerkuliahan->perkuliahan?->pengajars?->contains('dosen_id', $user->dosen_id));
         abort_unless($visible, 403);
 
         return view('monev.ringkasan-perkuliahan.show', compact('ringkasanPerkuliahan'));
