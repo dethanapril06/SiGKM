@@ -87,7 +87,7 @@ class RingkasanPerkuliahanController extends Controller
         ]);
 
         $user = auth()->user();
-        $isOwner = $ringkasanPerkuliahan->input_by === $user->id;
+        $isOwner = (int) $ringkasanPerkuliahan->input_by === (int) $user->id;
         $isPublished = $ringkasanPerkuliahan->status !== 'draft';
         $visible = $isOwner
             || ($user->hasAnyRole(['ketua-gkm', 'koordinator-prodi']) && $isPublished)

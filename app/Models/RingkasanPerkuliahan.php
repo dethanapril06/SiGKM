@@ -30,6 +30,8 @@ class RingkasanPerkuliahan extends Model
     {
         return [
             'jumlah_pertemuan' => 'integer',
+            'input_by' => 'integer',
+            'verified_by' => 'integer',
             'verified_at' => 'datetime',
         ];
     }
@@ -88,6 +90,6 @@ class RingkasanPerkuliahan extends Model
 
     public function canBeEditedBy(?User $user): bool
     {
-        return $this->canBeEdited() && $user?->id === $this->input_by;
+        return $this->canBeEdited() && $user && (int) $user->id === (int) $this->input_by;
     }
 }
