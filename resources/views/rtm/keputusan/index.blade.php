@@ -37,7 +37,7 @@
                             </td>
                             <td style="min-width:180px;white-space:normal">{{ Str::limit($item->strategi, 100) ?: '-' }}
                             </td>
-                            <td>{{ $item->target_selesai?->format('d-m-Y') ?? '-' }}</td>
+                            <td>{{ $item->target_selesai ?: '-' }}</td>
                             <td><span
                                     class="badge bg-label-{{ $item->status === 'selesai' ? 'success' : ($item->status === 'proses' ? 'warning' : 'secondary') }}">{{ str($item->status)->replace('_', ' ')->title() }}</span>
                             </td>

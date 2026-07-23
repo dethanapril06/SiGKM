@@ -22,9 +22,7 @@ class KeputusanRtm extends Model
 
     protected function casts(): array
     {
-        return [
-            'target_selesai' => 'date',
-        ];
+        return [];
     }
 
     public function notulenRtm(): BelongsTo
@@ -44,8 +42,6 @@ class KeputusanRtm extends Model
 
     public function isOverdue(): bool
     {
-        return $this->target_selesai !== null
-            && $this->target_selesai->isPast()
-            && $this->status !== 'selesai';
+        return false;
     }
 }

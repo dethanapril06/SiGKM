@@ -173,7 +173,7 @@
                             <td style="min-width: 260px; white-space: normal;">{{ $rtl?->uraian_realisasi ?: '-' }}</td>
                             <td style="min-width: 220px; white-space: normal;">{{ $item->strategi ?: '-' }}</td>
                             <td style="min-width: 180px; white-space: normal;">{{ $temuan?->nama_penanggung_jawab ?? '-' }}</td>
-                            <td style="min-width: 150px; white-space: normal;">{{ $item->target_selesai?->translatedFormat('d M Y') ?? '-' }}</td>
+                            <td style="min-width: 150px; white-space: normal;">{{ $item->target_selesai ?: '-' }}</td>
                             <td>
                                 <span class="badge {{ $statusClass }}">
                                     {{ str($item->status)->replace('_', ' ')->title() }}

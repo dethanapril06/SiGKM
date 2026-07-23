@@ -42,7 +42,9 @@ class AmiController extends Controller
         $this->ensureManager();
         $data = $this->validated($request);
         $data['input_by'] = auth()->id();
-        Ami::create($data);
+        $ami = Ami::create($data);
+
+        $this->handleDocumentUpload($request, $ami);
 
         return redirect()->route('ami.index')->with('success', 'Data AMI berhasil dibuat.');
     }
@@ -61,6 +63,8 @@ class AmiController extends Controller
     {
         $this->ensureManager();
         $ami->update($this->validated($request));
+
+        $this->handleDocumentUpload($request, $ami);
 
         return redirect()->route('ami.index')->with('success', 'Data AMI berhasil diperbarui.');
     }
@@ -133,9 +137,34 @@ class AmiController extends Controller
             'temuan' => ['required', 'string'],
             'rekomendasi' => ['required', 'string'],
             'tindak_lanjut' => ['nullable', 'string'],
-            'target_selesai' => ['nullable', 'date'],
+            'target_selesai' => ['nullable', 'string', 'max:255'],
             'status' => ['required', 'in:draft,aktif,selesai'],
         ]);
+    }
+
+    private function handleDocumentUpload(Request $request, Ami $ami): void
+    {
+        $docData = $request->validate([
+            'nama_dokumen' => ['nullable', 'string', 'max:255'],
+            'document_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png', 'max:5120'],
+            'link_url' => ['nullable', 'url', 'max:2048'],
+        ], [
+            'document_file.mimes' => 'File harus berupa PDF, Word, Excel, JPG, JPEG, atau PNG.',
+            'document_file.max' => 'Ukuran file maksimal 5 MB.',
+            'link_url.url' => 'Link Google Drive harus berupa URL yang valid.',
+        ]);
+
+        if ($request->hasFile('document_file') || ! empty($docData['link_url'])) {
+            $namaDokumen = $docData['nama_dokumen'] ?: 'Bukti AMI';
+            $ami->dokumenAmis()->create([
+                'nama_dokumen' => $namaDokumen,
+                'file_path' => $request->hasFile('document_file')
+                    ? $request->file('document_file')->store('dokumen-ami', 'public')
+                    : null,
+                'link_url' => $docData['link_url'] ?? null,
+                'uploaded_by' => auth()->id(),
+            ]);
+        }
     }
 
     private function academicYears()

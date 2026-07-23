@@ -25,7 +25,7 @@
                 </span>
             </x-detail-row>
             <x-detail-row label="Target Selesai">
-                {{ $keputusanRtm->target_selesai?->format('d-m-Y') ?? '-' }}
+                {{ $keputusanRtm->target_selesai ?: '-' }}
             </x-detail-row>
             <x-detail-row label="Status">
                 <span class="badge bg-label-primary">

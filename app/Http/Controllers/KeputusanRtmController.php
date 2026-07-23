@@ -76,7 +76,7 @@ class KeputusanRtmController extends Controller
             'temuan_id' => ['required', 'exists:temuans,id'],
             'uraian_keputusan' => ['required', 'string'],
             'strategi' => ['nullable', 'string'],
-            'target_selesai' => ['nullable', 'date'],
+            'target_selesai' => ['nullable', 'string', 'max:255'],
             'status' => ['required', 'in:belum_dikerjakan,proses,selesai'],
         ]);
 

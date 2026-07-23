@@ -466,9 +466,7 @@ class LaporanRtmExcelService
 
     private function targetText(KeputusanRtm $keputusan): string
     {
-        return $keputusan->target_selesai
-            ? $keputusan->target_selesai->locale('id')->translatedFormat('d F Y')
-            : '-';
+        return $keputusan->target_selesai ?: '-';
     }
 
     private function statusLabel(string $status): string

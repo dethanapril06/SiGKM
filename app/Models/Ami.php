@@ -28,7 +28,6 @@ class Ami extends Model
     protected function casts(): array
     {
         return [
-            'target_selesai' => 'date',
             'tanggal_pelaksanaan' => 'date',
         ];
     }

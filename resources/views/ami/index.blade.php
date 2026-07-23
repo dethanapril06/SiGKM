@@ -42,7 +42,7 @@
                     <div class="col-md-4">
                         <h6>Tindak Lanjut</h6>
                         <p style="white-space:pre-line">{{ $item->tindak_lanjut ?: '-' }}</p><small>Target:
-                            {{ $item->target_selesai?->format('d-m-Y') ?? '-' }}</small>
+                            {{ $item->target_selesai ?: '-' }}</small>
                     </div>
                 </div>
                 <hr>
