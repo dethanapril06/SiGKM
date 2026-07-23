@@ -119,7 +119,7 @@
                     @enderror
 
                     <small class="text-muted">
-                        Draft belum tampil di Ketua GKM. Pilih diajukan jika sudah siap diverifikasi.
+                        Pilih diajukan jika ringkasan sudah siap diverifikasi.
                     </small>
                 </div>
 

@@ -17,18 +17,23 @@
                 @csrf
 
                 <div class="mb-3">
-                    <label class="form-label">Dosen</label>
-                    <select name="dosen_id" class="form-select @error('dosen_id') is-invalid @enderror">
-                        <option value="">-- Pilih Dosen --</option>
+                    <label class="form-label">Nama Anggota GKM <span class="text-danger">*</span></label>
+                    <input type="text" name="nama_anggota"
+                        class="form-control @error('nama_anggota') is-invalid @enderror"
+                        value="{{ old('nama_anggota') }}" placeholder="Masukkan nama lengkap anggota GKM">
 
-                        @foreach ($dosen as $item)
-                            <option value="{{ $item->id }}" {{ old('dosen_id') == $item->id ? 'selected' : '' }}>
-                                {{ $item->nama_dosen }}
-                            </option>
-                        @endforeach
-                    </select>
+                    @error('nama_anggota')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
 
-                    @error('dosen_id')
+                <div class="mb-3">
+                    <label class="form-label">NIP / NIDN (Opsional)</label>
+                    <input type="text" name="nip"
+                        class="form-control @error('nip') is-invalid @enderror"
+                        value="{{ old('nip') }}" placeholder="Masukkan NIP atau NIDN jika ada">
+
+                    @error('nip')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
@@ -72,7 +77,7 @@
                     @enderror
                 </div>
 
-                <div class="form-check mb-3">
+                <div class="form-check mb-4">
                     <input class="form-check-input" type="checkbox" name="is_active" value="1" id="is_active"
                         {{ old('is_active', true) ? 'checked' : '' }}>
 
@@ -81,10 +86,64 @@
                     </label>
                 </div>
 
+                <hr class="my-4">
+
+                <div class="card bg-light border mb-4">
+                    <div class="card-body">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" name="create_account" value="1"
+                                id="create_account" {{ old('create_account') ? 'checked' : '' }}
+                                onchange="toggleAccountFields(this.checked)">
+
+                            <label class="form-check-label fw-bold text-primary" for="create_account">
+                                Sekaligus Buatkan Akun Login untuk Anggota/Ketua ini
+                            </label>
+                            <div class="form-text">
+                                Akun login akan dibuat otomatis menggunakan Nama Anggota yang diinputkan dengan role sesuai Peran di atas.
+                            </div>
+                        </div>
+
+                        <div id="account_fields" style="{{ old('create_account') ? '' : 'display: none;' }}">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Email Login <span class="text-danger">*</span></label>
+                                    <input type="email" name="email"
+                                        class="form-control @error('email') is-invalid @enderror"
+                                        value="{{ old('email') }}" placeholder="contoh: dosen@prodi.ac.id">
+
+                                    @error('email')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Password <span class="text-danger">*</span></label>
+                                    <input type="password" name="password"
+                                        class="form-control @error('password') is-invalid @enderror"
+                                        placeholder="Minimal 6 karakter">
+
+                                    @error('password')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <button type="submit" class="btn btn-primary">
                     <i class="bx bx-save"></i> Simpan
                 </button>
             </form>
         </div>
     </div>
+
+    <script>
+        function toggleAccountFields(isChecked) {
+            const fields = document.getElementById('account_fields');
+            if (fields) {
+                fields.style.display = isChecked ? 'block' : 'none';
+            }
+        }
+    </script>
 @endsection

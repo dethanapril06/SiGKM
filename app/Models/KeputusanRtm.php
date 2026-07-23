@@ -13,7 +13,7 @@ class KeputusanRtm extends Model
 
     protected $fillable = [
         'notulen_rtm_id',
-        'rencana_tindak_lanjut_id',
+        'temuan_id',
         'uraian_keputusan',
         'strategi',
         'target_selesai',
@@ -32,9 +32,9 @@ class KeputusanRtm extends Model
         return $this->belongsTo(NotulenRtm::class);
     }
 
-    public function rencanaTindakLanjut(): BelongsTo
+    public function temuan(): BelongsTo
     {
-        return $this->belongsTo(RencanaTindakLanjut::class);
+        return $this->belongsTo(Temuan::class);
     }
 
     public function scopeBelumSelesai(Builder $query): Builder

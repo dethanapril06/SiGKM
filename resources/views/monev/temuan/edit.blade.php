@@ -58,21 +58,13 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Dosen Penanggung Jawab</label>
-                    <select name="dosen_id" class="form-select @error('dosen_id') is-invalid @enderror">
-                        <option value="">-- Pilih Dosen --</option>
-                        @foreach ($dosen as $item)
-                            <option value="{{ $item->id }}"
-                                {{ old('dosen_id', $temuanEvaluasi->dosen_id) == $item->id ? 'selected' : '' }}>
-                                {{ $item->nama_dosen }}
-                                @if ($item->nidn)
-                                    - {{ $item->nidn }}
-                                @endif
-                            </option>
-                        @endforeach
-                    </select>
+                    <label class="form-label">Penanggung Jawab</label>
+                    <input type="text" name="nama_penanggung_jawab"
+                        class="form-control @error('nama_penanggung_jawab') is-invalid @enderror"
+                        value="{{ old('nama_penanggung_jawab', $temuanEvaluasi->nama_penanggung_jawab) }}"
+                        placeholder="Tuliskan nama penanggung jawab tindak lanjut">
 
-                    @error('dosen_id')
+                    @error('nama_penanggung_jawab')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
@@ -156,7 +148,7 @@
                     </button>
 
                     <button type="submit" name="aksi" value="terbuka" class="btn btn-primary">
-                        <i class="bx bx-send"></i> Kirim ke Dosen
+                        <i class="bx bx-send"></i> Tandai Terbuka
                     </button>
                 </div>
             </form>

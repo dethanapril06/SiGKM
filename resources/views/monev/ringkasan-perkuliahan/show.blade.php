@@ -59,7 +59,7 @@
                 <i class="bx bx-edit"></i> Edit
             </a>
 
-            @if ($ringkasanPerkuliahan->status !== 'diajukan')
+            @if (auth()->user()->hasRole('anggota-gkm') && $ringkasanPerkuliahan->status !== 'diajukan')
                 <form action="{{ route('ringkasan-perkuliahan.submit', $ringkasanPerkuliahan) }}" method="POST"
                     class="d-inline" data-confirm-form
                     data-confirm-title="Ajukan ringkasan ini ke Ketua GKM?"

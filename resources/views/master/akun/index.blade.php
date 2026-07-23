@@ -34,7 +34,6 @@
                         <th>Nama Akun</th>
                         <th>Email Login</th>
                         <th>Role</th>
-                        <th>Dosen Terkait</th>
                         <th>Status</th>
                         <th width="220">Aksi</th>
                     </tr>
@@ -50,7 +49,6 @@
                                     {{ $item->role->name ?? '-' }}
                                 </span>
                             </td>
-                            <td>{{ $item->dosen->nama_dosen ?? '-' }}</td>
                             <td>
                                 @if ($item->is_active)
                                     <span class="badge bg-label-success">Aktif</span>

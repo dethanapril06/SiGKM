@@ -170,9 +170,9 @@
                             <td style="min-width: 220px; white-space: normal;">{{ $risiko->pluck('dampak_risiko')->filter()->join('; ') ?: '-' }}</td>
                             <td style="min-width: 160px; white-space: normal;">{{ $risiko->pluck('tingkatRisiko.nama_tingkat')->filter()->join('; ') ?: '-' }}</td>
                             <td style="min-width: 260px; white-space: normal;">{{ $item->uraian_keputusan ?: '-' }}</td>
-                            <td style="min-width: 260px; white-space: normal;">{{ $rtl?->uraian_rencana_tindak_lanjut ?: '-' }}</td>
+                            <td style="min-width: 260px; white-space: normal;">{{ $rtl?->uraian_realisasi ?: '-' }}</td>
                             <td style="min-width: 220px; white-space: normal;">{{ $item->strategi ?: '-' }}</td>
-                            <td style="min-width: 180px; white-space: normal;">{{ $temuan?->dosen?->nama_dosen ?? '-' }}</td>
+                            <td style="min-width: 180px; white-space: normal;">{{ $temuan?->nama_penanggung_jawab ?? '-' }}</td>
                             <td style="min-width: 150px; white-space: normal;">{{ $item->target_selesai?->translatedFormat('d M Y') ?? '-' }}</td>
                             <td>
                                 <span class="badge {{ $statusClass }}">

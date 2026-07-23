@@ -38,7 +38,7 @@ class NotulenRtmController extends Controller
             'jadwalRtm.semester.tahunAkademik',
             'penginput',
             'verifikator',
-            'keputusanRtms.rencanaTindakLanjut.temuan.dosen',
+            'keputusanRtms.rencanaTindakLanjut.temuan',
         ]);
 
         return view('rtm.notulen.show', compact('notulenRtm'));

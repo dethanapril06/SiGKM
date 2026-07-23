@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="d-flex justify-content-between align-items-center py-3 mb-4">
-        <h4 class="fw-bold mb-0">Edit RTL</h4>
+        <h4 class="fw-bold mb-0">Edit Realisasi RTL</h4>
 
         <a href="{{ route('rtl.index') }}" class="btn btn-secondary">
             <i class="bx bx-arrow-back"></i> Kembali
@@ -10,7 +10,7 @@
     </div>
 
     <div class="card">
-        <h5 class="card-header">Form Edit RTL</h5>
+        <h5 class="card-header">Form Edit Realisasi Rencana Tindak Lanjut</h5>
 
         <div class="card-body">
             @if ($errors->any())
@@ -28,7 +28,7 @@
                 @method('PUT')
 
                 <div class="mb-3">
-                    <label class="form-label">Temuan Evaluasi</label>
+                    <label class="form-label">Temuan Evaluasi <span class="text-danger">*</span></label>
                     <select name="temuan_id" class="form-select @error('temuan_id') is-invalid @enderror">
                         <option value="">-- Pilih Temuan Evaluasi --</option>
                         @foreach ($temuan as $item)
@@ -40,9 +40,9 @@
                                 -
                                 {{ $item->evaluasiIndikator->semester->nama ?? '-' }}
                                 |
-                                {{ \Illuminate\Support\Str::limit($item->pernyataan, 90) }}
+                                Temuan: {{ \Illuminate\Support\Str::limit($item->pernyataan, 70) }}
                                 |
-                                Rekomendasi: {{ \Illuminate\Support\Str::limit($item->rencana_awal ?? '-', 70) }}
+                                Rencana Awal: {{ \Illuminate\Support\Str::limit($item->rencana_awal ?? '-', 60) }}
                             </option>
                         @endforeach
                     </select>
@@ -53,43 +53,34 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Uraian Rencana Tindak Lanjut</label>
-                    <textarea name="uraian_rencana_tindak_lanjut" rows="5"
-                        class="form-control @error('uraian_rencana_tindak_lanjut') is-invalid @enderror">{{ old('uraian_rencana_tindak_lanjut', $rtl->uraian_rencana_tindak_lanjut) }}</textarea>
+                    <label class="form-label">Uraian Realisasi Tindak Lanjut <span class="text-danger">*</span></label>
+                    <textarea name="uraian_realisasi" rows="5"
+                        class="form-control @error('uraian_realisasi') is-invalid @enderror">{{ old('uraian_realisasi', $rtl->uraian_realisasi) }}</textarea>
 
-                    @error('uraian_rencana_tindak_lanjut')
+                    @error('uraian_realisasi')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Uraian Tindak Koreksi</label>
-                    <textarea name="uraian_tindak_koreksi" rows="4"
-                        class="form-control @error('uraian_tindak_koreksi') is-invalid @enderror"
-                        placeholder="Isi jika ada koreksi atau tindakan berbeda dari rekomendasi awal">{{ old('uraian_tindak_koreksi', $rtl->uraian_tindak_koreksi) }}</textarea>
+                    <label class="form-label">Waktu Pelaksanaan <span class="text-danger">*</span></label>
+                    <input type="date" name="waktu_pelaksanaan"
+                        class="form-control @error('waktu_pelaksanaan') is-invalid @enderror"
+                        value="{{ old('waktu_pelaksanaan', $rtl->waktu_pelaksanaan?->format('Y-m-d')) }}">
 
-                    @error('uraian_tindak_koreksi')
+                    @error('waktu_pelaksanaan')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Tambah Bukti Tindak Lanjut</label>
-                    <input type="file" name="bukti[]" multiple
-                        class="form-control @error('bukti') is-invalid @enderror @error('bukti.*') is-invalid @enderror">
-                    @error('bukti')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                    @error('bukti.*')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                    <small class="text-muted">Kosongkan jika tidak ingin menambah bukti baru.</small>
-                </div>
+                    <label class="form-label">Catatan Tambahan (Opsional)</label>
+                    <textarea name="catatan" rows="3"
+                        class="form-control @error('catatan') is-invalid @enderror">{{ old('catatan', $rtl->catatan) }}</textarea>
 
-                <div class="mb-3">
-                    <label class="form-label">Keterangan Bukti Baru</label>
-                    <textarea name="keterangan_bukti[]" rows="3" class="form-control"
-                        placeholder="Keterangan umum untuk bukti baru">{{ old('keterangan_bukti.0') }}</textarea>
+                    @error('catatan')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
 
                 @if ($rtl->buktiTindakLanjuts->isNotEmpty())
@@ -107,37 +98,27 @@
                 @endif
 
                 <div class="mb-3">
-                    <label class="form-label">Target Selesai</label>
-                    <input type="date" name="target_selesai"
-                        class="form-control @error('target_selesai') is-invalid @enderror"
-                        value="{{ old('target_selesai', $rtl->target_selesai?->format('Y-m-d')) }}">
-
-                    @error('target_selesai')
+                    <label class="form-label">Tambah Bukti Tindak Lanjut Baru (Opsional)</label>
+                    <input type="file" name="bukti[]" multiple
+                        class="form-control @error('bukti') is-invalid @enderror @error('bukti.*') is-invalid @enderror">
+                    @error('bukti')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
+                    @error('bukti.*')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                    <small class="text-muted">Kosongkan jika tidak ingin menambah bukti baru.</small>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Status Saat Ini</label>
-                    <input type="text" class="form-control"
-                        value="{{ ucwords(str_replace('_', ' ', $rtl->status)) }}" readonly>
+                <div class="mb-4">
+                    <label class="form-label">Keterangan Bukti Baru</label>
+                    <textarea name="keterangan_bukti[]" rows="2" class="form-control"
+                        placeholder="Keterangan umum untuk bukti baru">{{ old('keterangan_bukti.0') }}</textarea>
                 </div>
 
-                @if ($rtl->catatan_verifikasi)
-                    <div class="alert alert-info">
-                        <strong>Catatan Verifikasi:</strong>
-                        <br>
-                        {{ $rtl->catatan_verifikasi }}
-                    </div>
-                @endif
-
-                <div class="d-flex gap-2 flex-wrap">
-                    <button type="submit" name="aksi" value="draft" class="btn btn-secondary">
-                        <i class="bx bx-save"></i> Simpan Draft
-                    </button>
-
-                    <button type="submit" name="aksi" value="ajukan" class="btn btn-primary">
-                        <i class="bx bx-send"></i> Simpan dan Ajukan
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bx bx-save"></i> Simpan Perubahan
                     </button>
                 </div>
             </form>

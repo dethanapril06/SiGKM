@@ -299,7 +299,7 @@ class LaporanStandarMutuExcelService
     {
         $plans = $evaluasiIndikator->temuans
             ->flatMap(fn ($temuan) => $temuan->rencanaTindakLanjuts)
-            ->pluck('uraian_rencana_tindak_lanjut')
+            ->pluck('uraian_realisasi')
             ->filter()
             ->values();
 
@@ -317,17 +317,6 @@ class LaporanStandarMutuExcelService
 
     private function targetCapaianText(EvaluasiIndikator $evaluasiIndikator): string
     {
-        $dates = $evaluasiIndikator->temuans
-            ->flatMap(fn ($temuan) => $temuan->rencanaTindakLanjuts)
-            ->pluck('target_selesai')
-            ->filter()
-            ->map(fn ($date) => $date->locale('id')->translatedFormat('d F Y'))
-            ->values();
-
-        if ($dates->isNotEmpty()) {
-            return $dates->join("\n");
-        }
-
         $initialDates = $evaluasiIndikator->temuans
             ->pluck('target_selesai')
             ->filter()

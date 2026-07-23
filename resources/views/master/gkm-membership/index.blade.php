@@ -31,7 +31,7 @@
                 <thead>
                     <tr>
                         <th>No</th>
-                        <th>Nama Dosen</th>
+                        <th>Nama Anggota</th>
                         <th>Peran</th>
                         <th>Tanggal Mulai</th>
                         <th>Tanggal Selesai</th>
@@ -43,7 +43,12 @@
                     @forelse ($gkmMembership as $item)
                         <tr>
                             <td>{{ $gkmMembership->firstItem() + $loop->index }}</td>
-                            <td><strong>{{ $item->dosen->nama_dosen ?? '-' }}</strong></td>
+                            <td>
+                                <strong>{{ $item->nama_anggota }}</strong>
+                                @if ($item->nip)
+                                    <br><small class="text-muted">NIP: {{ $item->nip }}</small>
+                                @endif
+                            </td>
                             <td>
                                 @if ($item->peran === 'ketua')
                                     <span class="badge bg-label-primary">Ketua GKM</span>
@@ -61,7 +66,7 @@
                                 @endif
                             </td>
                             <td>
-                                <a href="{{ route('gkm-membership.edit', $item->id) }}" class="btn btn-sm btn-iconbtn-warning">
+                                <a href="{{ route('gkm-membership.edit', $item->id) }}" class="btn btn-sm btn-icon btn-warning">
                                     <i class="bx bx-edit"></i>
                                 </a>
 

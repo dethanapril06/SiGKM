@@ -63,13 +63,13 @@
                                 <form action="{{ route('ami.dokumen.destroy', $dokumen) }}" method="POST"
                                     class="d-inline">@csrf @method('DELETE')<button
                                         class="btn btn-sm btn-outline-danger ms-1"
-                                        onclick="return confirm('Hapus bukti ini?')">Hapus</button></form>
+                                        onclick="return confirm('Hapus bukti ini?')"><i class="bx bx-trash"></i> Hapus</button></form>
                             @endif
                         </div>
                     @empty<span class="text-muted">Belum ada bukti.</span>
                     @endforelse
                 </div>
-                <a href="{{ route('ami.show', $item) }}" class="btn btn-info mb-3">Detail</a>
+                <a href="{{ route('ami.show', $item) }}" class="btn btn-info mb-3"><i class="bx bx-show"></i> Detail</a>
                 @if ($canManage)
                     <form action="{{ route('ami.dokumen.store', $item) }}" method="POST" enctype="multipart/form-data"
                         class="border rounded p-3 mb-3">@csrf
@@ -84,10 +84,10 @@
                                     link.</small></div>
                         </div><button class="btn btn-sm btn-primary">Tambah Bukti</button>
                     </form>
-                    <a href="{{ route('ami.edit', $item) }}" class="btn btn-warning">Edit</a>
+                    <a href="{{ route('ami.edit', $item) }}" class="btn btn-warning"><i class="bx bx-edit"></i> Edit</a>
                     <form action="{{ route('ami.destroy', $item) }}" method="POST" class="d-inline">@csrf
                         @method('DELETE')<button class="btn btn-danger"
-                            onclick="return confirm('Hapus data AMI ini?')">Hapus</button></form>
+                            onclick="return confirm('Hapus data AMI ini?')"><i class="bx bx-trash"></i> Hapus</button></form>
                 @endif
             </div>
         </div>

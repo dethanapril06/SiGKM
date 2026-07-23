@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Dosen;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -16,7 +15,7 @@ class AkunController extends Controller
 {
     public function index(): View
     {
-        $akun = User::with(['role', 'dosen'])
+        $akun = User::with(['role'])
             ->latest()
             ->paginate(10)
             ->withQueryString();
@@ -30,18 +29,13 @@ class AkunController extends Controller
             ->orderBy('name')
             ->get();
 
-        $dosen = Dosen::query()
-            ->orderBy('nama_dosen')
-            ->get();
-
-        return view('master.akun.create', compact('role', 'dosen'));
+        return view('master.akun.create', compact('role'));
     }
 
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'role_id' => ['required', 'exists:roles,id'],
-            'dosen_id' => ['nullable', 'exists:dosens,id'],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
@@ -55,22 +49,8 @@ class AkunController extends Controller
             'password.confirmed' => 'Konfirmasi password tidak sesuai.',
         ]);
 
-        if ($validated['dosen_id']) {
-            $alreadyExists = User::query()
-                ->where('dosen_id', $validated['dosen_id'])
-                ->where('role_id', $validated['role_id'])
-                ->exists();
-
-            if ($alreadyExists) {
-                throw ValidationException::withMessages([
-                    'role_id' => 'Dosen ini sudah memiliki akun dengan role tersebut.',
-                ]);
-            }
-        }
-
         User::create([
             'role_id' => $validated['role_id'],
-            'dosen_id' => $validated['dosen_id'] ?? null,
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
@@ -88,18 +68,13 @@ class AkunController extends Controller
             ->orderBy('name')
             ->get();
 
-        $dosen = Dosen::query()
-            ->orderBy('nama_dosen')
-            ->get();
-
-        return view('master.akun.edit', compact('akun', 'role', 'dosen'));
+        return view('master.akun.edit', compact('akun', 'role'));
     }
 
     public function update(Request $request, User $akun): RedirectResponse
     {
         $validated = $request->validate([
             'role_id' => ['required', 'exists:roles,id'],
-            'dosen_id' => ['nullable', 'exists:dosens,id'],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($akun->id)],
             'password' => ['nullable', 'string', 'min:6', 'confirmed'],
@@ -112,23 +87,8 @@ class AkunController extends Controller
             'password.confirmed' => 'Konfirmasi password tidak sesuai.',
         ]);
 
-        if ($validated['dosen_id']) {
-            $alreadyExists = User::query()
-                ->where('dosen_id', $validated['dosen_id'])
-                ->where('role_id', $validated['role_id'])
-                ->whereKeyNot($akun->id)
-                ->exists();
-
-            if ($alreadyExists) {
-                throw ValidationException::withMessages([
-                    'role_id' => 'Dosen ini sudah memiliki akun dengan role tersebut.',
-                ]);
-            }
-        }
-
         $akun->fill([
             'role_id' => $validated['role_id'],
-            'dosen_id' => $validated['dosen_id'] ?? null,
             'name' => $validated['name'],
             'email' => $validated['email'],
             'is_active' => $request->boolean('is_active'),

@@ -16,7 +16,7 @@ class Temuan extends Model
     protected $fillable = [
         'kode_temuan',
         'evaluasi_indikator_id',
-        'dosen_id',
+        'nama_penanggung_jawab',
         'pernyataan',
         'rencana_awal',
         'target_selesai',
@@ -41,11 +41,6 @@ class Temuan extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function dosen(): BelongsTo
-    {
-        return $this->belongsTo(Dosen::class);
-    }
-
     public function risikoTemuans(): HasMany
     {
         return $this->hasMany(RisikoTemuan::class);
@@ -54,6 +49,11 @@ class Temuan extends Model
     public function rencanaTindakLanjuts(): HasMany
     {
         return $this->hasMany(RencanaTindakLanjut::class);
+    }
+
+    public function keputusanRtms(): HasMany
+    {
+        return $this->hasMany(KeputusanRtm::class);
     }
 
     public function scopeOpen(Builder $query): Builder
@@ -77,19 +77,13 @@ class Temuan extends Model
             return false;
         }
 
-        return $user->hasRole('anggota-gkm')
+        return $user->hasAnyRole(['ketua-gkm', 'anggota-gkm'])
             && in_array($this->status, [WorkflowStatus::DRAFT, WorkflowStatus::TERBUKA], true)
-            && (int) $this->created_by === (int) $user->id
-            && ! $this->rencanaTindakLanjuts()->exists();
+            && ($user->hasRole('ketua-gkm') || (int) $this->created_by === (int) $user->id);
     }
 
     public function isTerbuka(): bool
     {
         return $this->status === WorkflowStatus::TERBUKA;
-    }
-
-    public function belongsToDosen(?User $user): bool
-    {
-        return $user?->dosen_id && (int) $this->dosen_id === (int) $user->dosen_id;
     }
 }

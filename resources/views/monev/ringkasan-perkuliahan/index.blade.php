@@ -4,7 +4,7 @@
     <div class="d-flex justify-content-between align-items-center py-3 mb-4">
         <h4 class="fw-bold mb-0">Ringkasan Perkuliahan</h4>
 
-        @if (auth()->user()->hasRole('anggota-gkm'))
+        @if (auth()->user()->hasAnyRole(['ketua-gkm', 'anggota-gkm']))
             <a href="{{ route('ringkasan-perkuliahan.create') }}" class="btn btn-primary">
                 <i class="bx bx-plus"></i> Tambah Ringkasan
             </a>
@@ -127,7 +127,7 @@
                                         <i class="bx bx-edit"></i>
                                     </a>
 
-                                    @if ($item->status !== 'diajukan')
+                                    @if (auth()->user()->hasRole('anggota-gkm') && $item->status !== 'diajukan')
                                         <form action="{{ route('ringkasan-perkuliahan.submit', $item->id) }}"
                                             method="POST" class="d-inline" data-confirm-form
                                             data-confirm-title="Ajukan ringkasan ini ke Ketua GKM?"

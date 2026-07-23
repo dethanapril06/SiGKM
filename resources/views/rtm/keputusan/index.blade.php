@@ -16,7 +16,7 @@
                     <tr>
                         <th>No</th>
                         <th>RTM</th>
-                        <th>RTL yang Ditinjau</th>
+                        <th>Temuan yang Ditinjau</th>
                         <th>Keputusan</th>
                         <th>Strategi</th>
                         <th>Target</th>
@@ -31,7 +31,7 @@
                             <td><strong>{{ $item->notulenRtm?->jadwalRtm?->judul }}</strong><br><small>{{ $item->notulenRtm?->jadwalRtm?->semester?->label }}</small>
                             </td>
                             <td style="min-width:220px;white-space:normal">
-                                <strong>{{ $item->rencanaTindakLanjut?->temuan?->kode_temuan }}</strong><br>{{ Str::limit($item->rencanaTindakLanjut?->uraian_rencana_tindak_lanjut, 100) }}<br><small>{{ $item->rencanaTindakLanjut?->temuan?->dosen?->nama ?? '-' }}</small>
+                                <strong>{{ $item->temuan?->kode_temuan }}</strong><br>{{ Str::limit($item->temuan?->pernyataan, 100) }}<br><small>{{ $item->temuan?->nama_penanggung_jawab ?? '-' }}</small>
                             </td>
                             <td style="min-width:220px;white-space:normal">{{ Str::limit($item->uraian_keputusan, 110) }}
                             </td>
@@ -42,11 +42,11 @@
                                     class="badge bg-label-{{ $item->status === 'selesai' ? 'success' : ($item->status === 'proses' ? 'warning' : 'secondary') }}">{{ str($item->status)->replace('_', ' ')->title() }}</span>
                             </td>
                             <td><a href="{{ route('keputusan-rtm.show', $item) }}"
-                                    class="btn btn-sm btn-icon btn-info">Detail</a> <a
+                                    class="btn btn-sm btn-icon btn-info" title="Detail"><i class="bx bx-show"></i></a> <a
                                     href="{{ route('keputusan-rtm.edit', $item) }}"
-                                    class="btn btn-sm btn-icon btn-warning">Edit</a>
+                                    class="btn btn-sm btn-icon btn-warning" title="Edit"><i class="bx bx-edit"></i></a>
                                 <form action="{{ route('keputusan-rtm.destroy', $item) }}" method="POST" class="d-inline">
-                                    @csrf @method('DELETE')<button class="btn btn-sm btn-icon btn-danger">Hapus</button>
+                                    @csrf @method('DELETE')<button class="btn btn-sm btn-icon btn-danger" title="Hapus"><i class="bx bx-trash"></i></button>
                                 </form>
                             </td>
                     </tr>@empty<tr>

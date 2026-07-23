@@ -94,11 +94,11 @@ class DashboardController extends Controller
             ],
             'pending' => [
                 'ringkasan' => RingkasanPerkuliahan::where('status', 'diajukan')->count(),
-                'rtl' => RencanaTindakLanjut::where('status', 'diajukan')->count(),
+                'rtl' => Temuan::where('status', 'terbuka')->count(),
                 'notulen' => NotulenRtm::where('status', 'diajukan')->count(),
             ],
             'capaian' => $this->capaian(),
-            'temuanTerbaru' => Temuan::with(['evaluasiIndikator.semester.tahunAkademik', 'dosen'])->latest()->limit(5)->get(),
+            'temuanTerbaru' => Temuan::with('evaluasiIndikator.semester.tahunAkademik')->latest()->limit(5)->get(),
             'jadwalRtmTerbaru' => JadwalRtm::with(['semester.tahunAkademik', 'notulenRtm.keputusanRtms'])->latest('tanggal')->limit(5)->get(),
             'amiTerbaru' => Ami::with('tahunAkademik')->latest('tanggal_pelaksanaan')->limit(5)->get(),
         ]);
@@ -123,7 +123,7 @@ class DashboardController extends Controller
                 'notulen_ditolak' => NotulenRtm::where('input_by', $userId)->where('status', 'ditolak')->count(),
             ],
             'ringkasanTerbaru' => RingkasanPerkuliahan::with(['perkuliahan.mataKuliah', 'perkuliahan.kelas'])->where('input_by', $userId)->latest()->limit(5)->get(),
-            'temuanTerbaru' => Temuan::with(['dosen', 'evaluasiIndikator.semester.tahunAkademik'])->where('created_by', $userId)->latest()->limit(5)->get(),
+            'temuanTerbaru' => Temuan::with('evaluasiIndikator.semester.tahunAkademik')->where('created_by', $userId)->latest()->limit(5)->get(),
             'notulenTerbaru' => NotulenRtm::with('jadwalRtm.semester.tahunAkademik')->where('input_by', $userId)->latest()->limit(5)->get(),
             'jadwalMonevAktif' => JadwalMonev::with(['semester.tahunAkademik', 'termin'])->where('status', 'aktif')->latest()->limit(3)->get(),
         ]);
@@ -140,28 +140,9 @@ class DashboardController extends Controller
             ],
             'capaian' => $this->capaian(),
             'ringkasanTerbaru' => RingkasanPerkuliahan::with(['perkuliahan.mataKuliah', 'perkuliahan.kelas', 'jadwalMonev.semester.tahunAkademik'])->where('status', 'diverifikasi')->latest()->limit(5)->get(),
-            'temuanTerbuka' => Temuan::with(['dosen', 'evaluasiIndikator.semester.tahunAkademik'])->where('status', 'terbuka')->latest()->limit(5)->get(),
+            'temuanTerbuka' => Temuan::with('evaluasiIndikator.semester.tahunAkademik')->where('status', 'terbuka')->latest()->limit(5)->get(),
             'rtmTerbaru' => JadwalRtm::with(['semester.tahunAkademik', 'notulenRtm.keputusanRtms'])->latest('tanggal')->limit(5)->get(),
             'amiTerbaru' => Ami::with(['tahunAkademik', 'dokumenAmis'])->latest('tanggal_pelaksanaan')->limit(5)->get(),
-        ]);
-    }
-
-    public function dosen(): View
-    {
-        $dosenId = auth()->user()->dosen_id;
-        $temuanQuery = Temuan::where('dosen_id', $dosenId);
-        $rtlQuery = RencanaTindakLanjut::whereHas('temuan', fn ($query) => $query->where('dosen_id', $dosenId));
-
-        return view('dashboard.dosen', [
-            'stats' => [
-                ['label' => 'Perkuliahan Saya', 'value' => Perkuliahan::whereHas('pengajars', fn ($query) => $query->where('dosen_id', $dosenId))->count(), 'icon' => 'bx-book', 'color' => 'primary'],
-                ['label' => 'Temuan Terbuka', 'value' => (clone $temuanQuery)->where('status', 'terbuka')->count(), 'icon' => 'bx-error-circle', 'color' => 'danger'],
-                ['label' => 'RTL Draft/Ditolak', 'value' => (clone $rtlQuery)->whereIn('status', ['draft', 'ditolak'])->count(), 'icon' => 'bx-edit', 'color' => 'warning'],
-                ['label' => 'RTL Diverifikasi', 'value' => (clone $rtlQuery)->where('status', 'diverifikasi')->count(), 'icon' => 'bx-check-circle', 'color' => 'success'],
-            ],
-            'temuanTerbaru' => (clone $temuanQuery)->with(['evaluasiIndikator.semester.tahunAkademik'])->latest()->limit(5)->get(),
-            'rtlTerbaru' => (clone $rtlQuery)->with(['temuan', 'buktiTindakLanjuts'])->latest()->limit(5)->get(),
-            'perkuliahanAktif' => Perkuliahan::with(['mataKuliah', 'kelas', 'semester.tahunAkademik'])->whereHas('pengajars', fn ($query) => $query->where('dosen_id', $dosenId))->where('status', 'aktif')->latest()->limit(5)->get(),
         ]);
     }
 

@@ -4,7 +4,7 @@
     <div class="d-flex justify-content-between align-items-center py-3 mb-4">
         <h4 class="fw-bold mb-0">Evaluasi Indikator</h4>
 
-        @if (auth()->user()->hasRole('anggota-gkm'))
+        @if (auth()->user()->hasAnyRole(['ketua-gkm', 'anggota-gkm']))
             <a href="{{ route('evaluasi-indikator.create') }}" class="btn btn-primary">
                 <i class="bx bx-plus"></i> Tambah Evaluasi
             </a>
@@ -80,7 +80,7 @@
                                     </a>
                                 @endif
 
-                                @if (auth()->user()->hasRole('anggota-gkm'))
+                                @if (auth()->user()->hasAnyRole(['ketua-gkm', 'anggota-gkm']))
                                     <a href="{{ route('evaluasi-indikator.edit', $item->id) }}"
                                         class="btn btn-sm btn-icon btn-warning">
                                         <i class="bx bx-edit"></i>

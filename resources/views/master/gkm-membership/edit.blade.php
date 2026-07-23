@@ -18,19 +18,23 @@
                 @method('PUT')
 
                 <div class="mb-3">
-                    <label class="form-label">Dosen</label>
-                    <select name="dosen_id" class="form-select @error('dosen_id') is-invalid @enderror">
-                        <option value="">-- Pilih Dosen --</option>
+                    <label class="form-label">Nama Anggota GKM <span class="text-danger">*</span></label>
+                    <input type="text" name="nama_anggota"
+                        class="form-control @error('nama_anggota') is-invalid @enderror"
+                        value="{{ old('nama_anggota', $gkmMembership->nama_anggota) }}" placeholder="Masukkan nama lengkap anggota GKM">
 
-                        @foreach ($dosen as $item)
-                            <option value="{{ $item->id }}"
-                                {{ old('dosen_id', $gkmMembership->dosen_id) == $item->id ? 'selected' : '' }}>
-                                {{ $item->nama_dosen }}
-                            </option>
-                        @endforeach
-                    </select>
+                    @error('nama_anggota')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
 
-                    @error('dosen_id')
+                <div class="mb-3">
+                    <label class="form-label">NIP / NIDN (Opsional)</label>
+                    <input type="text" name="nip"
+                        class="form-control @error('nip') is-invalid @enderror"
+                        value="{{ old('nip', $gkmMembership->nip) }}" placeholder="Masukkan NIP atau NIDN jika ada">
+
+                    @error('nip')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
@@ -81,6 +85,13 @@
                     <label class="form-check-label" for="is_active">
                         Aktif
                     </label>
+                </div>
+
+                <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
+                    <i class="bx bx-info-circle me-2"></i>
+                    <div>
+                        Perubahan pada form ini hanya mengubah data keanggotaan GKM. Untuk mengedit email atau password akun login, silakan kelola melalui menu <strong>Manajemen Akun</strong>.
+                    </div>
                 </div>
 
                 <button type="submit" class="btn btn-primary">

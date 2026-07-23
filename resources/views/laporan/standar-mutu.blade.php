@@ -115,11 +115,9 @@
                             $temuanItems = $evaluasiItem?->temuans ?? collect();
                             $temuan = $temuanItems->pluck('pernyataan')->filter();
                             $plans = $temuanItems
-                                ->flatMap(fn ($temuanItem) => $temuanItem->rencanaTindakLanjuts)
-                                ->pluck('uraian_rencana_tindak_lanjut')
+                                ->pluck('rencana_awal')
                                 ->filter();
                             $targets = $temuanItems
-                                ->flatMap(fn ($temuanItem) => $temuanItem->rencanaTindakLanjuts)
                                 ->pluck('target_selesai')
                                 ->filter()
                                 ->map(fn ($date) => $date->translatedFormat('d M Y'));

@@ -25,11 +25,6 @@ class RoleSeeder extends Seeder
                 'slug' => 'koordinator-prodi',
                 'description' => 'Akun untuk Koordinator Program Studi',
             ],
-            [
-                'name' => 'Dosen',
-                'slug' => 'dosen',
-                'description' => 'Akun untuk Dosen',
-            ],
         ];
 
         foreach ($roles as $role) {

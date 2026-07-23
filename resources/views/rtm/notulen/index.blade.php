@@ -45,26 +45,26 @@
                                     {{ $item->verifikator?->name ?? '-' }}</small></td>
                             <td style="min-width:230px">
                                 <a href="{{ route('notulen-rtm.show', $item) }}"
-                                    class="btn btn-sm btn-icon btn-info">Detail</a>
+                                    class="btn btn-sm btn-icon btn-info" title="Detail"><i class="bx bx-show"></i></a>
                                 @can('update', $item)
                                     <a href="{{ route('notulen-rtm.edit', $item) }}"
-                                        class="btn btn-sm btn-icon btn-warning">Edit</a>
+                                        class="btn btn-sm btn-icon btn-warning" title="Edit"><i class="bx bx-edit"></i></a>
                                 @endcan
                                 @can('submit', $item)
                                     <form action="{{ route('notulen-rtm.ajukan', $item) }}" method="POST" class="d-inline">
-                                        @csrf @method('PATCH')<button class="btn btn-sm btn-icon btn-primary">Ajukan</button>
+                                        @csrf @method('PATCH')<button class="btn btn-sm btn-icon btn-primary" title="Ajukan"><i class="bx bx-send"></i></button>
                                     </form>
                                 @endcan
                                 @can('verify', $item)
                                     <form action="{{ route('notulen-rtm.verifikasi', $item) }}" method="POST"
                                         class="d-inline">@csrf @method('PATCH')<button
-                                            class="btn btn-sm btn-icon btn-success">Verifikasi</button></form>
+                                            class="btn btn-sm btn-icon btn-success" title="Verifikasi"><i class="bx bx-check"></i></button></form>
                                     <button class="btn btn-sm btn-icon btn-danger" data-bs-toggle="modal"
-                                        data-bs-target="#tolak-{{ $item->id }}">Tolak</button>
+                                        data-bs-target="#tolak-{{ $item->id }}" title="Tolak"><i class="bx bx-x"></i></button>
                                 @endcan
                                 @can('delete', $item)
                                     <form action="{{ route('notulen-rtm.destroy', $item) }}" method="POST" class="d-inline">
-                                        @csrf @method('DELETE')<button class="btn btn-sm btn-icon btn-danger">Hapus</button>
+                                        @csrf @method('DELETE')<button class="btn btn-sm btn-icon btn-danger" title="Hapus"><i class="bx bx-trash"></i></button>
                                     </form>
                                 @endcan
                             </td>

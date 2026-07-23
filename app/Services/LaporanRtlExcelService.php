@@ -174,7 +174,7 @@ class LaporanRtlExcelService
             $this->setText($dom, $xpath, 'D'.$row, $evaluatable->isi_indikator ?: '-');
             $this->setText($dom, $xpath, 'E'.$row, $item->temuan?->pernyataan ?: '-');
             $this->setText($dom, $xpath, 'F'.$row, $this->tindakLanjutText($item));
-            $this->setText($dom, $xpath, 'G'.$row, $item->temuan?->dosen?->nama_dosen ?: '-');
+            $this->setText($dom, $xpath, 'G'.$row, $item->temuan?->nama_penanggung_jawab ?: '-');
             $this->setText($dom, $xpath, 'H'.$row, $this->targetText($item));
         }
     }
@@ -208,7 +208,7 @@ class LaporanRtlExcelService
             $this->setText($dom, $xpath, 'F'.$row, $this->codeAndText($ikks->kode_ikks, $ikks->uraian_ikks));
             $this->setText($dom, $xpath, 'G'.$row, $item->temuan?->pernyataan ?: '-');
             $this->setText($dom, $xpath, 'H'.$row, $this->tindakLanjutText($item));
-            $this->setText($dom, $xpath, 'I'.$row, $item->temuan?->dosen?->nama_dosen ?: '-');
+            $this->setText($dom, $xpath, 'I'.$row, $item->temuan?->nama_penanggung_jawab ?: '-');
             $this->setText($dom, $xpath, 'J'.$row, $this->targetText($item));
         }
     }
@@ -502,15 +502,16 @@ class LaporanRtlExcelService
     private function tindakLanjutText(RencanaTindakLanjut $rtl): string
     {
         return collect([
-            $rtl->uraian_rencana_tindak_lanjut,
-            $rtl->uraian_tindak_koreksi ? 'Tindak koreksi: '.$rtl->uraian_tindak_koreksi : null,
+            $rtl->temuan?->rencana_awal ? 'Rencana awal: '.$rtl->temuan->rencana_awal : null,
+            $rtl->uraian_realisasi ? 'Realisasi: '.$rtl->uraian_realisasi : null,
+            $rtl->catatan ? 'Catatan: '.$rtl->catatan : null,
         ])->filter()->join("\n") ?: '-';
     }
 
     private function targetText(RencanaTindakLanjut $rtl): string
     {
-        return $rtl->target_selesai
-            ? $rtl->target_selesai->locale('id')->translatedFormat('d F Y')
+        return $rtl->temuan?->target_selesai
+            ? $rtl->temuan->target_selesai->locale('id')->translatedFormat('d F Y')
             : '-';
     }
 

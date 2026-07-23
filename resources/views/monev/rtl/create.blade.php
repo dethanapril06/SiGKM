@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="d-flex justify-content-between align-items-center py-3 mb-4">
-        <h4 class="fw-bold mb-0">Isi Tindak Lanjut</h4>
+        <h4 class="fw-bold mb-0">Catat Realisasi RTL</h4>
 
         <a href="{{ route('rtl.index') }}" class="btn btn-secondary">
             <i class="bx bx-arrow-back"></i> Kembali
@@ -10,7 +10,7 @@
     </div>
 
     <div class="card">
-        <h5 class="card-header">Form Tindak Lanjut Temuan</h5>
+        <h5 class="card-header">Form Pencatatan Realisasi Rencana Tindak Lanjut</h5>
 
         <div class="card-body">
             @if ($errors->any())
@@ -25,7 +25,7 @@
 
             @if ($temuan->isEmpty())
                 <div class="alert alert-info">
-                    Belum ada temuan terbuka yang ditugaskan kepada Anda.
+                    Belum ada temuan terbuka yang perlu direalisasikan.
                 </div>
             @endif
 
@@ -33,7 +33,7 @@
                 @csrf
 
                 <div class="mb-3">
-                    <label class="form-label">Temuan Evaluasi</label>
+                    <label class="form-label">Temuan Evaluasi <span class="text-danger">*</span></label>
                     <select name="temuan_id" class="form-select @error('temuan_id') is-invalid @enderror">
                         <option value="">-- Pilih Temuan Evaluasi --</option>
                         @foreach ($temuan as $item)
@@ -44,9 +44,9 @@
                                 -
                                 {{ $item->evaluasiIndikator->semester->nama ?? '-' }}
                                 |
-                                {{ \Illuminate\Support\Str::limit($item->pernyataan, 90) }}
+                                Temuan: {{ \Illuminate\Support\Str::limit($item->pernyataan, 70) }}
                                 |
-                                Rekomendasi: {{ \Illuminate\Support\Str::limit($item->rencana_awal ?? '-', 70) }}
+                                Rencana Awal: {{ \Illuminate\Support\Str::limit($item->rencana_awal ?? '-', 60) }}
                             </option>
                         @endforeach
                     </select>
@@ -57,29 +57,40 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Uraian Rencana Tindak Lanjut</label>
-                    <textarea name="uraian_rencana_tindak_lanjut" rows="5"
-                        class="form-control @error('uraian_rencana_tindak_lanjut') is-invalid @enderror"
-                        placeholder="Tuliskan RTL yang dilakukan. Boleh mengikuti rencana awal dari GKM.">{{ old('uraian_rencana_tindak_lanjut') }}</textarea>
+                    <label class="form-label">Uraian Realisasi Tindak Lanjut <span class="text-danger">*</span></label>
+                    <textarea name="uraian_realisasi" rows="5"
+                        class="form-control @error('uraian_realisasi') is-invalid @enderror"
+                        placeholder="Jelaskan realisasi tindakan yang telah dilaksanakan untuk menyelesaikan temuan ini.">{{ old('uraian_realisasi') }}</textarea>
 
-                    @error('uraian_rencana_tindak_lanjut')
+                    @error('uraian_realisasi')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Uraian Tindak Koreksi</label>
-                    <textarea name="uraian_tindak_koreksi" rows="4"
-                        class="form-control @error('uraian_tindak_koreksi') is-invalid @enderror"
-                        placeholder="Isi jika ada koreksi atau tindakan berbeda dari rekomendasi awal">{{ old('uraian_tindak_koreksi') }}</textarea>
+                    <label class="form-label">Waktu Pelaksanaan <span class="text-danger">*</span></label>
+                    <input type="date" name="waktu_pelaksanaan"
+                        class="form-control @error('waktu_pelaksanaan') is-invalid @enderror"
+                        value="{{ old('waktu_pelaksanaan', date('Y-m-d')) }}">
 
-                    @error('uraian_tindak_koreksi')
+                    @error('waktu_pelaksanaan')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Bukti Tindak Lanjut</label>
+                    <label class="form-label">Catatan Tambahan (Opsional)</label>
+                    <textarea name="catatan" rows="3"
+                        class="form-control @error('catatan') is-invalid @enderror"
+                        placeholder="Tambahkan catatan jika diperlukan">{{ old('catatan') }}</textarea>
+
+                    @error('catatan')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Upload Bukti Tindak Lanjut (Opsional)</label>
                     <input type="file" name="bukti[]" multiple
                         class="form-control @error('bukti') is-invalid @enderror @error('bukti.*') is-invalid @enderror">
                     @error('bukti')
@@ -91,30 +102,15 @@
                     <small class="text-muted">Format: PDF, DOC, DOCX, JPG, JPEG, PNG. Maksimal 2MB per file.</small>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Keterangan Bukti</label>
-                    <textarea name="keterangan_bukti[]" rows="3" class="form-control"
-                        placeholder="Keterangan umum untuk bukti yang diunggah">{{ old('keterangan_bukti.0') }}</textarea>
+                <div class="mb-4">
+                    <label class="form-label">Keterangan Bukti (Opsional)</label>
+                    <textarea name="keterangan_bukti[]" rows="2" class="form-control"
+                        placeholder="Keterangan untuk bukti yang diunggah">{{ old('keterangan_bukti.0') }}</textarea>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Target Selesai</label>
-                    <input type="date" name="target_selesai"
-                        class="form-control @error('target_selesai') is-invalid @enderror"
-                        value="{{ old('target_selesai') }}">
-
-                    @error('target_selesai')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="d-flex gap-2 flex-wrap">
-                    <button type="submit" name="aksi" value="draft" class="btn btn-secondary">
-                        <i class="bx bx-save"></i> Simpan Draft
-                    </button>
-
-                    <button type="submit" name="aksi" value="ajukan" class="btn btn-primary">
-                        <i class="bx bx-send"></i> Simpan dan Ajukan
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bx bx-save"></i> Simpan Realisasi RTL
                     </button>
                 </div>
             </form>

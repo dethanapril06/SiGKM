@@ -90,6 +90,14 @@ class RingkasanPerkuliahan extends Model
 
     public function canBeEditedBy(?User $user): bool
     {
-        return $this->canBeEdited() && $user && (int) $user->id === (int) $this->input_by;
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->hasRole('ketua-gkm')) {
+            return true;
+        }
+
+        return $this->canBeEdited() && (int) $user->id === (int) $this->input_by;
     }
 }

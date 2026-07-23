@@ -40,7 +40,7 @@ class EvaluasiIndikatorController extends Controller
             'evaluatable',
             'penginput',
             'verifikator',
-            'temuans.dosen',
+            'temuans',
         ]);
 
         return view('monev.evaluasi-indikator.show', compact('evaluasiIndikator'));

@@ -126,6 +126,16 @@
                             {{ old('status', $ringkasanPerkuliahan->status) === 'diajukan' ? 'selected' : '' }}>
                             Ajukan
                         </option>
+                        @if (auth()->user()->hasRole('ketua-gkm'))
+                            <option value="diverifikasi"
+                                {{ old('status', $ringkasanPerkuliahan->status) === 'diverifikasi' ? 'selected' : '' }}>
+                                Diverifikasi
+                            </option>
+                            <option value="ditolak"
+                                {{ old('status', $ringkasanPerkuliahan->status) === 'ditolak' ? 'selected' : '' }}>
+                                Ditolak
+                            </option>
+                        @endif
                     </select>
 
                     @error('status')

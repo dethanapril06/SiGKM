@@ -41,12 +41,16 @@
                             </td>
                             <td>{{ $item->notulenRtm ? ucfirst($item->notulenRtm->status) : 'Belum ada' }}</td>
                             <td>
-                                <a href="{{ route('jadwal-rtm.show', $item) }}" class="btn btn-sm btn-icon btn-info">Detail</a>
+                                <a href="{{ route('jadwal-rtm.show', $item) }}" class="btn btn-sm btn-icon btn-info" title="Detail">
+                                    <i class="bx bx-show"></i>
+                                </a>
                                 @if (auth()->user()->hasAnyRole(['ketua-gkm', 'anggota-gkm']))
-                                    <a href="{{ route('jadwal-rtm.edit', $item) }}" class="btn btn-sm btn-icon btn-warning">Edit</a>
+                                    <a href="{{ route('jadwal-rtm.edit', $item) }}" class="btn btn-sm btn-icon btn-warning" title="Edit">
+                                        <i class="bx bx-edit"></i>
+                                    </a>
                                     <form action="{{ route('jadwal-rtm.destroy', $item) }}" method="POST" class="d-inline"
                                         onsubmit="return confirm('Hapus jadwal ini?')">@csrf @method('DELETE')<button
-                                            class="btn btn-sm btn-icon btn-danger">Hapus</button></form>
+                                            class="btn btn-sm btn-icon btn-danger" title="Hapus"><i class="bx bx-trash"></i></button></form>
                                 @endif
                             </td>
                         </tr>

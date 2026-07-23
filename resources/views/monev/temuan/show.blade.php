@@ -18,8 +18,8 @@
                 {{ $temuan->evaluasiIndikator?->sumber_kode }} —
                 {{ $temuan->evaluasiIndikator?->sumber_uraian }}
             </x-detail-row>
-            <x-detail-row label="Dosen Penanggung Jawab">
-                {{ $temuan->dosen?->nama_dosen }}
+            <x-detail-row label="Penanggung Jawab">
+                {{ $temuan->nama_penanggung_jawab ?? '-' }}
             </x-detail-row>
             <x-detail-row label="Pernyataan Temuan">
                 <span style="white-space:pre-line">
@@ -57,13 +57,13 @@
         </div>
     </div>
     <div class="card">
-        <h5 class="card-header">Rencana Tindak Lanjut</h5>
+        <h5 class="card-header">Realisasi Tindak Lanjut</h5>
         <div class="list-group list-group-flush">
             @forelse($temuan->rencanaTindakLanjuts as $rtl)
                 <a href="{{ route('rtl.show', $rtl) }}"
-                    class="list-group-item list-group-item-action"><strong>{{ ucfirst($rtl->status) }}</strong> —
-                {{ Str::limit($rtl->uraian_rencana_tindak_lanjut, 130) }}</a>@empty<div class="p-3 text-muted">Belum
-                    ada RTL.</div>
+                    class="list-group-item list-group-item-action"><strong>{{ $rtl->waktu_pelaksanaan?->format('d-m-Y') ?? '-' }}</strong> —
+                {{ Str::limit($rtl->uraian_realisasi, 130) }}</a>@empty<div class="p-3 text-muted">Belum
+                    ada Realisasi RTL.</div>
             @endforelse
         </div>
     </div>

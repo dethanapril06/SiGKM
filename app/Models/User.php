@@ -16,7 +16,6 @@ class User extends Authenticatable
 
     protected $fillable = [
         'role_id',
-        'dosen_id',
         'name',
         'email',
         'password',
@@ -40,11 +39,6 @@ class User extends Authenticatable
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
-    }
-
-    public function dosen(): BelongsTo
-    {
-        return $this->belongsTo(Dosen::class);
     }
 
     public function ringkasanPerkuliahansDiinput(): HasMany
@@ -83,7 +77,6 @@ class User extends Authenticatable
             RoleSlug::KETUA_GKM => 'ketua-gkm.dashboard',
             RoleSlug::ANGGOTA_GKM => 'anggota-gkm.dashboard',
             RoleSlug::KOORDINATOR_PRODI => 'koordinator-prodi.dashboard',
-            RoleSlug::DOSEN => 'dosen.dashboard',
             default => 'dashboard',
         };
     }

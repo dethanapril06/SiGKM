@@ -244,7 +244,7 @@ class LaporanController extends Controller
 
         if ($selectedSemester) {
             $rtl = RencanaTindakLanjut::with([
-                'temuan.dosen',
+                'buktiTindakLanjuts',
                 'temuan.evaluasiIndikator.semester.tahunAkademik',
                 'temuan.evaluasiIndikator.evaluatable' => function (MorphTo $morphTo) {
                     $morphTo->morphWith([
@@ -255,11 +255,6 @@ class LaporanController extends Controller
                     ]);
                 },
             ])
-                ->whereIn('status', [
-                    WorkflowStatus::DIAJUKAN,
-                    WorkflowStatus::DIVERIFIKASI,
-                    WorkflowStatus::DITOLAK,
-                ])
                 ->whereHas('temuan.evaluasiIndikator', function ($query) use ($selectedSemester, $evaluatableType) {
                     $query
                         ->where('semester_id', $selectedSemester->id)
@@ -298,7 +293,6 @@ class LaporanController extends Controller
         if ($selectedSemester) {
             $keputusanRtm = KeputusanRtm::with([
                 'notulenRtm.jadwalRtm.semester.tahunAkademik',
-                'rencanaTindakLanjut.temuan.dosen',
                 'rencanaTindakLanjut.temuan.risikoTemuans.tingkatRisiko',
                 'rencanaTindakLanjut.temuan.evaluasiIndikator.evaluatable' => function (MorphTo $morphTo) {
                     $morphTo->morphWith([

@@ -6,15 +6,14 @@
         $title = $isFakultas ? 'Laporan RTL Fakultas' : 'Laporan RTL Prodi';
         $route = $isFakultas ? route('laporan.rtl.fakultas') : route('laporan.rtl.prodi');
         $exportRoute = $isFakultas ? route('laporan.rtl.fakultas.excel') : route('laporan.rtl.prodi.excel');
-        $submitted = $rtl->where('status', 'diajukan')->count();
-        $verified = $rtl->where('status', 'diverifikasi')->count();
-        $rejected = $rtl->where('status', 'ditolak')->count();
+        $closed = $rtl->filter(fn ($item) => ($item->temuan?->status ?? '') === 'ditutup')->count();
+        $open = $rtl->count() - $closed;
     @endphp
 
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 py-3 mb-4">
         <div>
             <h4 class="fw-bold mb-1">{{ $title }}</h4>
-            <span class="text-muted">Data diambil dari RTL yang sudah diajukan, diverifikasi, atau ditolak.</span>
+            <span class="text-muted">Data diambil dari realisasi RTL pada semester terpilih.</span>
         </div>
         <button type="submit" form="laporan-rtl-filter" formaction="{{ $exportRoute }}" class="btn btn-success">
             <i class="bx bx-spreadsheet me-1"></i> Unduh Excel
@@ -60,27 +59,27 @@
         <div class="col-lg-3 col-md-6 col-12 mb-4">
             <div class="card">
                 <div class="card-body">
-                    <span class="fw-semibold d-block mb-1">Diajukan</span>
-                    <h3 class="card-title mb-2">{{ $submitted }}</h3>
-                    <small class="text-muted">Menunggu verifikasi</small>
+                    <span class="fw-semibold d-block mb-1">Selesai</span>
+                    <h3 class="card-title mb-2">{{ $closed }}</h3>
+                    <small class="text-muted">Temuan ditutup</small>
                 </div>
             </div>
         </div>
         <div class="col-lg-3 col-md-6 col-12 mb-4">
             <div class="card">
                 <div class="card-body">
-                    <span class="fw-semibold d-block mb-1">Diverifikasi</span>
-                    <h3 class="card-title mb-2">{{ $verified }}</h3>
-                    <small class="text-muted">Sudah disetujui</small>
+                    <span class="fw-semibold d-block mb-1">Terbuka</span>
+                    <h3 class="card-title mb-2">{{ $open }}</h3>
+                    <small class="text-muted">Temuan belum ditutup</small>
                 </div>
             </div>
         </div>
         <div class="col-lg-3 col-md-6 col-12 mb-4">
             <div class="card">
                 <div class="card-body">
-                    <span class="fw-semibold d-block mb-1">Ditolak</span>
-                    <h3 class="card-title mb-2">{{ $rejected }}</h3>
-                    <small class="text-muted">Perlu perbaikan</small>
+                    <span class="fw-semibold d-block mb-1">Dengan Bukti</span>
+                    <h3 class="card-title mb-2">{{ $rtl->filter(fn ($item) => $item->buktiTindakLanjuts->isNotEmpty())->count() }}</h3>
+                    <small class="text-muted">Bukti terlampir</small>
                 </div>
             </div>
         </div>
@@ -124,12 +123,6 @@
                             $ikk = $isFakultas ? null : $evaluatable?->indikatorKinerjaKegiatan;
                             $iku = $ikk?->indikatorKinerjaUtama;
                             $sasaran = $iku?->sasaranStrategis;
-                            $statusClass = match ($item->status) {
-                                'diajukan' => 'bg-label-warning',
-                                'diverifikasi' => 'bg-label-success',
-                                'ditolak' => 'bg-label-danger',
-                                default => 'bg-label-secondary',
-                            };
                         @endphp
                         <tr>
                             <td class="text-center">{{ $loop->iteration }}</td>
@@ -162,17 +155,17 @@
                             @endif
                             <td style="min-width: 260px; white-space: normal;">{{ $item->temuan?->pernyataan ?? '-' }}</td>
                             <td style="min-width: 260px; white-space: normal;">
-                                {{ $item->uraian_rencana_tindak_lanjut ?? '-' }}
-                                @if ($item->uraian_tindak_koreksi)
-                                    <small class="d-block text-muted mt-1">Koreksi: {{ $item->uraian_tindak_koreksi }}</small>
-                                @endif
+                                <strong>Rencana:</strong> {{ $item->temuan?->rencana_awal ?? '-' }}<br>
+                                <strong class="mt-1 d-block">Realisasi:</strong> {{ $item->uraian_realisasi ?? '-' }}
                             </td>
-                            <td style="min-width: 180px; white-space: normal;">{{ $item->temuan?->dosen?->nama_dosen ?? '-' }}</td>
-                            <td style="min-width: 150px; white-space: normal;">{{ $item->target_selesai?->translatedFormat('d M Y') ?? '-' }}</td>
+                            <td style="min-width: 180px; white-space: normal;">{{ $item->temuan?->nama_penanggung_jawab ?? '-' }}</td>
+                            <td style="min-width: 150px; white-space: normal;">{{ $item->temuan?->target_selesai?->translatedFormat('d M Y') ?? '-' }}</td>
                             <td>
-                                <span class="badge {{ $statusClass }}">
-                                    {{ str($item->status)->replace('_', ' ')->title() }}
-                                </span>
+                                @if (($item->temuan?->status ?? '') === 'ditutup')
+                                    <span class="badge bg-label-success">Selesai / Ditutup</span>
+                                @else
+                                    <span class="badge bg-label-warning">Terbuka</span>
+                                @endif
                             </td>
                         </tr>
                     @empty

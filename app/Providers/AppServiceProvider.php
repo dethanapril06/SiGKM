@@ -38,7 +38,6 @@ class AppServiceProvider extends ServiceProvider
 
             if (auth()->check() && auth()->user()->hasRole('ketua-gkm')) {
                 $pendingCount = RingkasanPerkuliahan::where('status', 'diajukan')->count()
-                    + RencanaTindakLanjut::where('status', 'diajukan')->count()
                     + NotulenRtm::where('status', 'diajukan')->count();
             }
 

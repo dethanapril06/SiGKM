@@ -81,14 +81,6 @@ Route::middleware(['auth', 'role:koordinator-prodi'])
             ->name('dashboard');
     });
 
-Route::middleware(['auth', 'role:dosen'])
-    ->prefix('dosen')
-    ->name('dosen.')
-    ->group(function () {
-        Route::get('/dashboard', [DashboardController::class, 'dosen'])
-            ->name('dashboard');
-    });
-
 Route::middleware(['auth', 'role:ketua-gkm,anggota-gkm'])
     ->group(function () {
         Route::patch('/tahun-akademik/{tahunAkademik}/set-active', [TahunAkademikController::class, 'setActive'])
@@ -161,7 +153,7 @@ Route::middleware(['auth', 'role:ketua-gkm,anggota-gkm'])
             ->parameters(['keputusan-rtm' => 'keputusanRtm']);
     });
 
-Route::middleware(['auth', 'role:ketua-gkm,anggota-gkm,koordinator-prodi,dosen'])
+Route::middleware(['auth', 'role:ketua-gkm,anggota-gkm,koordinator-prodi'])
     ->group(function () {
         Route::get('/jadwal-monev', [JadwalMonevController::class, 'index'])
             ->name('jadwal-monev.index');
@@ -214,15 +206,6 @@ Route::middleware(['auth', 'role:ketua-gkm,anggota-gkm,koordinator-prodi,dosen']
 
         Route::resource('temuan-evaluasi', TemuanController::class)
             ->parameters(['temuan-evaluasi' => 'temuan']);
-
-        Route::patch('/rtl/{rtl}/submit', [RencanaTindakLanjutController::class, 'submit'])
-            ->name('rtl.submit');
-
-        Route::patch('/rtl/{rtl}/verify', [RencanaTindakLanjutController::class, 'verify'])
-            ->name('rtl.verify');
-
-        Route::patch('/rtl/{rtl}/reject', [RencanaTindakLanjutController::class, 'reject'])
-            ->name('rtl.reject');
 
         Route::resource('rtl', RencanaTindakLanjutController::class)
             ->parameters(['rtl' => 'rtl']);

@@ -66,6 +66,35 @@
             </li>
 
             <li
+                class="menu-item {{ request()->routeIs('jadwal-monev.*') || request()->routeIs('jadwal-rtm.*') ? 'active open' : '' }}">
+                <a href="javascript:void(0);" class="menu-link menu-toggle">
+                    <i class="menu-icon tf-icons bx bx-calendar"></i>
+                    <div>Penjadwalan</div>
+                </a>
+
+                <ul class="menu-sub">
+                    <li class="menu-item {{ request()->routeIs('jadwal-monev.*') ? 'active' : '' }}">
+                        <a href="{{ route('jadwal-monev.index') }}" class="menu-link">
+                            <div>Jadwal Monev</div>
+                        </a>
+                    </li>
+
+                    <li class="menu-item {{ request()->routeIs('jadwal-rtm.*') ? 'active' : '' }}">
+                        <a href="{{ route('jadwal-rtm.index') }}" class="menu-link">
+                            <div>Jadwal RTM</div>
+                        </a>
+                    </li>
+
+                    <li class="menu-item {{ request()->routeIs('termin.*') ? 'active' : '' }}">
+                        <a href="{{ route('termin.index') }}" class="menu-link">
+                            <div>Termin</div>
+                        </a>
+                    </li>
+                </ul>
+
+            </li>
+
+            <li
                 class="menu-item {{ request()->routeIs('tahun-akademik.*') ||
                 request()->routeIs('semester.*') ||
                 request()->routeIs('dosen.*') ||
@@ -117,12 +146,6 @@
                             <div>Perkuliahan</div>
                         </a>
                     </li>
-
-                    <li class="menu-item {{ request()->routeIs('termin.*') ? 'active' : '' }}">
-                        <a href="{{ route('termin.index') }}" class="menu-link">
-                            <div>Termin</div>
-                        </a>
-                    </li>
                 </ul>
             </li>
 
@@ -151,29 +174,6 @@
                         </a>
                     </li>
                 </ul>
-            </li>
-
-            <li
-                class="menu-item {{ request()->routeIs('jadwal-monev.*') || request()->routeIs('jadwal-rtm.*') ? 'active open' : '' }}">
-                <a href="javascript:void(0);" class="menu-link menu-toggle">
-                    <i class="menu-icon tf-icons bx bx-calendar"></i>
-                    <div>Penjadwalan</div>
-                </a>
-
-                <ul class="menu-sub">
-                    <li class="menu-item {{ request()->routeIs('jadwal-monev.*') ? 'active' : '' }}">
-                        <a href="{{ route('jadwal-monev.index') }}" class="menu-link">
-                            <div>Jadwal Monev</div>
-                        </a>
-                    </li>
-
-                    <li class="menu-item {{ request()->routeIs('jadwal-rtm.*') ? 'active' : '' }}">
-                        <a href="{{ route('jadwal-rtm.index') }}" class="menu-link">
-                            <div>Jadwal RTM</div>
-                        </a>
-                    </li>
-                </ul>
-
             </li>
 
             <li
@@ -577,50 +577,6 @@
             </li>
         @endif
 
-
-        @if (auth()->user()->hasRole('dosen'))
-            <li class="menu-item {{ request()->routeIs('dosen.dashboard') ? 'active' : '' }}">
-                <a href="{{ route('dosen.dashboard') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-home-circle"></i>
-                    <div>Dashboard</div>
-                </a>
-            </li>
-
-            <li class="menu-item {{ request()->routeIs('jadwal-monev.*') ? 'active' : '' }}">
-                <a href="{{ route('jadwal-monev.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-calendar-check"></i>
-                    <div>Jadwal Monev</div>
-                </a>
-            </li>
-
-            <li class="menu-item {{ request()->routeIs('jadwal-rtm.*') ? 'active' : '' }}">
-                <a href="{{ route('jadwal-rtm.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-calendar-event"></i>
-                    <div>Jadwal RTM</div>
-                </a>
-            </li>
-
-            <li class="menu-item {{ request()->routeIs('ringkasan-perkuliahan.*') ? 'active' : '' }}">
-                <a href="{{ route('ringkasan-perkuliahan.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-book-content"></i>
-                    <div>Ringkasan Perkuliahan</div>
-                </a>
-            </li>
-
-            <li class="menu-item {{ request()->routeIs('temuan-evaluasi.*') ? 'active' : '' }}">
-                <a href="{{ route('temuan-evaluasi.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-search"></i>
-                    <div>Temuan Evaluasi</div>
-                </a>
-            </li>
-
-            <li class="menu-item {{ request()->routeIs('rtl.*') ? 'active' : '' }}">
-                <a href="{{ route('rtl.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-task"></i>
-                    <div>RTL</div>
-                </a>
-            </li>
-        @endif
 
     </ul>
 </aside>

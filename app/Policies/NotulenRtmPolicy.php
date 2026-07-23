@@ -19,24 +19,24 @@ class NotulenRtmPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasRole('anggota-gkm');
+        return $user->hasAnyRole(['ketua-gkm', 'anggota-gkm']);
     }
 
     public function update(User $user, NotulenRtm $notulenRtm): bool
     {
-        return $user->hasRole('anggota-gkm')
+        return $user->hasAnyRole(['ketua-gkm', 'anggota-gkm'])
             && in_array($notulenRtm->status, ['draft', 'ditolak'], true);
     }
 
     public function delete(User $user, NotulenRtm $notulenRtm): bool
     {
-        return $user->hasRole('anggota-gkm')
+        return $user->hasAnyRole(['ketua-gkm', 'anggota-gkm'])
             && $notulenRtm->status === 'draft';
     }
 
     public function submit(User $user, NotulenRtm $notulenRtm): bool
     {
-        return $user->hasRole('anggota-gkm')
+        return $user->hasAnyRole(['ketua-gkm', 'anggota-gkm'])
             && in_array($notulenRtm->status, ['draft', 'ditolak'], true);
     }
 

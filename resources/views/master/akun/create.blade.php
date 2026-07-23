@@ -16,26 +16,6 @@
             <form action="{{ route('akun.store') }}" method="POST">
                 @csrf
 
-                <div class="mb-3">
-                    <label class="form-label">Dosen Terkait</label>
-                    <select name="dosen_id" class="form-select @error('dosen_id') is-invalid @enderror">
-                        <option value="">-- Tidak terkait dosen --</option>
-
-                        @foreach ($dosen as $item)
-                            <option value="{{ $item->id }}" {{ old('dosen_id') == $item->id ? 'selected' : '' }}>
-                                {{ $item->nama_dosen }}
-                            </option>
-                        @endforeach
-                    </select>
-
-                    @error('dosen_id')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-
-                    <small class="text-muted">
-                        Pilih dosen jika akun ini milik dosen, anggota GKM, ketua GKM, atau koordinator prodi.
-                    </small>
-                </div>
 
                 <div class="mb-3">
                     <label class="form-label">Role Akun</label>
@@ -57,7 +37,7 @@
                 <div class="mb-3">
                     <label class="form-label">Nama Akun</label>
                     <input type="text" name="name" class="form-control @error('name') is-invalid @enderror"
-                        value="{{ old('name') }}" placeholder="Contoh: Andi - Dosen">
+                        value="{{ old('name') }}" placeholder="Contoh: Andi - Anggota GKM">
 
                     @error('name')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -67,7 +47,7 @@
                 <div class="mb-3">
                     <label class="form-label">Email Login</label>
                     <input type="email" name="email" class="form-control @error('email') is-invalid @enderror"
-                        value="{{ old('email') }}" placeholder="Contoh: dosen.andi@example.com">
+                        value="{{ old('email') }}" placeholder="Contoh: andi@example.com">
 
                     @error('email')
                         <div class="invalid-feedback">{{ $message }}</div>

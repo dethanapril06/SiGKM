@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\CodeGenerator;
-use App\Models\Dosen;
 use App\Models\EvaluasiIndikator;
 use App\Models\Temuan;
 use App\Models\TingkatRisiko;
@@ -24,18 +23,10 @@ class TemuanController extends Controller
             'evaluasiIndikator.semester.tahunAkademik',
             'evaluasiIndikator.evaluatable',
             'risikoTemuans.tingkatRisiko',
-            'dosen',
             'pembuat',
         ])
             ->when($user->hasRole('anggota-gkm'), function ($query) use ($user) {
                 $query->where('created_by', $user->id);
-            })
-            ->when($user->hasRole('ketua-gkm'), function ($query) {
-                $query->whereIn('status', [WorkflowStatus::TERBUKA, WorkflowStatus::DITUTUP]);
-            })
-            ->when($user->hasRole('dosen'), function ($query) use ($user) {
-                $query->where('dosen_id', $user->dosen_id)
-                    ->whereIn('status', [WorkflowStatus::TERBUKA, WorkflowStatus::DITUTUP]);
             })
             ->when($user->hasRole('koordinator-prodi'), function ($query) {
                 $query->whereIn('status', [WorkflowStatus::TERBUKA, WorkflowStatus::DITUTUP]);
@@ -53,17 +44,15 @@ class TemuanController extends Controller
             'evaluasiIndikator.semester.tahunAkademik',
             'evaluasiIndikator.evaluatable',
             'risikoTemuans.tingkatRisiko',
-            'dosen',
             'pembuat',
             'rencanaTindakLanjuts.buktiTindakLanjuts.pengunggah',
-            'rencanaTindakLanjuts.verifikator',
         ]);
 
         $user = auth()->user();
         $isPublished = $temuan->status !== WorkflowStatus::DRAFT;
-        $visible = ($user->hasAnyRole(['ketua-gkm', 'koordinator-prodi']) && $isPublished)
-            || ($user->hasRole('anggota-gkm') && $temuan->created_by === $user->id)
-            || ($user->hasRole('dosen') && $isPublished && $temuan->dosen_id === $user->dosen_id);
+        $visible = $user->hasRole('ketua-gkm')
+            || ($user->hasRole('koordinator-prodi') && $isPublished)
+            || ($user->hasRole('anggota-gkm') && $temuan->created_by === $user->id);
         abort_unless($visible, 403);
 
         return view('monev.temuan.show', compact('temuan'));
@@ -71,8 +60,8 @@ class TemuanController extends Controller
 
     public function create(): View
     {
-        if (! auth()->user()->hasRole('anggota-gkm')) {
-            abort(403, 'Hanya Anggota GKM yang dapat membuat temuan.');
+        if (! auth()->user()->hasAnyRole(['ketua-gkm', 'anggota-gkm'])) {
+            abort(403, 'Hanya Ketua GKM dan Anggota GKM yang dapat membuat temuan.');
         }
 
         return view('monev.temuan.create', $this->formData() + [
@@ -82,8 +71,8 @@ class TemuanController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        if (! auth()->user()->hasRole('anggota-gkm')) {
-            abort(403, 'Hanya Anggota GKM yang dapat membuat temuan.');
+        if (! auth()->user()->hasAnyRole(['ketua-gkm', 'anggota-gkm'])) {
+            abort(403, 'Hanya Ketua GKM dan Anggota GKM yang dapat membuat temuan.');
         }
 
         $validated = $this->validatedData($request);
@@ -186,16 +175,15 @@ class TemuanController extends Controller
             ->get();
 
         $tingkatRisiko = TingkatRisiko::orderBy('nama_tingkat')->get();
-        $dosen = Dosen::orderBy('nama_dosen')->get();
 
-        return compact('evaluasiIndikator', 'tingkatRisiko', 'dosen');
+        return compact('evaluasiIndikator', 'tingkatRisiko');
     }
 
     private function validatedData(Request $request, ?Temuan $temuan = null): array
     {
         return $request->validate([
             'evaluasi_indikator_id' => ['required', 'exists:evaluasi_indikators,id'],
-            'dosen_id' => ['required', 'exists:dosens,id'],
+            'nama_penanggung_jawab' => ['nullable', 'string', 'max:255'],
             'kode_temuan' => [
                 'required',
                 'string',
@@ -207,7 +195,6 @@ class TemuanController extends Controller
             'target_selesai' => ['nullable', 'date'],
         ], [
             'evaluasi_indikator_id.required' => 'Evaluasi indikator wajib dipilih.',
-            'dosen_id.required' => 'Dosen penanggung jawab wajib dipilih.',
             'kode_temuan.required' => 'Kode temuan wajib diisi.',
             'kode_temuan.unique' => 'Kode temuan sudah digunakan.',
             'pernyataan.required' => 'Pernyataan temuan wajib diisi.',

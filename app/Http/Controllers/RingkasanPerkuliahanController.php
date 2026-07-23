@@ -32,17 +32,8 @@ class RingkasanPerkuliahanController extends Controller
             ->when($user->hasRole('anggota-gkm'), function ($query) use ($user) {
                 $query->where('input_by', $user->id);
             })
-            ->when($user->hasRole('ketua-gkm'), function ($query) {
-                $query->whereIn('status', ['diajukan', 'diverifikasi', 'ditolak']);
-            })
             ->when($user->hasRole('koordinator-prodi'), function ($query) {
                 $query->whereIn('status', ['diajukan', 'diverifikasi', 'ditolak']);
-            })
-            ->when($user->hasRole('dosen') && $user->dosen_id, function ($query) use ($user) {
-                $query->whereIn('status', ['diajukan', 'diverifikasi', 'ditolak'])
-                    ->whereHas('perkuliahan.pengajars', function ($q) use ($user) {
-                        $q->where('dosen_id', $user->dosen_id);
-                    });
             })
             ->latest()
             ->paginate(10)
@@ -89,9 +80,9 @@ class RingkasanPerkuliahanController extends Controller
         $user = auth()->user();
         $isOwner = (int) $ringkasanPerkuliahan->input_by === (int) $user->id;
         $isPublished = $ringkasanPerkuliahan->status !== 'draft';
-        $visible = $isOwner
-            || ($user->hasAnyRole(['ketua-gkm', 'koordinator-prodi']) && $isPublished)
-            || ($user->hasRole('dosen') && $isPublished && $ringkasanPerkuliahan->perkuliahan?->pengajars?->contains('dosen_id', $user->dosen_id));
+        $visible = $user->hasRole('ketua-gkm')
+            || $isOwner
+            || ($user->hasAnyRole(['ketua-gkm', 'koordinator-prodi']) && $isPublished);
         abort_unless($visible, 403);
 
         return view('monev.ringkasan-perkuliahan.show', compact('ringkasanPerkuliahan'));
@@ -170,6 +161,10 @@ class RingkasanPerkuliahanController extends Controller
             abort(403, 'Ringkasan ini tidak dapat diedit.');
         }
 
+        $statusRules = auth()->user()->hasRole('ketua-gkm')
+            ? ['required', 'in:draft,diajukan,diverifikasi,ditolak']
+            : ['required', 'in:draft,diajukan'];
+
         $validated = $request->validate([
             'jadwal_monev_id' => ['required', 'exists:jadwal_monevs,id'],
             'perkuliahan_id' => ['required', 'exists:perkuliahans,id'],
@@ -177,7 +172,7 @@ class RingkasanPerkuliahanController extends Controller
             'kesesuaian_materi' => ['required', 'in:sesuai,sebagian,tidak_sesuai'],
             'metode_pembelajaran' => ['nullable', 'string'],
             'keterangan' => ['nullable', 'string'],
-            'status' => ['required', 'in:draft,diajukan'],
+            'status' => $statusRules,
         ], [
             'kesesuaian_materi.required' => 'Kesesuaian materi wajib dipilih.',
         ]);
@@ -194,9 +189,15 @@ class RingkasanPerkuliahanController extends Controller
             ]);
         }
 
-        $validated['catatan_verifikasi'] = null;
-        $validated['verified_by'] = null;
-        $validated['verified_at'] = null;
+        if (in_array($validated['status'], ['draft', 'diajukan'], true)) {
+            $validated['catatan_verifikasi'] = null;
+            $validated['verified_by'] = null;
+            $validated['verified_at'] = null;
+        } elseif ($validated['status'] === 'diverifikasi') {
+            $validated['catatan_verifikasi'] = null;
+            $validated['verified_by'] = auth()->id();
+            $validated['verified_at'] = now();
+        }
 
         $ringkasanPerkuliahan->update($validated);
 

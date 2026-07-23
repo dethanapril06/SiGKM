@@ -7,7 +7,6 @@ final class RoleSlug
     public const KETUA_GKM = 'ketua-gkm';
     public const ANGGOTA_GKM = 'anggota-gkm';
     public const KOORDINATOR_PRODI = 'koordinator-prodi';
-    public const DOSEN = 'dosen';
 
     public static function all(): array
     {
@@ -15,7 +14,6 @@ final class RoleSlug
             self::KETUA_GKM,
             self::ANGGOTA_GKM,
             self::KOORDINATOR_PRODI,
-            self::DOSEN,
         ];
     }
 }

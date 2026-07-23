@@ -23,9 +23,8 @@ class VerifikasiController extends Controller
         $rtl = RencanaTindakLanjut::with([
             'temuan.evaluasiIndikator.semester.tahunAkademik',
             'temuan.evaluasiIndikator.evaluatable',
-            'temuan.dosen',
             'buktiTindakLanjuts',
-        ])->where('status', 'diajukan')->oldest()->paginate(10, ['*'], 'rtl_page')->withQueryString();
+        ])->whereRaw('1 = 0')->paginate(10, ['*'], 'rtl_page')->withQueryString();
 
         $notulenRtm = NotulenRtm::with([
             'jadwalRtm.semester.tahunAkademik',

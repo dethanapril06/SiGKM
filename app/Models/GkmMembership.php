@@ -5,14 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class GkmMembership extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'dosen_id',
+        'nama_anggota',
+        'nip',
         'peran',
         'tanggal_mulai',
         'tanggal_selesai',
@@ -28,10 +28,6 @@ class GkmMembership extends Model
         ];
     }
 
-    public function dosen(): BelongsTo
-    {
-        return $this->belongsTo(Dosen::class);
-    }
 
     public function scopeActive(Builder $query): Builder
     {

@@ -9,28 +9,12 @@ class RtlPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasRole('ketua_gkm')
-            || $user->hasRole('anggota_gkm')
-            || $user->hasRole('dosen');
+        return $user->hasAnyRole(['ketua-gkm', 'anggota-gkm', 'koordinator-prodi']);
     }
 
     public function view(User $user, Rtl $rtl): bool
     {
-        if ($user->hasRole('ketua_gkm') || $user->hasRole('anggota_gkm')) {
-            return true;
-        }
-
-        if ($user->hasRole('dosen')) {
-            return $rtl
-                ->temuanEvaluasi
-                ?->evaluasiIndikator
-                ?->ringkasanPerkuliahan
-                ?->mengajar
-                ?->dosen
-                ?->user_id === $user->id;
-        }
-
-        return false;
+        return $user->hasAnyRole(['ketua-gkm', 'anggota-gkm', 'koordinator-prodi']);
     }
 
     public function create(User $user): bool

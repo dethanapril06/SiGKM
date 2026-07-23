@@ -1,6 +1,6 @@
 @php($current = $keputusanRtm ?? null)
 <div class="alert alert-info">
-    Keputusan hanya dapat diberikan kepada RTL terverifikasi dari satu semester sebelum semester pelaksanaan RTM.</div>
+    Pilih RTM, lalu pilih Temuan yang akan diberikan Keputusan.</div>
 <div class="mb-3">
     <label class="form-label">Notulen RTM Terverifikasi</label>
     <select id="notulen_rtm_id" name="notulen_rtm_id" class="form-select @error('notulen_rtm_id') is-invalid @enderror"
@@ -16,13 +16,13 @@
     @enderror
 </div>
 <div class="mb-3">
-    <label class="form-label">RTL Semester Sebelumnya</label>
-    <select id="rencana_tindak_lanjut_id" name="rencana_tindak_lanjut_id"
-        class="form-select @error('rencana_tindak_lanjut_id') is-invalid @enderror" required
-        data-selected="{{ old('rencana_tindak_lanjut_id', $current?->rencana_tindak_lanjut_id) }}">
+    <label class="form-label">Temuan yang Ditinjau</label>
+    <select id="temuan_id" name="temuan_id"
+        class="form-select @error('temuan_id') is-invalid @enderror" required
+        data-selected="{{ old('temuan_id', $current?->temuan_id) }}">
         <option value="">-- Pilih RTM terlebih dahulu --</option>
     </select>
-    @error('rencana_tindak_lanjut_id')
+    @error('temuan_id')
         <div class="invalid-feedback">{{ $message }}</div>
     @enderror
 </div>
@@ -53,19 +53,19 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const rtlByNotulen = @json($rtlByNotulen);
+            const temuanByNotulen = @json($temuanByNotulen);
             const notulen = document.getElementById('notulen_rtm_id');
-            const rtl = document.getElementById('rencana_tindak_lanjut_id');
-            const selected = String(rtl.dataset.selected || '');
+            const temuan = document.getElementById('temuan_id');
+            const selected = String(temuan.dataset.selected || '');
             const refresh = () => {
-                const options = rtlByNotulen[notulen.value] || [];
-                rtl.innerHTML = '<option value="">-- Pilih RTL --</option>';
+                const options = temuanByNotulen[notulen.value] || [];
+                temuan.innerHTML = '<option value="">-- Pilih Temuan --</option>';
                 options.forEach(item => {
                     const option = new Option(item.label, item.id, false, String(item.id) === selected);
-                    rtl.add(option);
+                    temuan.add(option);
                 });
-                if (!options.length && notulen.value) rtl.innerHTML =
-                    '<option value="">Tidak ada RTL semester sebelumnya yang tersedia</option>';
+                if (!options.length && notulen.value) temuan.innerHTML =
+                    '<option value="">Tidak ada Temuan yang tersedia untuk RTM ini</option>';
             };
             notulen.addEventListener('change', refresh);
             refresh();

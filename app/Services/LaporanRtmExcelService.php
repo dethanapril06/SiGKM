@@ -160,9 +160,9 @@ class LaporanRtmExcelService
             $this->setText($dom, $xpath, 'G'.$row, $dampak);
             $this->setText($dom, $xpath, 'H'.$row, $peringkat);
             $this->setText($dom, $xpath, 'I'.$row, $keputusan->uraian_keputusan ?: '-');
-            $this->setText($dom, $xpath, 'J'.$row, $rtl?->uraian_rencana_tindak_lanjut ?: '-');
+            $this->setText($dom, $xpath, 'J'.$row, $rtl?->uraian_realisasi ?: '-');
             $this->setText($dom, $xpath, 'K'.$row, $keputusan->strategi ?: '-');
-            $this->setText($dom, $xpath, 'L'.$row, $temuan?->dosen?->nama_dosen ?: '-');
+            $this->setText($dom, $xpath, 'L'.$row, $temuan?->nama_penanggung_jawab ?: '-');
             $this->setText($dom, $xpath, 'M'.$row, $this->targetText($keputusan));
             $this->setText($dom, $xpath, 'N'.$row, $this->statusLabel($keputusan->status));
         }
@@ -204,9 +204,9 @@ class LaporanRtmExcelService
             $this->setText($dom, $xpath, 'I'.$row, $dampak);
             $this->setText($dom, $xpath, 'J'.$row, $peringkat);
             $this->setText($dom, $xpath, 'K'.$row, $keputusan->uraian_keputusan ?: '-');
-            $this->setText($dom, $xpath, 'L'.$row, $rtl?->uraian_rencana_tindak_lanjut ?: '-');
+            $this->setText($dom, $xpath, 'L'.$row, $rtl?->uraian_realisasi ?: '-');
             $this->setText($dom, $xpath, 'M'.$row, $keputusan->strategi ?: '-');
-            $this->setText($dom, $xpath, 'N'.$row, $temuan?->dosen?->nama_dosen ?: '-');
+            $this->setText($dom, $xpath, 'N'.$row, $temuan?->nama_penanggung_jawab ?: '-');
             $this->setText($dom, $xpath, 'O'.$row, $this->targetText($keputusan));
             $this->setText($dom, $xpath, 'P'.$row, $this->statusLabel($keputusan->status));
         }

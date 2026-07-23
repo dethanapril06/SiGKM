@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\KeputusanRtm;
 use App\Models\NotulenRtm;
-use App\Models\RencanaTindakLanjut;
 use App\Models\Semester;
+use App\Models\Temuan;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -18,8 +18,7 @@ class KeputusanRtmController extends Controller
     {
         $keputusanRtm = KeputusanRtm::with([
             'notulenRtm.jadwalRtm.semester.tahunAkademik',
-            'rencanaTindakLanjut.temuan.evaluasiIndikator.semester.tahunAkademik',
-            'rencanaTindakLanjut.temuan.dosen',
+            'temuan.evaluasiIndikator.semester.tahunAkademik',
         ])->latest()->paginate(10)->withQueryString();
 
         return view('rtm.keputusan.index', compact('keputusanRtm'));
@@ -34,10 +33,8 @@ class KeputusanRtmController extends Controller
     {
         $keputusanRtm->load([
             'notulenRtm.jadwalRtm.semester.tahunAkademik',
-            'rencanaTindakLanjut.temuan.evaluasiIndikator.semester.tahunAkademik',
-            'rencanaTindakLanjut.temuan.evaluasiIndikator.evaluatable',
-            'rencanaTindakLanjut.temuan.dosen',
-            'rencanaTindakLanjut.buktiTindakLanjuts',
+            'temuan.evaluasiIndikator.semester.tahunAkademik',
+            'temuan.evaluasiIndikator.evaluatable',
         ]);
 
         return view('rtm.keputusan.show', compact('keputusanRtm'));
@@ -76,20 +73,20 @@ class KeputusanRtmController extends Controller
     {
         $data = $request->validate([
             'notulen_rtm_id' => ['required', Rule::exists('notulen_rtms', 'id')->where('status', 'diverifikasi')],
-            'rencana_tindak_lanjut_id' => ['required', 'exists:rencana_tindak_lanjuts,id'],
+            'temuan_id' => ['required', 'exists:temuans,id'],
             'uraian_keputusan' => ['required', 'string'],
             'strategi' => ['nullable', 'string'],
             'target_selesai' => ['nullable', 'date'],
             'status' => ['required', 'in:belum_dikerjakan,proses,selesai'],
         ]);
 
-        $eligible = $this->eligibleRtlQuery((int) $data['notulen_rtm_id'], $keputusanRtm)
-            ->whereKey($data['rencana_tindak_lanjut_id'])
+        $eligible = $this->eligibleTemuanQuery((int) $data['notulen_rtm_id'], $keputusanRtm)
+            ->whereKey($data['temuan_id'])
             ->exists();
 
         if (! $eligible) {
             throw ValidationException::withMessages([
-                'rencana_tindak_lanjut_id' => 'RTL harus sudah diverifikasi, berasal dari semester sebelumnya, dan belum diputuskan pada RTM ini.',
+                'temuan_id' => 'Temuan tidak valid atau sudah diputuskan pada RTM ini.',
             ]);
         }
 
@@ -103,36 +100,26 @@ class KeputusanRtmController extends Controller
             ->latest('verified_at')
             ->get();
 
-        $rtlByNotulen = $notulenRtm->mapWithKeys(fn ($notulen) => [
-            $notulen->id => $this->eligibleRtlQuery($notulen->id, $keputusanRtm)
-                ->with(['temuan.evaluasiIndikator.semester.tahunAkademik', 'temuan.dosen'])
+        $temuanByNotulen = $notulenRtm->mapWithKeys(fn ($notulen) => [
+            $notulen->id => $this->eligibleTemuanQuery($notulen->id, $keputusanRtm)
+                ->with('evaluasiIndikator.semester.tahunAkademik')
                 ->get()
-                ->map(fn ($rtl) => [
-                    'id' => $rtl->id,
-                    'label' => ($rtl->temuan?->kode_temuan ?? 'Temuan').' - '.str($rtl->uraian_rencana_tindak_lanjut)->limit(90),
+                ->map(fn ($temuan) => [
+                    'id' => $temuan->id,
+                    'label' => $temuan->kode_temuan.' - '.str($temuan->pernyataan)->limit(90),
                 ])->values(),
         ]);
 
-        return compact('notulenRtm', 'rtlByNotulen');
+        return compact('notulenRtm', 'temuanByNotulen');
     }
 
-    private function eligibleRtlQuery(int $notulenId, ?KeputusanRtm $current = null)
+    private function eligibleTemuanQuery(int $notulenId, ?KeputusanRtm $current = null)
     {
-        $notulen = NotulenRtm::with('jadwalRtm.semester')->find($notulenId);
-        $semester = $notulen?->jadwalRtm?->semester;
-        $previous = $semester
-            ? Semester::where('tanggal_mulai', '<', $semester->tanggal_mulai)->latest('tanggal_mulai')->first()
-            : null;
-
-        return RencanaTindakLanjut::query()
-            ->where('status', 'diverifikasi')
-            ->when($previous, fn ($query) => $query->whereHas(
-                'temuan.evaluasiIndikator', fn ($q) => $q->where('semester_id', $previous->id)
-            ), fn ($query) => $query->whereRaw('1 = 0'))
+        return Temuan::query()
             ->where(function ($query) use ($notulenId, $current) {
                 $query->whereDoesntHave('keputusanRtms', fn ($q) => $q->where('notulen_rtm_id', $notulenId));
                 if ($current && (int) $current->notulen_rtm_id === $notulenId) {
-                    $query->orWhereKey($current->rencana_tindak_lanjut_id);
+                    $query->orWhereKey($current->temuan_id);
                 }
             });
     }

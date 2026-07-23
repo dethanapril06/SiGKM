@@ -4,7 +4,7 @@
     <div class="d-flex justify-content-between align-items-center py-3 mb-4">
         <h4 class="fw-bold mb-0">Temuan Evaluasi</h4>
 
-        @if (auth()->user()->hasRole('anggota-gkm'))
+        @if (auth()->user()->hasAnyRole(['ketua-gkm', 'anggota-gkm']))
             <a href="{{ route('temuan-evaluasi.create') }}" class="btn btn-primary">
                 <i class="bx bx-plus"></i> Tambah Temuan
             </a>
@@ -36,7 +36,7 @@
                         <th>Kode</th>
                         <th>Semester</th>
                         <th>Indikator</th>
-                        <th>Dosen</th>
+                        <th>Penanggung Jawab</th>
                         <th>Temuan</th>
                         <th>Risiko</th>
                         <th>Target</th>
@@ -76,7 +76,7 @@
                                     {{ \Illuminate\Support\Str::limit($item->evaluasiIndikator->sumber_uraian, 55) }}
                                 </small>
                             </td>
-                            <td>{{ $item->dosen->nama_dosen ?? '-' }}</td>
+                            <td>{{ $item->nama_penanggung_jawab ?? '-' }}</td>
                             <td>{{ \Illuminate\Support\Str::limit($item->pernyataan, 70) }}</td>
                             <td>
                                 @if ($risiko)

@@ -35,7 +35,7 @@ function rtmSemester(string $name, string $start, string $end): Semester
     ]);
 }
 
-function verifiedRtlFor(Semester $semester, string $code): RencanaTindakLanjut
+function findingFor(Semester $semester, string $code): Temuan
 {
     $dosen = Dosen::create(['nama_dosen' => 'Dosen '.$code]);
     $standard = StandarMutu::create(['nama_standar' => 'Standar '.$code]);
@@ -50,18 +50,12 @@ function verifiedRtlFor(Semester $semester, string $code): RencanaTindakLanjut
         'evaluatable_id' => $indicator->id,
         'status_capaian' => 'belum_tercapai',
     ]);
-    $finding = Temuan::create([
+    return Temuan::create([
         'kode_temuan' => $code,
         'evaluasi_indikator_id' => $evaluation->id,
         'dosen_id' => $dosen->id,
         'pernyataan' => 'Temuan '.$code,
         'status' => 'ditutup',
-    ]);
-
-    return RencanaTindakLanjut::create([
-        'temuan_id' => $finding->id,
-        'uraian_rencana_tindak_lanjut' => 'RTL '.$code,
-        'status' => 'diverifikasi',
     ]);
 }
 
@@ -91,12 +85,13 @@ it('allows an Anggota GKM to submit a notulen and Ketua GKM to verify it', funct
         ->and($notulen->verified_by)->toBe($chair->id);
 });
 
-it('only accepts RTL from the immediately preceding semester for a decision', function () {
+it('accepts any Temuan for a decision in an RTM as long as it has not been decided in the same RTM', function () {
     $member = rtmUser('anggota-gkm');
     $previous = rtmSemester('ganjil', '2025-08-01', '2026-01-31');
     $current = rtmSemester('genap', '2026-02-01', '2026-07-31');
-    $previousRtl = verifiedRtlFor($previous, 'TMN-PREV');
-    $currentRtl = verifiedRtlFor($current, 'TMN-CURR');
+    $finding1 = findingFor($previous, 'TMN-PREV');
+    $finding2 = findingFor($current, 'TMN-CURR');
+    
     $schedule = JadwalRtm::create([
         'semester_id' => $current->id,
         'judul' => 'RTM Genap',
@@ -117,20 +112,23 @@ it('only accepts RTL from the immediately preceding semester for a decision', fu
         'status' => 'belum_dikerjakan',
     ];
 
+    // Dapat menggunakan temuan dari semester lalu
     $this->actingAs($member)->post(route('keputusan-rtm.store'), $payload + [
-        'rencana_tindak_lanjut_id' => $currentRtl->id,
-    ])->assertSessionHasErrors('rencana_tindak_lanjut_id');
-
-    $this->actingAs($member)->post(route('keputusan-rtm.store'), $payload + [
-        'rencana_tindak_lanjut_id' => $previousRtl->id,
+        'temuan_id' => $finding1->id,
     ])->assertRedirect(route('keputusan-rtm.index'));
 
     $this->assertDatabaseHas('keputusan_rtms', [
-        'rencana_tindak_lanjut_id' => $previousRtl->id,
+        'temuan_id' => $finding1->id,
         'strategi' => 'Monitoring bulanan.',
     ]);
 
+    // Tidak boleh duplikat pada notulen yang sama
     $this->actingAs($member)->post(route('keputusan-rtm.store'), $payload + [
-        'rencana_tindak_lanjut_id' => $previousRtl->id,
-    ])->assertSessionHasErrors('rencana_tindak_lanjut_id');
+        'temuan_id' => $finding1->id,
+    ])->assertSessionHasErrors('temuan_id');
+
+    // Dapat menggunakan temuan dari semester berjalan
+    $this->actingAs($member)->post(route('keputusan-rtm.store'), $payload + [
+        'temuan_id' => $finding2->id,
+    ])->assertRedirect(route('keputusan-rtm.index'));
 });

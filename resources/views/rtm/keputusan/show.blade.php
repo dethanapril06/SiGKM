@@ -34,29 +34,29 @@
             </x-detail-row>
         </div>
     </div>
-    @php($rtl = $keputusanRtm->rencanaTindakLanjut)<div class="card">
+    @php($temuan = $keputusanRtm->temuan)<div class="card">
         <div class="card-header d-flex justify-content-between">
-            <h5>RTL yang Ditinjau</h5>
-            @if ($rtl)
-                <a href="{{ route('rtl.show', $rtl) }}" class="btn btn-sm btn-info">Detail RTL</a>
+            <h5>Temuan yang Ditinjau</h5>
+            @if ($temuan)
+                <a href="{{ route('temuan.show', $temuan) }}" class="btn btn-sm btn-info">Detail Temuan</a>
             @endif
         </div>
         <div class="card-body">
             <x-detail-row label="Kode Temuan">
-                {{ $rtl?->temuan?->kode_temuan }}
+                {{ $temuan?->kode_temuan }}
             </x-detail-row>
-            <x-detail-row label="Semester RTL">
-                {{ $rtl?->temuan?->evaluasiIndikator?->semester?->label }}
+            <x-detail-row label="Semester Temuan">
+                {{ $temuan?->evaluasiIndikator?->semester?->label }}
             </x-detail-row>
             <x-detail-row label="Indikator">
-                {{ $rtl?->temuan?->evaluasiIndikator?->sumber_uraian }}
+                {{ $temuan?->evaluasiIndikator?->sumber_uraian }}
             </x-detail-row>
-            <x-detail-row label="Dosen">
-                {{ $rtl?->temuan?->dosen?->nama_dosen }}
+            <x-detail-row label="Penanggung Jawab">
+                {{ $temuan?->nama_penanggung_jawab ?: '-' }}
             </x-detail-row>
-            <x-detail-row label="Uraian RTL">
+            <x-detail-row label="Pernyataan Temuan">
                 <span style="white-space:pre-line">
-                    {{ $rtl?->uraian_rencana_tindak_lanjut }}
+                    {{ $temuan?->pernyataan }}
                 </span>
             </x-detail-row>
         </div>
