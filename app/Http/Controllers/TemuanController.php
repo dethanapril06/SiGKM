@@ -192,7 +192,7 @@ class TemuanController extends Controller
             ],
             'pernyataan' => ['required', 'string'],
             'rencana_awal' => ['nullable', 'string'],
-            'target_selesai' => ['nullable', 'date'],
+            'target_selesai' => ['nullable', 'string', 'max:255'],
         ], [
             'evaluasi_indikator_id.required' => 'Evaluasi indikator wajib dipilih.',
             'kode_temuan.required' => 'Kode temuan wajib diisi.',

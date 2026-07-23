@@ -320,7 +320,6 @@ class LaporanStandarMutuExcelService
         $initialDates = $evaluasiIndikator->temuans
             ->pluck('target_selesai')
             ->filter()
-            ->map(fn ($date) => $date->locale('id')->translatedFormat('d F Y'))
             ->values();
 
         return $initialDates->isNotEmpty() ? $initialDates->join("\n") : '-';

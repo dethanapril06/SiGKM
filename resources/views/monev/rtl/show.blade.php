@@ -29,7 +29,7 @@
                 </span>
             </x-detail-row>
             <x-detail-row label="Target Selesai">
-                {{ $rtl->temuan?->target_selesai?->format('d-m-Y') ?? '-' }}
+                {{ $rtl->temuan?->target_selesai ?: '-' }}
             </x-detail-row>
             <hr>
             <x-detail-row label="Uraian Realisasi RTL">

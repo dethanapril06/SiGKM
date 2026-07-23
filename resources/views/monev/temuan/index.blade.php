@@ -91,7 +91,7 @@
                                     <span class="text-muted">-</span>
                                 @endif
                             </td>
-                            <td>{{ $item->target_selesai?->format('d/m/Y') ?? '-' }}</td>
+                            <td>{{ $item->target_selesai ?: '-' }}</td>
                             <td>
                                 <span class="badge {{ $statusClass }}">
                                     {{ ucwords(str_replace('_', ' ', $item->status)) }}

@@ -145,7 +145,7 @@
                             </td>
                             <td style="min-width: 240px; white-space: normal;">{{ $temuan->isNotEmpty() ? $temuan->join('; ') : ($evaluasiItem?->status_capaian === 'tercapai' ? 'Tidak ada temuan' : ($evaluasiItem?->catatan ?: '-')) }}</td>
                             <td style="min-width: 240px; white-space: normal;">{{ $plans->isNotEmpty() ? $plans->join('; ') : ($temuanItems->pluck('rencana_awal')->filter()->join('; ') ?: '-') }}</td>
-                            <td style="min-width: 160px; white-space: normal;">{{ $targets->isNotEmpty() ? $targets->join('; ') : ($temuanItems->pluck('target_selesai')->filter()->map(fn ($date) => $date->translatedFormat('d M Y'))->join('; ') ?: '-') }}</td>
+                            <td style="min-width: 160px; white-space: normal;">{{ $targets->isNotEmpty() ? $targets->join('; ') : ($temuanItems->pluck('target_selesai')->filter()->join('; ') ?: '-') }}</td>
                             <td style="min-width: 220px; white-space: normal;">{{ $evaluasiItem?->catatan ?: '-' }}</td>
                         </tr>
                     @empty

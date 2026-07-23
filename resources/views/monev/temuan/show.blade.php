@@ -32,7 +32,7 @@
                 </span>
             </x-detail-row>
             <x-detail-row label="Target Selesai">
-                {{ $temuan->target_selesai?->format('d-m-Y') ?? '-' }}
+                {{ $temuan->target_selesai ?: '-' }}
             </x-detail-row>
             <x-detail-row label="Status">
                 <span class="badge bg-label-primary">

@@ -510,9 +510,7 @@ class LaporanRtlExcelService
 
     private function targetText(RencanaTindakLanjut $rtl): string
     {
-        return $rtl->temuan?->target_selesai
-            ? $rtl->temuan->target_selesai->locale('id')->translatedFormat('d F Y')
-            : '-';
+        return $rtl->temuan?->target_selesai ?: '-';
     }
 
     private function codeAndText(?string $code, ?string $text): string

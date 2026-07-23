@@ -26,9 +26,7 @@ class Temuan extends Model
 
     protected function casts(): array
     {
-        return [
-            'target_selesai' => 'date',
-        ];
+        return [];
     }
 
     public function evaluasiIndikator(): BelongsTo

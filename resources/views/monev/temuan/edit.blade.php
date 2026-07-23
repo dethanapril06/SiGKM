@@ -89,9 +89,10 @@
 
                 <div class="mb-3">
                     <label class="form-label">Target Selesai</label>
-                    <input type="date" name="target_selesai"
+                    <input type="text" name="target_selesai"
                         class="form-control @error('target_selesai') is-invalid @enderror"
-                        value="{{ old('target_selesai', $temuanEvaluasi->target_selesai?->format('Y-m-d')) }}">
+                        value="{{ old('target_selesai', $temuanEvaluasi->target_selesai) }}"
+                        placeholder="Contoh: Semester depan, Akhir Semester 2024/2025, dsb.">
 
                     @error('target_selesai')
                         <div class="invalid-feedback">{{ $message }}</div>

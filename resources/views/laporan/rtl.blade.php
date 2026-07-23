@@ -159,7 +159,7 @@
                                 <strong class="mt-1 d-block">Realisasi:</strong> {{ $item->uraian_realisasi ?? '-' }}
                             </td>
                             <td style="min-width: 180px; white-space: normal;">{{ $item->temuan?->nama_penanggung_jawab ?? '-' }}</td>
-                            <td style="min-width: 150px; white-space: normal;">{{ $item->temuan?->target_selesai?->translatedFormat('d M Y') ?? '-' }}</td>
+                            <td style="min-width: 150px; white-space: normal;">{{ $item->temuan?->target_selesai ?: '-' }}</td>
                             <td>
                                 @if (($item->temuan?->status ?? '') === 'ditutup')
                                     <span class="badge bg-label-success">Selesai / Ditutup</span>
