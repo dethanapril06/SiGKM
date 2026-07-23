@@ -37,7 +37,7 @@
 
                 <div class="mb-3">
                     <label class="form-label">Sumber Indikator</label>
-                    <select name="evaluatable_key" class="form-select @error('evaluatable_key') is-invalid @enderror">
+                    <select name="evaluatable_key" class="form-select select2 @error('evaluatable_key') is-invalid @enderror" data-placeholder="-- Pilih Sumber Indikator --">
                         <option value="">-- Pilih Sumber Indikator --</option>
 
                         <optgroup label="Fakultas — Indikator Mutu">
@@ -58,7 +58,7 @@
                     </select>
 
                     @error('evaluatable_key')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
                 </div>
 
@@ -115,3 +115,21 @@
         </div>
     </div>
 @endsection
+
+@push('styles')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+@endpush
+
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('.select2').select2({
+                theme: 'bootstrap-5',
+                placeholder: $(this).data('placeholder') || '-- Pilih --',
+                allowClear: true
+            });
+        });
+    </script>
+@endpush

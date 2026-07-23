@@ -25,7 +25,7 @@
                 <div class="mb-3">
                     <label class="form-label">Evaluasi Indikator</label>
                     <select name="evaluasi_indikator_id"
-                        class="form-select @error('evaluasi_indikator_id') is-invalid @enderror">
+                        class="form-select select2 @error('evaluasi_indikator_id') is-invalid @enderror" data-placeholder="-- Pilih Evaluasi Indikator --">
                         <option value="">-- Pilih Evaluasi Indikator --</option>
                         @foreach ($evaluasiIndikator as $item)
                             <option value="{{ $item->id }}"
@@ -44,7 +44,7 @@
                     </select>
 
                     @error('evaluasi_indikator_id')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
 
                     <small class="text-muted">
@@ -159,3 +159,21 @@
         </div>
     </div>
 @endsection
+
+@push('styles')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+@endpush
+
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('.select2').select2({
+                theme: 'bootstrap-5',
+                placeholder: $(this).data('placeholder') || '-- Pilih --',
+                allowClear: true
+            });
+        });
+    </script>
+@endpush
