@@ -28,7 +28,7 @@
             <form action="{{ route('indikator-mutu.index') }}" method="GET" class="row g-3">
                 <div class="col-md-10">
                     <label class="form-label">Filter Standar Mutu</label>
-                    <select name="standar_mutu_id" class="form-select">
+                    <select name="standar_mutu_id" id="standar_mutu_id" class="form-select select2" data-placeholder="-- Semua Standar Mutu --">
                         <option value="">-- Semua Standar Mutu --</option>
 
                         @foreach ($standarMutu as $item)
@@ -108,3 +108,21 @@
     </div>
     <div class="mt-3">@include('components._pagination', ['paginator' => $indikatorMutu])</div>
 @endsection
+
+@push('styles')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+@endpush
+
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#standar_mutu_id').select2({
+                theme: 'bootstrap-5',
+                placeholder: $(this).data('placeholder') || '-- Semua Standar Mutu --',
+                allowClear: true
+            });
+        });
+    </script>
+@endpush

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Dosen;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class DosenController extends Controller
@@ -73,6 +74,10 @@ class DosenController extends Controller
         ]);
 
         if ($request->hasFile('file_penelitian')) {
+            if ($dosen->file_penelitian && Storage::disk('public')->exists($dosen->file_penelitian)) {
+                Storage::disk('public')->delete($dosen->file_penelitian);
+            }
+
             $validated['file_penelitian'] = $request
                 ->file('file_penelitian')
                 ->store('file-penelitian', 'public');
@@ -87,16 +92,12 @@ class DosenController extends Controller
 
     public function destroy(Dosen $dosen): RedirectResponse
     {
-        if ($dosen->users()->exists()) {
-            return back()->with('error', 'Dosen tidak dapat dihapus karena sudah memiliki akun pengguna.');
-        }
-
         if ($dosen->pengajars()->exists()) {
             return back()->with('error', 'Dosen tidak dapat dihapus karena sudah digunakan pada data pengajar.');
         }
 
-        if ($dosen->gkmMemberships()->exists()) {
-            return back()->with('error', 'Dosen tidak dapat dihapus karena sudah digunakan pada keanggotaan GKM.');
+        if ($dosen->file_penelitian && Storage::disk('public')->exists($dosen->file_penelitian)) {
+            Storage::disk('public')->delete($dosen->file_penelitian);
         }
 
         $dosen->delete();

@@ -119,7 +119,7 @@ class KeputusanRtmController extends Controller
             ->where(function ($query) use ($notulenId, $current) {
                 $query->whereDoesntHave('keputusanRtms', fn ($q) => $q->where('notulen_rtm_id', $notulenId));
                 if ($current && (int) $current->notulen_rtm_id === $notulenId) {
-                    $query->orWhereKey($current->temuan_id);
+                    $query->orWhere('id', $current->temuan_id);
                 }
             });
     }

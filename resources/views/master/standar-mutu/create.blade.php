@@ -19,8 +19,9 @@
                 <div class="mb-3">
                     <label class="form-label">Kode Standar</label>
                     <input type="text" name="kode_standar"
-                        class="form-control @error('kode_standar') is-invalid @enderror" value="{{ old('kode_standar') }}"
-                        placeholder="Contoh: STD-01">
+                        class="form-control @error('kode_standar') is-invalid @enderror" value="{{ old('kode_standar', $autoKode) }}"
+                        placeholder="Contoh: STD-001">
+                    <div class="form-text">Kode standar terisi otomatis secara berurutan, namun tetap dapat disesuaikan manual jika diperlukan.</div>
 
                     @error('kode_standar')
                         <div class="invalid-feedback">{{ $message }}</div>

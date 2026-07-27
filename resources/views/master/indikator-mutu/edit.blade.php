@@ -20,7 +20,9 @@
 
                 <div class="mb-3">
                     <label class="form-label">Standar Mutu</label>
-                    <select name="standar_mutu_id" class="form-select @error('standar_mutu_id') is-invalid @enderror">
+                    <select name="standar_mutu_id" id="standar_mutu_id"
+                        class="form-select select2 @error('standar_mutu_id') is-invalid @enderror"
+                        data-placeholder="-- Pilih Standar Mutu --">
                         <option value="">-- Pilih Standar Mutu --</option>
 
                         @foreach ($standarMutu as $item)
@@ -33,7 +35,7 @@
                     </select>
 
                     @error('standar_mutu_id')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
                 </div>
 
@@ -73,3 +75,21 @@
         </div>
     </div>
 @endsection
+
+@push('styles')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+@endpush
+
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#standar_mutu_id').select2({
+                theme: 'bootstrap-5',
+                placeholder: $(this).data('placeholder') || '-- Pilih Standar Mutu --',
+                allowClear: true
+            });
+        });
+    </script>
+@endpush

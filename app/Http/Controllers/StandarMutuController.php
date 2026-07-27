@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\CodeGenerator;
 use App\Models\StandarMutu;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,13 +22,19 @@ class StandarMutuController extends Controller
 
     public function create(): View
     {
-        return view('master.standar-mutu.create');
+        $autoKode = CodeGenerator::kodeStandarMutu();
+
+        return view('master.standar-mutu.create', compact('autoKode'));
     }
 
     public function store(Request $request): RedirectResponse
     {
+        if (empty($request->kode_standar)) {
+            $request->merge(['kode_standar' => CodeGenerator::kodeStandarMutu()]);
+        }
+
         $validated = $request->validate([
-            'kode_standar' => ['nullable', 'string', 'max:50', 'unique:standar_mutus,kode_standar'],
+            'kode_standar' => ['required', 'string', 'max:50', 'unique:standar_mutus,kode_standar'],
             'nama_standar' => ['required', 'string', 'max:255'],
             'deskripsi' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],

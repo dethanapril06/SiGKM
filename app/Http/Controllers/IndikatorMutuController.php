@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\CodeGenerator;
 use App\Models\IndikatorMutu;
 use App\Models\StandarMutu;
 use Illuminate\Http\RedirectResponse;
@@ -23,7 +24,7 @@ class IndikatorMutuController extends Controller
             ->withQueryString();
 
         $standarMutu = StandarMutu::query()
-            ->orderBy('nama_standar')
+            ->orderBy('kode_standar')
             ->get();
 
         return view('master.indikator-mutu.index', compact(
@@ -37,19 +38,31 @@ class IndikatorMutuController extends Controller
     {
         $standarMutu = StandarMutu::query()
             ->where('is_active', true)
-            ->orderBy('nama_standar')
+            ->orderBy('kode_standar')
             ->get();
 
         $selectedStandarMutuId = $request->standar_mutu_id;
 
+        $autoKodeMap = [];
+        foreach ($standarMutu as $item) {
+            $autoKodeMap[$item->id] = CodeGenerator::kodeIndikatorMutu($item);
+        }
+
         return view('master.indikator-mutu.create', compact(
             'standarMutu',
-            'selectedStandarMutuId'
+            'selectedStandarMutuId',
+            'autoKodeMap'
         ));
     }
 
     public function store(Request $request): RedirectResponse
     {
+        if (empty($request->kode_indikator) && ! empty($request->standar_mutu_id)) {
+            $request->merge([
+                'kode_indikator' => CodeGenerator::kodeIndikatorMutu((int) $request->standar_mutu_id),
+            ]);
+        }
+
         $validated = $request->validate([
             'standar_mutu_id' => ['required', 'exists:standar_mutus,id'],
             'kode_indikator' => ['nullable', 'string', 'max:50'],
@@ -86,7 +99,7 @@ class IndikatorMutuController extends Controller
     public function edit(IndikatorMutu $indikatorMutu): View
     {
         $standarMutu = StandarMutu::query()
-            ->orderBy('nama_standar')
+            ->orderBy('kode_standar')
             ->get();
 
         return view('master.indikator-mutu.edit', compact(

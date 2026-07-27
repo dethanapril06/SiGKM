@@ -44,7 +44,7 @@
                     class="btn btn-sm btn-info">Detail Notulen</a>
             </div>
             <div class="card-body">
-                <p style="white-space:pre-line">{{ $jadwalRtm->notulenRtm->isi_notulen }}</p>
+                <div class="notulen-content border rounded p-3 bg-light mb-3">{!! $jadwalRtm->notulenRtm->isi_notulen !!}</div>
                 <strong>{{ $jadwalRtm->notulenRtm->keputusanRtms->count() }} keputusan</strong>
             </div>
     </div>@else<div class="alert alert-info">Belum ada notulen.</div>

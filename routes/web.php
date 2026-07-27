@@ -140,6 +140,8 @@ Route::middleware(['auth', 'role:ketua-gkm,anggota-gkm'])
             ->parameters(['jadwal-rtm' => 'jadwalRtm'])
             ->except(['index', 'show']);
 
+        Route::get('/notulen-rtm/{notulenRtm}/download-pdf', [NotulenRtmController::class, 'downloadPdf'])
+            ->name('notulen-rtm.download-pdf');
         Route::patch('/notulen-rtm/{notulenRtm}/ajukan', [NotulenRtmController::class, 'submit'])
             ->name('notulen-rtm.ajukan');
         Route::patch('/notulen-rtm/{notulenRtm}/verifikasi', [NotulenRtmController::class, 'verify'])

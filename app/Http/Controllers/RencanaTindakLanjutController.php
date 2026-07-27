@@ -135,7 +135,7 @@ class RencanaTindakLanjutController extends Controller
             ->when($rtl, function ($query) use ($rtl) {
                 $query->where(function ($q) use ($rtl) {
                     $q->whereDoesntHave('rencanaTindakLanjuts')
-                        ->orWhereKey($rtl->temuan_id);
+                        ->orWhere('id', $rtl->temuan_id);
                 });
             }, function ($query) {
                 $query->whereDoesntHave('rencanaTindakLanjuts');

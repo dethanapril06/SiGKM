@@ -200,10 +200,6 @@ class PerkuliahanController extends Controller
             return back()->with('error', 'Perkuliahan tidak dapat dihapus karena sudah digunakan pada ringkasan perkuliahan.');
         }
 
-        if ($perkuliahan->temuans()->exists()) {
-            return back()->with('error', 'Perkuliahan tidak dapat dihapus karena sudah digunakan pada data temuan.');
-        }
-
         DB::transaction(function () use ($perkuliahan) {
             $perkuliahan->pengajars()->delete();
             $perkuliahan->delete();

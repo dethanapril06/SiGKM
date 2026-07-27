@@ -169,7 +169,7 @@ class TemuanController extends Controller
         ])
             ->whereIn('status_capaian', ['hampir_tercapai', 'belum_tercapai'])
             ->when($temuan, function ($query) use ($temuan) {
-                $query->orWhereKey($temuan->evaluasi_indikator_id);
+                $query->orWhere('id', $temuan->evaluasi_indikator_id);
             })
             ->latest()
             ->get();

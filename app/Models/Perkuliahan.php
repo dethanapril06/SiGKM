@@ -52,11 +52,6 @@ class Perkuliahan extends Model
         return $this->hasMany(RingkasanPerkuliahan::class);
     }
 
-    public function temuans(): HasMany
-    {
-        return $this->hasMany(Temuan::class);
-    }
-
     public function scopeAktif(Builder $query): Builder
     {
         return $query->where('status', 'aktif');

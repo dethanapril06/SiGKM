@@ -101,7 +101,7 @@
                             <td>{{ $loop->iteration }}</td>
                             <td><strong>{{ $item->jadwalRtm?->judul }}</strong><br><small>{{ $item->jadwalRtm?->semester?->label }}</small>
                             </td>
-                            <td style="min-width:280px;white-space:normal">{{ Str::limit($item->isi_notulen, 150) }}</td>
+                            <td style="min-width:280px;white-space:normal">{{ Str::limit(strip_tags($item->isi_notulen), 150) }}</td>
                             <td>{{ $item->penginput?->name ?? '-' }}</td>
                             <td style="min-width:260px"><a href="{{ route('notulen-rtm.show', $item) }}"
                                     class="btn btn-sm btn-icon btn-info" title="Detail"><i class="bx bx-show"></i></a>

@@ -32,7 +32,7 @@
                             <td>{{ $notulenRtm->firstItem() + $loop->index }}</td>
                             <td><strong>{{ $item->jadwalRtm?->judul }}</strong><br><small>{{ $item->jadwalRtm?->semester?->label }}</small>
                             </td>
-                            <td style="min-width:260px;white-space:normal">{{ Str::limit($item->isi_notulen, 130) }}
+                            <td style="min-width:260px;white-space:normal">{{ Str::limit(strip_tags($item->isi_notulen), 130) }}
                                 @if ($item->catatan_verifikasi)
                                     <div class="text-danger mt-1"><small>Catatan: {{ $item->catatan_verifikasi }}</small>
                                     </div>
@@ -43,7 +43,9 @@
                             </td>
                             <td>{{ $item->penginput?->name ?? '-' }}<br><small>Verifikator:
                                     {{ $item->verifikator?->name ?? '-' }}</small></td>
-                            <td style="min-width:230px">
+                            <td style="min-width:260px">
+                                <a href="{{ route('notulen-rtm.download-pdf', $item) }}"
+                                    class="btn btn-sm btn-icon btn-secondary" title="Download File Gabungan RTM"><i class="bx bx-download"></i></a>
                                 <a href="{{ route('notulen-rtm.show', $item) }}"
                                     class="btn btn-sm btn-icon btn-info" title="Detail"><i class="bx bx-show"></i></a>
                                 @can('update', $item)

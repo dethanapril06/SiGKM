@@ -14,6 +14,10 @@
         'ikks' => 'indikator_kinerja_kegiatan_id',
         default => null,
     };
+    $selectedParentId = $parentField ? old($parentField, $item?->{$parentField} ?? request('parent_id')) : null;
+    $defaultKode = $editing
+        ? old('kode_' . $field, $item?->{'kode_' . $field})
+        : old('kode_' . $field, $jenis === 'sasaran' ? ($autoKodeMap['default'] ?? '') : ($autoKodeMap[$selectedParentId] ?? ''));
 @endphp
 
 @section('content')
@@ -34,7 +38,7 @@
                     <div class="mb-3">
                         <label class="form-label">Induk
                             {{ $jenis === 'iku' ? 'Sasaran Strategis' : ($jenis === 'ikk' ? 'IKU' : 'IKK') }}</label>
-                        <select name="{{ $parentField }}" class="form-select @error($parentField) is-invalid @enderror">
+                        <select name="{{ $parentField }}" id="parent_select" class="form-select select2 @error($parentField) is-invalid @enderror" data-placeholder="-- Pilih Induk --">
                             <option value="">-- Pilih Induk --</option>
                             @foreach ($parents as $parent)
                                 @php
@@ -44,21 +48,23 @@
                                         'ikks' => ($parent->kode_ikk ?: 'IKK') . ' — ' . $parent->uraian_ikk,
                                     };
                                 @endphp
-                                <option value="{{ $parent->id }}" @selected(old($parentField, $item?->{$parentField} ?? request('parent_id')) == $parent->id)>{{ $parentLabel }}
+                                <option value="{{ $parent->id }}" @selected($selectedParentId == $parent->id)>{{ $parentLabel }}
                                 </option>
                             @endforeach
                         </select>
                         @error($parentField)
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
                     </div>
                 @endif
 
                 <div class="mb-3">
                     <label class="form-label">Kode {{ strtoupper($field) }}</label>
-                    <input name="kode_{{ $field }}"
+                    <input name="kode_{{ $field }}" id="kode_field"
                         class="form-control @error('kode_' . $field) is-invalid @enderror"
-                        value="{{ old('kode_' . $field, $item?->{'kode_' . $field}) }}" maxlength="50">
+                        value="{{ $defaultKode }}" maxlength="50" placeholder="Contoh: {{ strtoupper($field) }}-01">
+                    <div class="form-text">Kode terisi otomatis secara berurutan, namun tetap dapat disesuaikan manual.</div>
+
                     @error('kode_' . $field)
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -81,3 +87,33 @@
         </div>
     </div>
 @endsection
+
+@push('styles')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+@endpush
+
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            const isEditing = @json($editing);
+            const autoKodeMap = @json($autoKodeMap ?? []);
+
+            if ($('#parent_select').length) {
+                $('#parent_select').select2({
+                    theme: 'bootstrap-5',
+                    placeholder: $(this).data('placeholder') || '-- Pilih Induk --',
+                    allowClear: true
+                }).on('change', function() {
+                    if (!isEditing) {
+                        const selectedId = $(this).val();
+                        if (selectedId && autoKodeMap[selectedId]) {
+                            $('#kode_field').val(autoKodeMap[selectedId]);
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+@endpush

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\CodeGenerator;
 use App\Models\IndikatorKinerjaKegiatan;
 use App\Models\IndikatorKinerjaKegiatanSatuan;
 use App\Models\IndikatorKinerjaUtama;
@@ -18,16 +19,16 @@ class KinerjaProgramStudiController extends Controller
 
     public function index(): View
     {
-        $sasaranStrategis = SasaranStrategis::latest()->paginate(15, ['*'], 'sasaran_page')->withQueryString();
+        $sasaranStrategis = SasaranStrategis::orderBy('kode_sasaran')->paginate(15, ['*'], 'sasaran_page')->withQueryString();
     
         $ikuList = IndikatorKinerjaUtama::with('sasaranStrategis')
-            ->latest()->paginate(15, ['*'], 'iku_page')->withQueryString();
+            ->orderBy('kode_iku')->paginate(15, ['*'], 'iku_page')->withQueryString();
     
         $ikkList = IndikatorKinerjaKegiatan::with('indikatorKinerjaUtama')
-            ->latest()->paginate(15, ['*'], 'ikk_page')->withQueryString();
+            ->orderBy('kode_ikk')->paginate(15, ['*'], 'ikk_page')->withQueryString();
     
         $ikksList = IndikatorKinerjaKegiatanSatuan::with('indikatorKinerjaKegiatan')
-            ->latest()->paginate(15, ['*'], 'ikks_page')->withQueryString();
+            ->orderBy('kode_ikks')->paginate(15, ['*'], 'ikks_page')->withQueryString();
     
         return view('program-studi.kinerja.index', compact(
             'sasaranStrategis',
@@ -47,6 +48,18 @@ class KinerjaProgramStudiController extends Controller
     public function store(Request $request, string $jenis): RedirectResponse
     {
         $this->ensureJenis($jenis);
+
+        $field = "kode_{$jenis}";
+        if (empty($request->input($field))) {
+            $autoKode = match ($jenis) {
+                'sasaran' => CodeGenerator::kodeSasaran(),
+                'iku' => CodeGenerator::kodeIku((int) $request->input('sasaran_strategis_id')),
+                'ikk' => CodeGenerator::kodeIkk((int) $request->input('indikator_kinerja_utama_id')),
+                'ikks' => CodeGenerator::kodeIkks((int) $request->input('indikator_kinerja_kegiatan_id')),
+            };
+            $request->merge([$field => $autoKode]);
+        }
+
         $validated = $this->validatedData($request, $jenis);
 
         if ($jenis === 'sasaran') {
@@ -104,19 +117,38 @@ class KinerjaProgramStudiController extends Controller
 
     private function formData(string $jenis, ?Model $item = null): array
     {
+        $parents = match ($jenis) {
+            'iku' => SasaranStrategis::orderBy('kode_sasaran')->get(),
+            'ikk' => IndikatorKinerjaUtama::with('sasaranStrategis')->orderBy('kode_iku')->get(),
+            'ikks' => IndikatorKinerjaKegiatan::with([
+                'indikatorKinerjaUtama.sasaranStrategis',
+                'indikatorKinerjaKegiatanSatuan',
+            ])->orderBy('kode_ikk')->get(),
+            default => collect(),
+        };
+
+        $autoKodeMap = [];
+        if (! $item) {
+            if ($jenis === 'sasaran') {
+                $autoKodeMap['default'] = CodeGenerator::kodeSasaran();
+            } else {
+                foreach ($parents as $parent) {
+                    $autoKodeMap[$parent->id] = match ($jenis) {
+                        'iku' => CodeGenerator::kodeIku($parent->id),
+                        'ikk' => CodeGenerator::kodeIkk($parent->id),
+                        'ikks' => CodeGenerator::kodeIkks($parent->id),
+                        default => '',
+                    };
+                }
+            }
+        }
+
         return [
             'jenis' => $jenis,
             'item' => $item,
             'label' => $this->label($jenis),
-            'parents' => match ($jenis) {
-                'iku' => SasaranStrategis::orderBy('kode_sasaran')->get(),
-                'ikk' => IndikatorKinerjaUtama::with('sasaranStrategis')->orderBy('kode_iku')->get(),
-                'ikks' => IndikatorKinerjaKegiatan::with([
-                    'indikatorKinerjaUtama.sasaranStrategis',
-                    'indikatorKinerjaKegiatanSatuan',
-                ])->orderBy('kode_ikk')->get(),
-                default => collect(),
-            },
+            'parents' => $parents,
+            'autoKodeMap' => $autoKodeMap,
         ];
     }
 

@@ -15,6 +15,9 @@ class NotulenRtm extends Model
     protected $fillable = [
         'jadwal_rtm_id',
         'isi_notulen',
+        'file_undangan',
+        'file_absensi',
+        'file_dokumentasi',
         'status',
         'input_by',
         'verified_by',
@@ -26,7 +29,27 @@ class NotulenRtm extends Model
     {
         return [
             'verified_at' => 'datetime',
+            'file_dokumentasi' => 'array',
         ];
+    }
+
+    public function getDokumentasiListAttribute(): array
+    {
+        $value = $this->file_dokumentasi;
+
+        if (is_array($value)) {
+            return array_values(array_filter($value));
+        }
+
+        if (is_string($value) && ! empty($value)) {
+            $decoded = json_decode($value, true);
+            if (is_array($decoded)) {
+                return array_values(array_filter($decoded));
+            }
+            return [$value];
+        }
+
+        return [];
     }
 
     public function jadwalRtm(): BelongsTo
