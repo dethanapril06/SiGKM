@@ -98,7 +98,7 @@
             <table class="table table-bordered align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th class="text-center">Baris</th>
+                        <th class="text-center">No</th>
                         <th>Standar</th>
                         <th class="text-center">Indikator</th>
                         <th>Status</th>
@@ -131,7 +131,7 @@
                                 });
                         @endphp
                         <tr>
-                            <td class="text-center">{{ 12 + $loop->iteration }}</td>
+                            <td class="text-center">{{ $loop->iteration }}</td>
                             <td style="min-width: 220px; white-space: normal;">
                                 <strong>{{ $item->standarMutu->kode_standar ?? '-' }}</strong>
                                 <small class="d-block text-muted">{{ $item->standarMutu->nama_standar ?? '-' }}</small>
