@@ -35,6 +35,11 @@ class KeputusanRtm extends Model
         return $this->belongsTo(Temuan::class);
     }
 
+    public function getRencanaTindakLanjutAttribute(): ?RencanaTindakLanjut
+    {
+        return $this->temuan?->rencanaTindakLanjuts?->first();
+    }
+
     public function scopeBelumSelesai(Builder $query): Builder
     {
         return $query->where('status', '!=', 'selesai');

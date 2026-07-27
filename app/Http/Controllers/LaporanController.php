@@ -293,8 +293,9 @@ class LaporanController extends Controller
         if ($selectedSemester) {
             $keputusanRtm = KeputusanRtm::with([
                 'notulenRtm.jadwalRtm.semester.tahunAkademik',
-                'rencanaTindakLanjut.temuan.risikoTemuans.tingkatRisiko',
-                'rencanaTindakLanjut.temuan.evaluasiIndikator.evaluatable' => function (MorphTo $morphTo) {
+                'temuan.risikoTemuans.tingkatRisiko',
+                'temuan.rencanaTindakLanjuts',
+                'temuan.evaluasiIndikator.evaluatable' => function (MorphTo $morphTo) {
                     $morphTo->morphWith([
                         IndikatorMutu::class => ['standarMutu'],
                         IndikatorKinerjaKegiatanSatuan::class => [
@@ -304,7 +305,7 @@ class LaporanController extends Controller
                 },
             ])
                 ->whereHas('notulenRtm.jadwalRtm', fn ($query) => $query->where('semester_id', $selectedSemester->id))
-                ->whereHas('rencanaTindakLanjut.temuan.evaluasiIndikator', fn ($query) => $query->where('evaluatable_type', $evaluatableType))
+                ->whereHas('temuan.evaluasiIndikator', fn ($query) => $query->where('evaluatable_type', $evaluatableType))
                 ->get()
                 ->sortBy(fn ($item) => $this->rtmSortKey($item, $jenis))
                 ->values();
@@ -353,15 +354,15 @@ class LaporanController extends Controller
 
     private function rtmSortKey(KeputusanRtm $keputusanRtm, string $jenis): string
     {
-        $rtl = $keputusanRtm->rencanaTindakLanjut;
-        $evaluatable = $rtl?->temuan?->evaluasiIndikator?->evaluatable;
+        $temuan = $keputusanRtm->temuan;
+        $evaluatable = $temuan?->evaluasiIndikator?->evaluatable;
 
         if ($jenis === 'fakultas' && $evaluatable instanceof IndikatorMutu) {
             return sprintf(
                 '%06d|%06d|%s',
                 $evaluatable->standar_mutu_id ?? 0,
                 (int) preg_replace('/\D+/', '', $evaluatable->kode_indikator ?? '0'),
-                $rtl?->temuan?->kode_temuan ?? ''
+                $temuan?->kode_temuan ?? ''
             );
         }
 
@@ -375,11 +376,11 @@ class LaporanController extends Controller
                 $iku?->kode_iku,
                 $ikk?->kode_ikk,
                 $evaluatable->kode_ikks,
-                $rtl?->temuan?->kode_temuan,
+                $temuan?->kode_temuan,
             ])->filter()->join('|');
         }
 
-        return $rtl?->temuan?->kode_temuan ?? '';
+        return $temuan?->kode_temuan ?? '';
     }
 
     private function standarMutuData(Request $request): array

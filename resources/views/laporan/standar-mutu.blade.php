@@ -120,7 +120,15 @@
                             $targets = $temuanItems
                                 ->pluck('target_selesai')
                                 ->filter()
-                                ->map(fn ($date) => $date->translatedFormat('d M Y'));
+                                ->map(function ($date) {
+                                    if ($date instanceof \Carbon\CarbonInterface) {
+                                        return $date->translatedFormat('d M Y');
+                                    }
+                                    if (is_string($date) && strtotime($date) !== false) {
+                                        return \Carbon\Carbon::parse($date)->locale('id')->isoFormat('D MMM YYYY');
+                                    }
+                                    return (string) $date;
+                                });
                         @endphp
                         <tr>
                             <td class="text-center">{{ 12 + $loop->iteration }}</td>
