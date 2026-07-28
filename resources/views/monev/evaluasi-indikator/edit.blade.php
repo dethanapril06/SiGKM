@@ -20,7 +20,7 @@
 
                 <div class="mb-3">
                     <label class="form-label">Semester</label>
-                    <select name="semester_id" class="form-select @error('semester_id') is-invalid @enderror">
+                    <select name="semester_id" class="form-select select2 @error('semester_id') is-invalid @enderror">
                         <option value="">-- Pilih Semester --</option>
 
                         @foreach ($semester as $item)

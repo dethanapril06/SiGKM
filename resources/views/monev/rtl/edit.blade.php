@@ -29,7 +29,7 @@
 
                 <div class="mb-3">
                     <label class="form-label">Temuan Evaluasi <span class="text-danger">*</span></label>
-                    <select name="temuan_id" class="form-select @error('temuan_id') is-invalid @enderror">
+                    <select name="temuan_id" class="form-select select2 @error('temuan_id') is-invalid @enderror">
                         <option value="">-- Pilih Temuan Evaluasi --</option>
                         @foreach ($temuan as $item)
                             <option value="{{ $item->id }}"

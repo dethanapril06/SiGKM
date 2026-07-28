@@ -24,7 +24,7 @@
 
                 <div class="mb-3">
                     <label class="form-label">Semester</label>
-                    <select name="semester_id" class="form-select @error('semester_id') is-invalid @enderror">
+                    <select name="semester_id" class="form-select select2 @error('semester_id') is-invalid @enderror">
                         <option value="">-- Pilih Semester --</option>
 
                         @foreach ($semester as $item)
@@ -45,7 +45,7 @@
 
                 <div class="mb-3">
                     <label class="form-label">Mata Kuliah</label>
-                    <select name="mata_kuliah_id" class="form-select @error('mata_kuliah_id') is-invalid @enderror">
+                    <select name="mata_kuliah_id" class="form-select select2 @error('mata_kuliah_id') is-invalid @enderror">
                         <option value="">-- Pilih Mata Kuliah --</option>
 
                         @foreach ($mataKuliah as $item)
@@ -63,7 +63,7 @@
 
                 <div class="mb-3">
                     <label class="form-label">Kelas</label>
-                    <select name="kelas_id" class="form-select @error('kelas_id') is-invalid @enderror">
+                    <select name="kelas_id" class="form-select select2 @error('kelas_id') is-invalid @enderror">
                         <option value="">-- Pilih Kelas --</option>
 
                         @foreach ($kelas as $item)
@@ -81,7 +81,7 @@
 
                 <div class="mb-3">
                     <label class="form-label">Dosen Pengajar (Team Teaching)</label>
-                    <select name="dosen_ids[]" id="dosen_ids" class="form-select select2-dosen @error('dosen_ids') is-invalid @enderror @error('dosen_ids.*') is-invalid @enderror" multiple="multiple">
+                    <select name="dosen_ids[]" id="dosen_ids" class="form-select select2 @error('dosen_ids') is-invalid @enderror @error('dosen_ids.*') is-invalid @enderror" multiple="multiple">
                         @foreach ($dosen as $item)
                             @php
                                 $isOldSelected = is_array(old('dosen_ids')) && in_array($item->id, old('dosen_ids'));

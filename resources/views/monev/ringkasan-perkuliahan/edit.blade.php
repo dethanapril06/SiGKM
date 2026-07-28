@@ -19,7 +19,7 @@
 
                 <div class="mb-3">
                     <label class="form-label">Jadwal Monev</label>
-                    <select name="jadwal_monev_id" class="form-select @error('jadwal_monev_id') is-invalid @enderror">
+                    <select name="jadwal_monev_id" class="form-select select2 @error('jadwal_monev_id') is-invalid @enderror">
                         <option value="">-- Pilih Jadwal Monev --</option>
 
                         @foreach ($jadwalMonev as $item)
@@ -41,7 +41,7 @@
 
                 <div class="mb-3">
                     <label class="form-label">Perkuliahan</label>
-                    <select name="perkuliahan_id" class="form-select @error('perkuliahan_id') is-invalid @enderror">
+                    <select name="perkuliahan_id" class="form-select select2 @error('perkuliahan_id') is-invalid @enderror">
                         <option value="">-- Pilih Perkuliahan --</option>
 
                         @foreach ($perkuliahan as $item)

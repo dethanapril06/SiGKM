@@ -30,6 +30,9 @@
     <link rel="stylesheet" href="{{ asset('template/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css') }}" />
     <link rel="stylesheet" href="{{ asset('template/assets/vendor/libs/apex-charts/apex-charts.css') }}" />
 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+
     @stack('styles')
 
     <script src="{{ asset('template/assets/vendor/js/helpers.js') }}"></script>
@@ -70,8 +73,41 @@
 
     <script src="{{ asset('template/assets/vendor/libs/apex-charts/apexcharts.js') }}"></script>
     <script src="{{ asset('template/assets/js/main.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+        $(document).ready(function() {
+            function initSelect2() {
+                $('.select2').each(function() {
+                    const $select = $(this);
+                    if ($select.hasClass("select2-hidden-accessible")) {
+                        return;
+                    }
+                    $select.select2({
+                        theme: 'bootstrap-5',
+                        placeholder: $select.attr('placeholder') || $select.find('option:first').text() || '-- Pilih --',
+                        allowClear: true,
+                        width: '100%'
+                    });
+                });
+            }
+
+            initSelect2();
+
+            // Re-init on BS modal show if select2 is inside modal
+            $(document).on('shown.bs.modal', '.modal', function () {
+                $(this).find('.select2').each(function() {
+                    $(this).select2({
+                        theme: 'bootstrap-5',
+                        dropdownParent: $(this).closest('.modal'),
+                        placeholder: $(this).attr('placeholder') || $(this).find('option:first').text() || '-- Pilih --',
+                        allowClear: true,
+                        width: '100%'
+                    });
+                });
+            });
+        });
+
         document.addEventListener('submit', function(event) {
             const form = event.target;
 

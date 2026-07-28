@@ -104,7 +104,7 @@
                 <div class="row g-3 align-items-end">
                     <div class="col-lg-5 col-md-6">
                         <label for="semester_id" class="form-label">Semester</label>
-                        <select id="semester_id" name="semester_id" class="form-select" onchange="this.form.submit()">
+                        <select id="semester_id" name="semester_id" class="form-select select2" onchange="this.form.submit()">
                             @forelse ($semesters as $semester)
                                 <option value="{{ $semester->id }}" @selected($selectedSemester?->id === $semester->id)>
                                     {{ $semester->label }}{{ $semester->is_active ? ' (Aktif)' : '' }}
@@ -116,7 +116,7 @@
                     </div>
                     <div class="col-lg-5 col-md-6">
                         <label for="jadwal_monev_id" class="form-label">Pelaksanaan Monev</label>
-                        <select id="jadwal_monev_id" name="jadwal_monev_id" class="form-select">
+                        <select id="jadwal_monev_id" name="jadwal_monev_id" class="form-select select2">
                             @forelse ($jadwalMonevs as $jadwal)
                                 <option value="{{ $jadwal->id }}" @selected($selectedJadwalMonev?->id === $jadwal->id)>
                                     {{ $jadwal->termin?->nama_termin ?? 'Tanpa termin' }}

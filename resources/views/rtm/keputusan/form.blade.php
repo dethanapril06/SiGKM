@@ -3,7 +3,7 @@
     Pilih RTM, lalu pilih Temuan yang akan diberikan Keputusan.</div>
 <div class="mb-3">
     <label class="form-label">Notulen RTM Terverifikasi</label>
-    <select id="notulen_rtm_id" name="notulen_rtm_id" class="form-select @error('notulen_rtm_id') is-invalid @enderror"
+    <select id="notulen_rtm_id" name="notulen_rtm_id" class="form-select select2 @error('notulen_rtm_id') is-invalid @enderror"
         required>
         <option value="">-- Pilih RTM --</option>
         @foreach ($notulenRtm as $item)
@@ -18,7 +18,7 @@
 <div class="mb-3">
     <label class="form-label">Temuan yang Ditinjau</label>
     <select id="temuan_id" name="temuan_id"
-        class="form-select @error('temuan_id') is-invalid @enderror" required
+        class="form-select select2 @error('temuan_id') is-invalid @enderror" required
         data-selected="{{ old('temuan_id', $current?->temuan_id) }}">
         <option value="">-- Pilih RTM terlebih dahulu --</option>
     </select>
@@ -68,8 +68,12 @@
                 });
                 if (!options.length && notulen.value) temuan.innerHTML =
                     '<option value="">Tidak ada Temuan yang tersedia untuk RTM ini</option>';
+
+                if ($(temuan).data('select2')) {
+                    $(temuan).trigger('change.select2');
+                }
             };
-            notulen.addEventListener('change', refresh);
+            $(notulen).on('change', refresh);
             refresh();
         });
     </script>

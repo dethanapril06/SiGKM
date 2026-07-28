@@ -4,7 +4,7 @@
             <div class="row align-items-end">
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Tahun Akademik</label>
-                    <select name="tahun_akademik_id" class="form-select">
+                    <select name="tahun_akademik_id" class="form-select select2">
                         <option value="">-- Semua Tahun Akademik --</option>
 
                         @foreach ($tahunAkademik as $item)
@@ -19,7 +19,7 @@
 
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Semester</label>
-                    <select name="semester_id" class="form-select">
+                    <select name="semester_id" class="form-select select2">
                         <option value="">-- Semua Semester --</option>
 
                         @foreach ($semester as $item)
