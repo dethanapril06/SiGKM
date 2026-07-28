@@ -94,6 +94,22 @@
                 </div>
 
                 <div class="mb-3">
+                    <label class="form-label">Kontrak Kuliah</label>
+                    <select name="kontrak_kuliah" class="form-select @error('kontrak_kuliah') is-invalid @enderror">
+                        <option value="ada" {{ old('kontrak_kuliah', 'ada') === 'ada' ? 'selected' : '' }}>
+                            Ada
+                        </option>
+                        <option value="tidak_ada" {{ old('kontrak_kuliah') === 'tidak_ada' ? 'selected' : '' }}>
+                            Tidak Ada
+                        </option>
+                    </select>
+
+                    @error('kontrak_kuliah')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <div class="mb-3">
                     <label class="form-label">Keterangan (Temuan/Masalah)</label>
                     <textarea name="keterangan" rows="3" class="form-control @error('keterangan') is-invalid @enderror"
                         placeholder="Tuliskan keterangan jika ada">{{ old('keterangan') }}</textarea>

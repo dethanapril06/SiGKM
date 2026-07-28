@@ -40,6 +40,11 @@
             <x-detail-row label="Kesesuaian Materi">
                 {{ str($ringkasanPerkuliahan->kesesuaian_materi)->replace('_', ' ')->title() }}
             </x-detail-row>
+            <x-detail-row label="Kontrak Kuliah">
+                <span class="badge {{ $ringkasanPerkuliahan->kontrak_kuliah === 'ada' ? 'bg-label-success' : 'bg-label-danger' }}">
+                    {{ $ringkasanPerkuliahan->kontrak_kuliah === 'ada' ? 'Ada' : 'Tidak Ada' }}
+                </span>
+            </x-detail-row>
             <x-detail-row label="Keterangan (Temuan/Masalah)"><span
                     style="white-space:pre-line">{{ $ringkasanPerkuliahan->keterangan ?: '-' }}</span></x-detail-row>
             <x-detail-row label="Status"><span

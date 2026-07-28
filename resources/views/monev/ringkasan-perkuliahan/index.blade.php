@@ -36,6 +36,7 @@
                         <th>Jadwal Monev</th>
                         <th>Perkuliahan</th>
                         <th>Jml Pertemuan</th>
+                        <th>Kontrak Kuliah</th>
                         <th>Materi Tercapai</th>
                         <th>Pembuat</th>
                         <th>Keterangan (Temuan/Masalah)</th>
@@ -67,6 +68,11 @@
                                 </small>
                             </td>
                             <td>{{ $item->jumlah_pertemuan }}</td>
+                            <td>
+                                <span class="badge {{ $item->kontrak_kuliah === 'ada' ? 'bg-label-success' : 'bg-label-danger' }}">
+                                    {{ $item->kontrak_kuliah === 'ada' ? 'Ada' : 'Tidak Ada' }}
+                                </span>
+                            </td>
                             <td>
                                 @if ($item->kesesuaian_materi === 'sesuai')
                                     <span class="badge bg-label-success">Sesuai</span>

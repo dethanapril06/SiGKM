@@ -97,6 +97,7 @@ class RingkasanPerkuliahanController extends Controller
             'perkuliahan_id' => ['required', 'exists:perkuliahans,id'],
             'jumlah_pertemuan' => ['required', 'integer', 'min:0', 'max:30'],
             'kesesuaian_materi' => ['required', 'in:sesuai,sebagian,tidak_sesuai'],
+            'kontrak_kuliah' => ['required', 'in:ada,tidak_ada'],
             'metode_pembelajaran' => ['nullable', 'string'],
             'keterangan' => ['nullable', 'string'],
         ], [
@@ -104,6 +105,7 @@ class RingkasanPerkuliahanController extends Controller
             'perkuliahan_id.required' => 'Perkuliahan wajib dipilih.',
             'jumlah_pertemuan.required' => 'Jumlah pertemuan wajib diisi.',
             'kesesuaian_materi.required' => 'Kesesuaian materi wajib dipilih.',
+            'kontrak_kuliah.required' => 'Kontrak kuliah wajib dipilih.',
         ]);
 
         $laporanTerbukti = Laporan::where('jenis_laporan', 'perkuliahan')
@@ -174,10 +176,12 @@ class RingkasanPerkuliahanController extends Controller
             'perkuliahan_id' => ['required', 'exists:perkuliahans,id'],
             'jumlah_pertemuan' => ['required', 'integer', 'min:0', 'max:30'],
             'kesesuaian_materi' => ['required', 'in:sesuai,sebagian,tidak_sesuai'],
+            'kontrak_kuliah' => ['required', 'in:ada,tidak_ada'],
             'metode_pembelajaran' => ['nullable', 'string'],
             'keterangan' => ['nullable', 'string'],
         ], [
             'kesesuaian_materi.required' => 'Kesesuaian materi wajib dipilih.',
+            'kontrak_kuliah.required' => 'Kontrak kuliah wajib dipilih.',
         ]);
 
         $laporanTerbukti = Laporan::where('jenis_laporan', 'perkuliahan')

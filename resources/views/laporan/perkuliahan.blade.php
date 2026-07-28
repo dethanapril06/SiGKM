@@ -159,6 +159,7 @@
                         <th class="text-center">Kelas</th>
                         <th>Dosen MK</th>
                         <th class="text-center">Pertemuan</th>
+                        <th class="text-center">Kontrak Kuliah</th>
                         <th class="text-center">Kesesuaian</th>
                         <th>Keterangan (Temuan/Masalah)</th>
                     </tr>
@@ -176,6 +177,11 @@
                             <td>{{ $item->perkuliahan?->pengajars?->pluck('dosen.nama_dosen')->filter()->join(', ') ?: '-' }}
                             </td>
                             <td class="text-center">{{ $item->jumlah_pertemuan }}</td>
+                            <td class="text-center">
+                                <span class="badge {{ $item->kontrak_kuliah === 'ada' ? 'bg-label-success' : 'bg-label-danger' }}">
+                                    {{ $item->kontrak_kuliah === 'ada' ? 'Ada' : 'Tidak Ada' }}
+                                </span>
+                            </td>
                             <td class="text-center">
                                 <span
                                     class="badge {{ $item->kesesuaian_materi === 'sesuai' ? 'bg-label-success' : 'bg-label-warning' }}">

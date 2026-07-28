@@ -17,6 +17,7 @@ class RingkasanPerkuliahan extends Model
         'perkuliahan_id',
         'jumlah_pertemuan',
         'kesesuaian_materi',
+        'kontrak_kuliah',
         'metode_pembelajaran',
         'keterangan',
         'status',
