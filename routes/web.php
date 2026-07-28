@@ -172,6 +172,8 @@ Route::middleware(['auth', 'role:ketua-gkm,anggota-gkm,koordinator-prodi'])
             ->name('laporan.perkuliahan.submit');
         Route::patch('/laporan/{laporan}/verifikasi', [LaporanController::class, 'verifikasiLaporan'])
             ->name('laporan.verifikasi');
+        Route::patch('/laporan/{laporan}/batalkan-verifikasi', [LaporanController::class, 'batalkanVerifikasi'])
+            ->name('laporan.batalkan-verifikasi');
         Route::patch('/laporan/{laporan}/tolak', [LaporanController::class, 'tolakLaporan'])
             ->name('laporan.tolak');
         Route::get('/laporan/perkuliahan/excel', [LaporanController::class, 'exportPerkuliahan'])

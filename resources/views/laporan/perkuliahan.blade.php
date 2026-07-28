@@ -50,6 +50,18 @@
         </div>
     @endif
 
+    @if ($missingCount > 0 && $selectedJadwalMonev)
+        <div class="alert alert-warning alert-dismissible mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="bx bx-error-circle fs-4 me-2"></i>
+                <div>
+                    <strong>Peringatan Kelengkapan Data:</strong> Masih terdapat <strong>{{ $missingCount }}</strong> dari <strong>{{ $totalPerkuliahanCount }}</strong> Mata Kuliah aktif yang belum diisi ringkasannya pada Pelaksanaan Monev ini.
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
     @if ($laporan)
         <div class="card mb-4 border-start border-4 {{ $laporan->status === 'diverifikasi' ? 'border-success' : ($laporan->status === 'diajukan' ? 'border-warning' : ($laporan->status === 'ditolak' ? 'border-danger' : 'border-secondary')) }}">
             <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
@@ -68,6 +80,20 @@
                         <small class="text-danger font-weight-bold">Catatan Perbaikan: {{ $laporan->catatan_verifikasi }}</small>
                     @endif
                 </div>
+                @if ($laporan->status === 'diverifikasi' && auth()->user()->hasRole('ketua-gkm'))
+                    <form action="{{ route('laporan.batalkan-verifikasi', $laporan) }}" method="POST"
+                        data-confirm-form
+                        data-confirm-title="Batalkan Verifikasi Laporan?"
+                        data-confirm-text="Laporan dan data ringkasan perkuliahan akan dibuka kembali untuk perbaikan."
+                        data-confirm-button-text="Ya, Batalkan Verifikasi"
+                        data-confirm-icon="warning">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            <i class="bx bx-undo me-1"></i> Batalkan Verifikasi
+                        </button>
+                    </form>
+                @endif
             </div>
         </div>
     @endif

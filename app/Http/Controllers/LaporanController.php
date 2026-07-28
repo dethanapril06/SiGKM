@@ -8,6 +8,7 @@ use App\Models\JadwalMonev;
 use App\Models\KeputusanRtm;
 use App\Models\RencanaTindakLanjut;
 use App\Models\Laporan;
+use App\Models\Perkuliahan;
 use App\Models\RingkasanPerkuliahan;
 use App\Models\Semester;
 use App\Services\LaporanPerkuliahanExcelService;
@@ -297,6 +298,46 @@ class LaporanController extends Controller
         return back()->with('success', 'Laporan berhasil ditolak.');
     }
 
+    public function batalkanVerifikasi(Request $request, Laporan $laporan): RedirectResponse
+    {
+        if (auth()->user()?->role?->slug !== 'ketua-gkm') {
+            abort(403, 'Hanya Ketua GKM yang dapat membatalkan verifikasi laporan.');
+        }
+
+        if ($laporan->status !== WorkflowStatus::DIVERIFIKASI) {
+            return back()->with('error', 'Hanya laporan berstatus diverifikasi yang dapat dibatalkan.');
+        }
+
+        $laporan->update([
+            'status' => WorkflowStatus::DIAJUKAN,
+            'verified_by' => null,
+            'verified_at' => null,
+            'catatan_verifikasi' => 'Verifikasi dibatalkan oleh Ketua GKM untuk penyesuaian data.',
+        ]);
+
+        if ($laporan->jenis_laporan === 'perkuliahan' && $laporan->jadwal_monev_id) {
+            RingkasanPerkuliahan::where('jadwal_monev_id', $laporan->jadwal_monev_id)
+                ->update([
+                    'status' => WorkflowStatus::DIAJUKAN,
+                    'verified_by' => null,
+                    'verified_at' => null,
+                ]);
+        }
+
+        if ($laporan->pembuat) {
+            $this->notifications->sendToUser(
+                $laporan->pembuat,
+                'Verifikasi Laporan Dibatalkan',
+                'Verifikasi laporan '.$laporan->judul.' telah dibatalkan oleh Ketua GKM.',
+                route('laporan.perkuliahan', ['semester_id' => $laporan->semester_id, 'jadwal_monev_id' => $laporan->jadwal_monev_id]),
+                'bx-undo',
+                'warning',
+            );
+        }
+
+        return back()->with('success', 'Verifikasi laporan berhasil dibatalkan. Laporan kini dibuka kembali untuk penyesuaian data.');
+    }
+
     private function perkuliahanData(Request $request): array
     {
         $request->validate([
@@ -323,11 +364,13 @@ class LaporanController extends Controller
 
         $ringkasanPerkuliahan = collect();
         $laporan = null;
+        $totalPerkuliahanCount = 0;
+        $missingCount = 0;
 
-        if ($selectedJadwalMonev) {
+        if ($selectedJadwalMonev && $selectedSemester) {
             $laporan = Laporan::with(['pembuat', 'verifikator'])
                 ->where('jenis_laporan', 'perkuliahan')
-                ->where('semester_id', $selectedSemester?->id)
+                ->where('semester_id', $selectedSemester->id)
                 ->where('jadwal_monev_id', $selectedJadwalMonev->id)
                 ->first();
 
@@ -344,6 +387,12 @@ class LaporanController extends Controller
                     ($item->perkuliahan?->kelas?->nama_kelas ?? '')
                 ))
                 ->values();
+
+            $totalPerkuliahanCount = Perkuliahan::where('semester_id', $selectedSemester->id)
+                ->where('status', 'aktif')
+                ->count();
+
+            $missingCount = max(0, $totalPerkuliahanCount - $ringkasanPerkuliahan->count());
         }
 
         return [
@@ -353,6 +402,8 @@ class LaporanController extends Controller
             'selectedJadwalMonev' => $selectedJadwalMonev,
             'ringkasanPerkuliahan' => $ringkasanPerkuliahan,
             'laporan' => $laporan,
+            'totalPerkuliahanCount' => $totalPerkuliahanCount,
+            'missingCount' => $missingCount,
             'programStudi' => config('sigkm.program_studi'),
             'tanggalLaporan' => now(),
         ];
