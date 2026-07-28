@@ -1,5 +1,10 @@
 @extends('layouts.app')
 
+@push('styles')
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+@endpush
+
 @section('content')
     <div class="d-flex justify-content-between align-items-center py-3 mb-4">
         <h4 class="fw-bold mb-0">Tambah Perkuliahan</h4>
@@ -71,24 +76,23 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Dosen Pengajar</label>
-                    <select name="dosen_ids[]" class="form-select @error('dosen_ids') is-invalid @enderror @error('dosen_ids.*') is-invalid @enderror">
-                        <option value="">-- Pilih Dosen Pengajar --</option>
-
+                    <label class="form-label">Dosen Pengajar (Team Teaching)</label>
+                    <select name="dosen_ids[]" id="dosen_ids" class="form-select select2-dosen @error('dosen_ids') is-invalid @enderror @error('dosen_ids.*') is-invalid @enderror" multiple="multiple">
                         @foreach ($dosen as $item)
                             <option value="{{ $item->id }}"
-                                {{ old('dosen_ids.0') == $item->id ? 'selected' : '' }}>
+                                {{ (is_array(old('dosen_ids')) && in_array($item->id, old('dosen_ids'))) ? 'selected' : '' }}>
                                 {{ $item->nama_dosen }}
                             </option>
                         @endforeach
                     </select>
+                    <small class="text-muted">Dapat memilih lebih dari 1 dosen pengampu perkuliahan.</small>
 
                     @error('dosen_ids')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
 
                     @error('dosen_ids.*')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
                 </div>
 
@@ -115,3 +119,17 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('.select2-dosen').select2({
+                theme: 'bootstrap-5',
+                placeholder: '-- Pilih Dosen Pengajar --',
+                allowClear: true,
+                width: '100%'
+            });
+        });
+    </script>
+@endpush
