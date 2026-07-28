@@ -7,14 +7,17 @@ use App\Models\IndikatorMutu;
 use App\Models\JadwalMonev;
 use App\Models\KeputusanRtm;
 use App\Models\RencanaTindakLanjut;
+use App\Models\Laporan;
 use App\Models\RingkasanPerkuliahan;
 use App\Models\Semester;
 use App\Services\LaporanPerkuliahanExcelService;
 use App\Services\LaporanRtlExcelService;
 use App\Services\LaporanRtmExcelService;
 use App\Services\LaporanStandarMutuExcelService;
+use App\Services\WorkflowNotificationService;
 use App\Support\WorkflowStatus;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -26,6 +29,7 @@ class LaporanController extends Controller
         private LaporanStandarMutuExcelService $standarMutuExcelService,
         private LaporanRtlExcelService $rtlExcelService,
         private LaporanRtmExcelService $rtmExcelService,
+        private WorkflowNotificationService $notifications,
     ) {}
 
     public function perkuliahan(Request $request): View
@@ -33,9 +37,15 @@ class LaporanController extends Controller
         return view('laporan.perkuliahan', $this->perkuliahanData($request));
     }
 
-    public function exportPerkuliahan(Request $request): BinaryFileResponse
+    public function exportPerkuliahan(Request $request): BinaryFileResponse|RedirectResponse
     {
         $data = $this->perkuliahanData($request);
+        $laporan = $data['laporan'];
+
+        if (! $laporan || $laporan->status !== WorkflowStatus::DIVERIFIKASI) {
+            return back()->with('error', 'Laporan Pelaksanaan Perkuliahan belum diverifikasi. Unduh Excel hanya tersedia untuk laporan yang sudah diverifikasi.');
+        }
+
         $semester = $data['selectedSemester'];
 
         $path = $this->excelService->generate(
@@ -174,6 +184,119 @@ class LaporanController extends Controller
         return response()->download($path, $filename)->deleteFileAfterSend(true);
     }
 
+    public function submitPerkuliahan(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'semester_id' => ['required', 'integer', 'exists:semesters,id'],
+            'jadwal_monev_id' => ['required', 'integer', 'exists:jadwal_monevs,id'],
+        ]);
+
+        $jadwalMonev = JadwalMonev::with('termin')->findOrFail($validated['jadwal_monev_id']);
+
+        $laporan = Laporan::updateOrCreate(
+            [
+                'jenis_laporan' => 'perkuliahan',
+                'semester_id' => $validated['semester_id'],
+                'jadwal_monev_id' => $validated['jadwal_monev_id'],
+            ],
+            [
+                'judul' => 'Laporan Pelaksanaan Perkuliahan - '.($jadwalMonev->nama ?? 'Termin '.($jadwalMonev->termin?->nama ?? '')),
+                'status' => WorkflowStatus::DIAJUKAN,
+                'generated_by' => auth()->id(),
+                'catatan_verifikasi' => null,
+            ]
+        );
+
+        $this->notifications->sendToRole(
+            'ketua-gkm',
+            'Laporan Perkuliahan Menunggu Verifikasi',
+            'Laporan Pelaksanaan Perkuliahan baru telah diajukan oleh '.(auth()->user()?->name ?? 'Anggota GKM').'.',
+            route('verifikasi.index'),
+            'bx-file',
+            'warning',
+        );
+
+        return back()->with('success', 'Laporan Pelaksanaan Perkuliahan berhasil diajukan untuk verifikasi.');
+    }
+
+    public function verifikasiLaporan(Request $request, Laporan $laporan): RedirectResponse
+    {
+        if (auth()->user()?->role?->slug !== 'ketua-gkm') {
+            abort(403, 'Hanya Ketua GKM yang dapat memverifikasi laporan.');
+        }
+
+        if ($laporan->status !== WorkflowStatus::DIAJUKAN) {
+            return back()->with('error', 'Hanya laporan berstatus diajukan yang dapat diverifikasi.');
+        }
+
+        $laporan->update([
+            'status' => WorkflowStatus::DIVERIFIKASI,
+            'verified_by' => auth()->id(),
+            'verified_at' => now(),
+            'catatan_verifikasi' => null,
+        ]);
+
+        if ($laporan->jenis_laporan === 'perkuliahan' && $laporan->jadwal_monev_id) {
+            RingkasanPerkuliahan::where('jadwal_monev_id', $laporan->jadwal_monev_id)
+                ->update([
+                    'status' => WorkflowStatus::DIVERIFIKASI,
+                    'verified_by' => auth()->id(),
+                    'verified_at' => now(),
+                    'catatan_verifikasi' => null,
+                ]);
+        }
+
+        if ($laporan->pembuat) {
+            $this->notifications->sendToUser(
+                $laporan->pembuat,
+                'Laporan Diverifikasi',
+                'Laporan '.$laporan->judul.' telah diverifikasi oleh Ketua GKM.',
+                route('laporan.perkuliahan', ['semester_id' => $laporan->semester_id, 'jadwal_monev_id' => $laporan->jadwal_monev_id]),
+                'bx-check-circle',
+                'success',
+            );
+        }
+
+        return back()->with('success', 'Laporan berhasil diverifikasi.');
+    }
+
+    public function tolakLaporan(Request $request, Laporan $laporan): RedirectResponse
+    {
+        if (auth()->user()?->role?->slug !== 'ketua-gkm') {
+            abort(403, 'Hanya Ketua GKM yang dapat menolak laporan.');
+        }
+
+        if ($laporan->status !== WorkflowStatus::DIAJUKAN) {
+            return back()->with('error', 'Hanya laporan berstatus diajukan yang dapat ditolak.');
+        }
+
+        $validated = $request->validate([
+            'catatan_verifikasi' => ['required', 'string'],
+        ], [
+            'catatan_verifikasi.required' => 'Catatan penolakan wajib diisi.',
+        ]);
+
+        $laporan->update([
+            'status' => WorkflowStatus::DITOLAK,
+            'verified_by' => auth()->id(),
+            'verified_at' => now(),
+            'catatan_verifikasi' => $validated['catatan_verifikasi'],
+        ]);
+
+        if ($laporan->pembuat) {
+            $this->notifications->sendToUser(
+                $laporan->pembuat,
+                'Laporan Perlu Perbaikan',
+                'Laporan '.$laporan->judul.' perlu diperbaiki: '.$validated['catatan_verifikasi'],
+                route('laporan.perkuliahan', ['semester_id' => $laporan->semester_id, 'jadwal_monev_id' => $laporan->jadwal_monev_id]),
+                'bx-x-circle',
+                'danger',
+            );
+        }
+
+        return back()->with('success', 'Laporan berhasil ditolak.');
+    }
+
     private function perkuliahanData(Request $request): array
     {
         $request->validate([
@@ -199,15 +322,21 @@ class LaporanController extends Controller
         }
 
         $ringkasanPerkuliahan = collect();
+        $laporan = null;
 
         if ($selectedJadwalMonev) {
+            $laporan = Laporan::with(['pembuat', 'verifikator'])
+                ->where('jenis_laporan', 'perkuliahan')
+                ->where('semester_id', $selectedSemester?->id)
+                ->where('jadwal_monev_id', $selectedJadwalMonev->id)
+                ->first();
+
             $ringkasanPerkuliahan = RingkasanPerkuliahan::with([
                 'perkuliahan.mataKuliah',
                 'perkuliahan.kelas',
                 'perkuliahan.pengajars.dosen',
             ])
                 ->where('jadwal_monev_id', $selectedJadwalMonev->id)
-                ->where('status', 'diverifikasi')
                 ->whereHas('perkuliahan', fn ($query) => $query->where('semester_id', $selectedSemester->id))
                 ->get()
                 ->sortBy(fn ($item) => mb_strtolower(
@@ -223,6 +352,7 @@ class LaporanController extends Controller
             'selectedSemester' => $selectedSemester,
             'selectedJadwalMonev' => $selectedJadwalMonev,
             'ringkasanPerkuliahan' => $ringkasanPerkuliahan,
+            'laporan' => $laporan,
             'programStudi' => config('sigkm.program_studi'),
             'tanggalLaporan' => now(),
         ];

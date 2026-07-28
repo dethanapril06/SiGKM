@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\JadwalMonev;
+use App\Models\Laporan;
 use App\Models\Perkuliahan;
 use App\Models\RingkasanPerkuliahan;
 use App\Services\WorkflowNotificationService;
+use App\Support\WorkflowStatus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -97,13 +99,22 @@ class RingkasanPerkuliahanController extends Controller
             'kesesuaian_materi' => ['required', 'in:sesuai,sebagian,tidak_sesuai'],
             'metode_pembelajaran' => ['nullable', 'string'],
             'keterangan' => ['nullable', 'string'],
-            'status' => ['required', 'in:draft,diajukan'],
         ], [
             'jadwal_monev_id.required' => 'Jadwal monev wajib dipilih.',
             'perkuliahan_id.required' => 'Perkuliahan wajib dipilih.',
             'jumlah_pertemuan.required' => 'Jumlah pertemuan wajib diisi.',
             'kesesuaian_materi.required' => 'Kesesuaian materi wajib dipilih.',
         ]);
+
+        $laporanTerbukti = Laporan::where('jenis_laporan', 'perkuliahan')
+            ->where('jadwal_monev_id', $validated['jadwal_monev_id'])
+            ->first();
+
+        if ($laporanTerbukti && $laporanTerbukti->status === WorkflowStatus::DIVERIFIKASI) {
+            throw ValidationException::withMessages([
+                'jadwal_monev_id' => 'Laporan Pelaksanaan Perkuliahan untuk periode ini telah diverifikasi dan dikunci. Data baru tidak dapat ditambahkan.',
+            ]);
+        }
 
         $isDuplicate = RingkasanPerkuliahan::query()
             ->where('jadwal_monev_id', $validated['jadwal_monev_id'])
@@ -116,13 +127,10 @@ class RingkasanPerkuliahanController extends Controller
             ]);
         }
 
+        $validated['status'] = 'diajukan';
         $validated['input_by'] = auth()->id();
 
-        $ringkasan = RingkasanPerkuliahan::create($validated);
-
-        if ($ringkasan->status === 'diajukan') {
-            $this->notifyRingkasanSubmitted($ringkasan);
-        }
+        RingkasanPerkuliahan::create($validated);
 
         return redirect()
             ->route('ringkasan-perkuliahan.index')
@@ -161,10 +169,6 @@ class RingkasanPerkuliahanController extends Controller
             abort(403, 'Ringkasan ini tidak dapat diedit.');
         }
 
-        $statusRules = auth()->user()->hasRole('ketua-gkm')
-            ? ['required', 'in:draft,diajukan,diverifikasi,ditolak']
-            : ['required', 'in:draft,diajukan'];
-
         $validated = $request->validate([
             'jadwal_monev_id' => ['required', 'exists:jadwal_monevs,id'],
             'perkuliahan_id' => ['required', 'exists:perkuliahans,id'],
@@ -172,10 +176,19 @@ class RingkasanPerkuliahanController extends Controller
             'kesesuaian_materi' => ['required', 'in:sesuai,sebagian,tidak_sesuai'],
             'metode_pembelajaran' => ['nullable', 'string'],
             'keterangan' => ['nullable', 'string'],
-            'status' => $statusRules,
         ], [
             'kesesuaian_materi.required' => 'Kesesuaian materi wajib dipilih.',
         ]);
+
+        $laporanTerbukti = Laporan::where('jenis_laporan', 'perkuliahan')
+            ->where('jadwal_monev_id', $validated['jadwal_monev_id'])
+            ->first();
+
+        if ($laporanTerbukti && $laporanTerbukti->status === WorkflowStatus::DIVERIFIKASI) {
+            throw ValidationException::withMessages([
+                'jadwal_monev_id' => 'Laporan Pelaksanaan Perkuliahan untuk periode ini telah diverifikasi dan dikunci.',
+            ]);
+        }
 
         $isDuplicate = RingkasanPerkuliahan::query()
             ->where('jadwal_monev_id', $validated['jadwal_monev_id'])
@@ -189,21 +202,7 @@ class RingkasanPerkuliahanController extends Controller
             ]);
         }
 
-        if (in_array($validated['status'], ['draft', 'diajukan'], true)) {
-            $validated['catatan_verifikasi'] = null;
-            $validated['verified_by'] = null;
-            $validated['verified_at'] = null;
-        } elseif ($validated['status'] === 'diverifikasi') {
-            $validated['catatan_verifikasi'] = null;
-            $validated['verified_by'] = auth()->id();
-            $validated['verified_at'] = now();
-        }
-
         $ringkasanPerkuliahan->update($validated);
-
-        if ($ringkasanPerkuliahan->status === 'diajukan') {
-            $this->notifyRingkasanSubmitted($ringkasanPerkuliahan);
-        }
 
         return redirect()
             ->route('ringkasan-perkuliahan.index')
@@ -214,6 +213,14 @@ class RingkasanPerkuliahanController extends Controller
     {
         if (! $ringkasanPerkuliahan->canBeEditedBy(auth()->user())) {
             abort(403, 'Ringkasan ini tidak dapat dihapus.');
+        }
+
+        $laporanTerbukti = Laporan::where('jenis_laporan', 'perkuliahan')
+            ->where('jadwal_monev_id', $ringkasanPerkuliahan->jadwal_monev_id)
+            ->first();
+
+        if ($laporanTerbukti && $laporanTerbukti->status === WorkflowStatus::DIVERIFIKASI) {
+            return back()->with('error', 'Laporan Pelaksanaan Perkuliahan untuk periode ini telah diverifikasi dan dikunci. Data tidak dapat dihapus.');
         }
 
         $ringkasanPerkuliahan->delete();

@@ -103,28 +103,8 @@
                     @enderror
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Status</label>
-                    <select name="status" class="form-select @error('status') is-invalid @enderror">
-                        <option value="draft" {{ old('status', 'draft') === 'draft' ? 'selected' : '' }}>
-                            Simpan sebagai Draft
-                        </option>
-                        <option value="diajukan" {{ old('status') === 'diajukan' ? 'selected' : '' }}>
-                            Langsung Ajukan
-                        </option>
-                    </select>
-
-                    @error('status')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-
-                    <small class="text-muted">
-                        Pilih diajukan jika ringkasan sudah siap diverifikasi.
-                    </small>
-                </div>
-
                 <button type="submit" class="btn btn-primary">
-                    <i class="bx bx-save"></i> Simpan
+                    <i class="bx bx-save me-1"></i> Simpan Data Ringkasan
                 </button>
             </form>
         </div>

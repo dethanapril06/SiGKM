@@ -9,6 +9,7 @@ use App\Models\EvaluasiIndikator;
 use App\Models\JadwalMonev;
 use App\Models\JadwalRtm;
 use App\Models\KeputusanRtm;
+use App\Models\Laporan;
 use App\Models\NotulenRtm;
 use App\Models\Perkuliahan;
 use App\Models\RencanaTindakLanjut;
@@ -93,7 +94,7 @@ class DashboardController extends Controller
                 ['label' => 'Total AMI', 'value' => Ami::count(), 'icon' => 'bx-folder-open', 'color' => 'success'],
             ],
             'pending' => [
-                'ringkasan' => RingkasanPerkuliahan::where('status', 'diajukan')->count(),
+                'ringkasan' => Laporan::where('jenis_laporan', 'perkuliahan')->where('status', 'diajukan')->count(),
                 'rtl' => Temuan::where('status', 'terbuka')->count(),
                 'notulen' => NotulenRtm::where('status', 'diajukan')->count(),
             ],

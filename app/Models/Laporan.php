@@ -15,6 +15,7 @@ class Laporan extends Model
     protected $fillable = [
         'jenis_laporan',
         'semester_id',
+        'jadwal_monev_id',
         'judul',
         'file_path',
         'status',
@@ -34,6 +35,11 @@ class Laporan extends Model
     public function semester(): BelongsTo
     {
         return $this->belongsTo(Semester::class);
+    }
+
+    public function jadwalMonev(): BelongsTo
+    {
+        return $this->belongsTo(JadwalMonev::class);
     }
 
     public function pembuat(): BelongsTo

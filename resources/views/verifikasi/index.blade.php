@@ -14,7 +14,7 @@
         <div class="alert alert-danger">{{ $errors->first() }}</div>
     @endif
     <div class="row mb-4">
-        @foreach ([['Ringkasan', $ringkasanPerkuliahan->total(), 'primary'], ['Notulen RTM', $notulenRtm->total(), 'info']] as [$label, $count, $color])
+        @foreach ([['Laporan Perkuliahan', $laporanPerkuliahan->total(), 'primary'], ['Notulen RTM', $notulenRtm->total(), 'info']] as [$label, $count, $color])
             <div class="col-md-6 mb-3">
                 <div class="card">
                     <div class="card-body text-center"><span
@@ -27,59 +27,63 @@
     </div>
 
     <div class="card mb-4">
-        <h5 class="card-header">Ringkasan Perkuliahan Menunggu Verifikasi</h5>
+        <h5 class="card-header">Laporan Pelaksanaan Perkuliahan Menunggu Verifikasi</h5>
         <div class="table-responsive">
             <table class="table align-middle">
                 <thead>
                     <tr>
                         <th>No</th>
-                        <th>Perkuliahan</th>
-                        <th>Dosen</th>
-                        <th>Ringkasan</th>
-                        <th>Penginput</th>
+                        <th>Judul Laporan</th>
+                        <th>Semester / Termin</th>
+                        <th>Pengaju</th>
+                        <th>Tanggal Pengajuan</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($ringkasanPerkuliahan as $item)
+                    @forelse($laporanPerkuliahan as $item)
                         <tr>
                             <td>{{ $loop->iteration }}</td>
-                            <td><strong>{{ $item->perkuliahan?->mataKuliah?->nama_mk ?? '-' }}</strong><br><small>{{ $item->perkuliahan?->kelas?->nama_kelas }}
-                                    | {{ $item->jadwalMonev?->semester?->label }}</small></td>
-                            <td>{{ $item->perkuliahan?->pengajars?->pluck('dosen.nama_dosen')->filter()->join(', ') ?: '-' }}
-                            </td>
-                            <td>{{ $item->jumlah_pertemuan }}
-                                pertemuan<br><small>{{ str($item->kesesuaian_materi)->replace('_', ' ')->title() }}</small>
-                            </td>
-                            <td>{{ $item->penginput?->name ?? '-' }}</td>
-                            <td style="min-width:260px"><a href="{{ route('ringkasan-perkuliahan.show', $item) }}"
-                                    class="btn btn-sm btn-icon btn-info" title="Detail"><i class="bx bx-show"></i></a>
-                                <form action="{{ route('ringkasan-perkuliahan.verify', $item) }}" method="POST"
-                                    class="d-inline">@csrf @method('PATCH')<button
-                                        class="btn btn-sm btn-icon btn-success" title="Verifikasi"><i class="bx bx-check"></i></button></form> <button
-                                    class="btn btn-sm btn-icon btn-danger" data-bs-toggle="modal"
-                                    data-bs-target="#tolak-ringkasan-{{ $item->id }}" title="Tolak"><i class="bx bx-x"></i></button>
+                            <td><strong>{{ $item->judul }}</strong></td>
+                            <td>{{ $item->semester?->label }}<br><small>{{ $item->jadwalMonev?->termin?->nama_termin ?? '-' }}</small></td>
+                            <td>{{ $item->pembuat?->name ?? '-' }}</td>
+                            <td>{{ $item->updated_at->translatedFormat('d M Y H:i') }}</td>
+                            <td style="min-width:200px">
+                                <a href="{{ route('laporan.perkuliahan', ['semester_id' => $item->semester_id, 'jadwal_monev_id' => $item->jadwal_monev_id]) }}"
+                                    class="btn btn-sm btn-icon btn-info" title="Lihat Laporan"><i class="bx bx-show"></i></a>
+                                <form action="{{ route('laporan.verifikasi', $item) }}" method="POST"
+                                    class="d-inline"
+                                    data-confirm-form
+                                    data-confirm-title="Verifikasi Laporan Pelaksanaan Perkuliahan?"
+                                    data-confirm-text="Laporan akan diverifikasi dan dikunci."
+                                    data-confirm-button-text="Ya, Verifikasi"
+                                    data-confirm-icon="success">
+                                    @csrf @method('PATCH')
+                                    <button class="btn btn-sm btn-icon btn-success" title="Verifikasi Laporan"><i class="bx bx-check"></i></button>
+                                </form> 
+                                <button class="btn btn-sm btn-icon btn-danger" data-bs-toggle="modal"
+                                    data-bs-target="#tolak-laporan-{{ $item->id }}" title="Tolak Laporan"><i class="bx bx-x"></i></button>
                             </td>
                         </tr>
                         @include('verifikasi.partials.modal-catatan', [
-                            'modalId' => 'tolak-ringkasan-' . $item->id,
-                            'action' => route('ringkasan-perkuliahan.reject', $item),
-                            'title' => 'Tolak Ringkasan Perkuliahan',
-                            'description' => 'Tuliskan perbaikan yang harus dilakukan oleh Anggota GKM.',
+                            'modalId' => 'tolak-laporan-' . $item->id,
+                            'action' => route('laporan.tolak', $item),
+                            'title' => 'Tolak Laporan Pelaksanaan Perkuliahan',
+                            'description' => 'Tuliskan catatan perbaikan untuk pengaju laporan.',
                             'fieldName' => 'catatan_verifikasi',
                             'required' => true,
                             'buttonClass' => 'btn-danger',
                             'buttonIcon' => 'bx bx-x',
-                            'buttonText' => 'Tolak',
+                            'buttonText' => 'Tolak Laporan',
                         ])
                     @empty<tr>
-                            <td colspan="6" class="text-center">Tidak ada ringkasan yang menunggu verifikasi.</td>
+                            <td colspan="6" class="text-center">Tidak ada laporan perkuliahan yang menunggu verifikasi.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
-        <div class="card-footer">@include('components._pagination', ['paginator' => $ringkasanPerkuliahan])</div>
+        <div class="card-footer">@include('components._pagination', ['paginator' => $laporanPerkuliahan])</div>
     </div>
 
     <div class="card">

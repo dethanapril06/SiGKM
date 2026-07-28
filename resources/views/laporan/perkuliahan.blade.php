@@ -4,13 +4,73 @@
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 py-3 mb-4">
         <div>
             <h4 class="fw-bold mb-1">Laporan Pelaksanaan Perkuliahan</h4>
-            <span class="text-muted">Pilih data laporan, lalu unduh menggunakan format Excel resmi.</span>
+            <span class="text-muted">Pilih data laporan, ajukan verifikasi, lalu unduh menggunakan format Excel resmi.</span>
         </div>
-        <button type="submit" form="laporan-perkuliahan-filter" formaction="{{ route('laporan.perkuliahan.excel') }}"
-            class="btn btn-success">
-            <i class="bx bx-spreadsheet me-1"></i> Unduh Excel
-        </button>
+        <div class="d-flex gap-2">
+            @if ($selectedSemester && $selectedJadwalMonev && $ringkasanPerkuliahan->isNotEmpty())
+                @if (!$laporan || in_array($laporan->status, ['draft', 'ditolak']))
+                    <form action="{{ route('laporan.perkuliahan.submit') }}" method="POST"
+                        data-confirm-form
+                        data-confirm-title="{{ $laporan && $laporan->status === 'ditolak' ? 'Ajukan Ulang Laporan Perkuliahan?' : 'Ajukan Laporan Pelaksanaan Perkuliahan?' }}"
+                        data-confirm-text="Laporan akan diajukan ke Ketua GKM untuk diverifikasi."
+                        data-confirm-button-text="Ya, Ajukan Laporan"
+                        data-confirm-icon="question">
+                        @csrf
+                        <input type="hidden" name="semester_id" value="{{ $selectedSemester->id }}">
+                        <input type="hidden" name="jadwal_monev_id" value="{{ $selectedJadwalMonev->id }}">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bx bx-paper-plane me-1"></i> {{ $laporan && $laporan->status === 'ditolak' ? 'Ajukan Ulang Laporan' : 'Ajukan Laporan Perkuliahan' }}
+                        </button>
+                    </form>
+                @endif
+            @endif
+            @if ($laporan && $laporan->status === 'diverifikasi')
+                <button type="submit" form="laporan-perkuliahan-filter" formaction="{{ route('laporan.perkuliahan.excel') }}"
+                    class="btn btn-success">
+                    <i class="bx bx-spreadsheet me-1"></i> Unduh Excel
+                </button>
+            @else
+                <button type="button" class="btn btn-secondary" disabled title="Unduh Excel hanya tersedia jika laporan telah diverifikasi oleh Ketua GKM">
+                    <i class="bx bx-lock-alt me-1"></i> Unduh Excel (Belum Diverifikasi)
+                </button>
+            @endif
+        </div>
     </div>
+
+    @if (session('success'))
+        <div class="alert alert-success alert-dismissible mb-4" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+    @if (session('error'))
+        <div class="alert alert-danger alert-dismissible mb-4" role="alert">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    @if ($laporan)
+        <div class="card mb-4 border-start border-4 {{ $laporan->status === 'diverifikasi' ? 'border-success' : ($laporan->status === 'diajukan' ? 'border-warning' : ($laporan->status === 'ditolak' ? 'border-danger' : 'border-secondary')) }}">
+            <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div>
+                    <h6 class="mb-1">
+                        Status Laporan: 
+                        <span class="badge {{ $laporan->status === 'diverifikasi' ? 'bg-label-success' : ($laporan->status === 'diajukan' ? 'bg-label-warning' : ($laporan->status === 'ditolak' ? 'bg-label-danger' : 'bg-label-secondary')) }}">
+                            {{ str($laporan->status)->title() }}
+                        </span>
+                    </h6>
+                    @if ($laporan->status === 'diajukan')
+                        <small class="text-muted">Laporan telah diajukan oleh <strong>{{ $laporan->pembuat?->name ?? 'Penginput' }}</strong> dan sedang menunggu verifikasi Ketua GKM.</small>
+                    @elseif ($laporan->status === 'diverifikasi')
+                        <small class="text-muted">Laporan telah diverifikasi oleh <strong>{{ $laporan->verifikator?->name ?? 'Ketua GKM' }}</strong> pada {{ $laporan->verified_at?->translatedFormat('d F Y H:i') }}.</small>
+                    @elseif ($laporan->status === 'ditolak')
+                        <small class="text-danger font-weight-bold">Catatan Perbaikan: {{ $laporan->catatan_verifikasi }}</small>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
 
     <div class="card mb-4">
         <div class="card-body">

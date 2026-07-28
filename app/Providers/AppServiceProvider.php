@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\IndikatorKinerjaKegiatanSatuan;
 use App\Models\IndikatorMutu;
+use App\Models\Laporan;
 use App\Models\NotulenRtm;
 use App\Models\RencanaTindakLanjut;
 use App\Models\RingkasanPerkuliahan;
@@ -37,7 +38,7 @@ class AppServiceProvider extends ServiceProvider
             $pendingCount = 0;
 
             if (auth()->check() && auth()->user()->hasRole('ketua-gkm')) {
-                $pendingCount = RingkasanPerkuliahan::where('status', 'diajukan')->count()
+                $pendingCount = Laporan::where('jenis_laporan', 'perkuliahan')->where('status', 'diajukan')->count()
                     + NotulenRtm::where('status', 'diajukan')->count();
             }
 

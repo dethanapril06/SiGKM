@@ -115,36 +115,8 @@
                     </div>
                 @endif
 
-                <div class="mb-3">
-                    <label class="form-label">Status</label>
-                    <select name="status" class="form-select @error('status') is-invalid @enderror">
-                        <option value="draft"
-                            {{ old('status', $ringkasanPerkuliahan->status) === 'draft' ? 'selected' : '' }}>
-                            Simpan sebagai Draft
-                        </option>
-                        <option value="diajukan"
-                            {{ old('status', $ringkasanPerkuliahan->status) === 'diajukan' ? 'selected' : '' }}>
-                            Ajukan
-                        </option>
-                        @if (auth()->user()->hasRole('ketua-gkm'))
-                            <option value="diverifikasi"
-                                {{ old('status', $ringkasanPerkuliahan->status) === 'diverifikasi' ? 'selected' : '' }}>
-                                Diverifikasi
-                            </option>
-                            <option value="ditolak"
-                                {{ old('status', $ringkasanPerkuliahan->status) === 'ditolak' ? 'selected' : '' }}>
-                                Ditolak
-                            </option>
-                        @endif
-                    </select>
-
-                    @error('status')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
                 <button type="submit" class="btn btn-primary">
-                    <i class="bx bx-save"></i> Simpan Perubahan
+                    <i class="bx bx-save me-1"></i> Simpan Perubahan
                 </button>
             </form>
         </div>

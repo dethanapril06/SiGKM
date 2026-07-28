@@ -39,8 +39,7 @@
                         <th>Materi Tercapai</th>
                         <th>Pembuat</th>
                         <th>Keterangan (Temuan/Masalah)</th>
-                        <th>Status</th>
-                        <th width="260">Aksi</th>
+                        <th width="150">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="table-border-bottom-0">
@@ -80,67 +79,18 @@
                                 @endif
                             </td>
                             <td>{{ $item->penginput->name ?? '-' }}</td>
-                            <td>
+                            <td style="max-width: 250px; white-space: normal;">
                                 {{ $item->keterangan ?? '-' }}
                             </td>
                             <td>
-                                <span
-                                    class="badge bg-label-{{ $item->status === 'diajukan' ? 'primary' : ($item->status === 'diterima' ? 'success' : 'secondary') }}">
-                                    {{ ucfirst($item->status ?? '-') }}
-                                </span>
-                            </td>
-                            <td>
-                                @if ($item->catatan_verifikasi)
-                                    <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal"
-                                        data-bs-target="#noteModal{{ $item->id }}">
-                                        <i class="bx bx-message-square-detail"></i>
-                                    </button>
-
-                                    <div class="modal fade" id="noteModal{{ $item->id }}" tabindex="-1">
-                                        <div class="modal-dialog">
-                                            <div class="modal-content">
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title">Catatan Verifikasi</h5>
-                                                    <button type="button" class="btn-close"
-                                                        data-bs-dismiss="modal"></button>
-                                                </div>
-
-                                                <div class="modal-body">
-                                                    <p class="mb-0 text-wrap">{{ $item->catatan_verifikasi }}</p>
-                                                </div>
-
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary"
-                                                        data-bs-dismiss="modal">
-                                                        Tutup
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endif
-
-                                <a href="{{ route('ringkasan-perkuliahan.show', $item) }}" class="btn btn-sm btn-icon btn-info"><i class="bx bx-show"></i></a>
+                                <a href="{{ route('ringkasan-perkuliahan.show', $item) }}" class="btn btn-sm btn-icon btn-info" title="Lihat Detail">
+                                    <i class="bx bx-show"></i>
+                                </a>
                                 @if ($item->canBeEditedBy(auth()->user()))
                                     <a href="{{ route('ringkasan-perkuliahan.edit', $item->id) }}"
-                                        class="btn btn-sm btn-icon btn-warning">
+                                        class="btn btn-sm btn-icon btn-warning" title="Edit Data">
                                         <i class="bx bx-edit"></i>
                                     </a>
-
-                                    @if (auth()->user()->hasRole('anggota-gkm') && $item->status !== 'diajukan')
-                                        <form action="{{ route('ringkasan-perkuliahan.submit', $item->id) }}"
-                                            method="POST" class="d-inline" data-confirm-form
-                                            data-confirm-title="Ajukan ringkasan ini ke Ketua GKM?"
-                                            data-confirm-text="Ringkasan akan masuk ke proses verifikasi."
-                                            data-confirm-button-text="Ya, ajukan" data-confirm-button-color="#696cff">
-                                            @csrf
-                                            @method('PATCH')
-
-                                            <button type="submit" class="btn btn-sm btn-primary">
-                                                <i class="bx bx-send"></i>
-                                            </button>
-                                        </form>
-                                    @endif
 
                                     <form action="{{ route('ringkasan-perkuliahan.destroy', $item->id) }}" method="POST"
                                         class="d-inline" data-confirm-form
@@ -150,68 +100,16 @@
                                         @csrf
                                         @method('DELETE')
 
-                                        <button type="submit" class="btn btn-sm btn-icon btn-danger">
+                                        <button type="submit" class="btn btn-sm btn-icon btn-danger" title="Hapus Data">
                                             <i class="bx bx-trash"></i>
                                         </button>
                                     </form>
-                                @endif
-
-                                @if (auth()->user()->hasRole('ketua-gkm') && $item->status === 'diajukan')
-                                    <form action="{{ route('ringkasan-perkuliahan.verify', $item->id) }}" method="POST"
-                                        class="d-inline" data-confirm-form
-                                        data-confirm-title="Verifikasi ringkasan ini?"
-                                        data-confirm-text="Ringkasan akan ditandai sebagai diverifikasi."
-                                        data-confirm-button-text="Ya, verifikasi" data-confirm-button-color="#71dd37">
-                                        @csrf
-                                        @method('PATCH')
-
-                                        <button type="submit" class="btn btn-sm btn-success">
-                                            <i class="bx bx-check"></i>
-                                        </button>
-                                    </form>
-
-                                    <button type="button" class="btn btn-sm btn-icon btn-danger" data-bs-toggle="modal"
-                                        data-bs-target="#rejectModal{{ $item->id }}">
-                                        <i class="bx bx-x"></i>
-                                    </button>
-
-                                    <div class="modal fade" id="rejectModal{{ $item->id }}" tabindex="-1">
-                                        <div class="modal-dialog">
-                                            <form action="{{ route('ringkasan-perkuliahan.reject', $item->id) }}"
-                                                method="POST" class="modal-content">
-                                                @csrf
-                                                @method('PATCH')
-
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title">Tolak Ringkasan</h5>
-                                                    <button type="button" class="btn-close"
-                                                        data-bs-dismiss="modal"></button>
-                                                </div>
-
-                                                <div class="modal-body">
-                                                    <label class="form-label">Catatan Penolakan</label>
-                                                    <textarea name="catatan_verifikasi" rows="4" class="form-control" placeholder="Masukkan alasan penolakan"
-                                                        required></textarea>
-                                                </div>
-
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary"
-                                                        data-bs-dismiss="modal">
-                                                        Batal
-                                                    </button>
-                                                    <button type="submit" class="btn btn-danger">
-                                                        Tolak
-                                                    </button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
                                 @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="text-center">
+                            <td colspan="8" class="text-center">
                                 Data ringkasan perkuliahan belum tersedia.
                             </td>
                         </tr>
@@ -220,5 +118,5 @@
             </table>
         </div>
     </div>
-<div class="mt-3">@include('components._pagination', ['paginator' => $ringkasanPerkuliahan])</div>
+    <div class="mt-3">@include('components._pagination', ['paginator' => $ringkasanPerkuliahan])</div>
 @endsection
