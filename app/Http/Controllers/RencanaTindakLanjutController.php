@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\EvaluasiIndikator;
 use App\Models\RencanaTindakLanjut;
 use App\Models\Temuan;
 use App\Support\WorkflowStatus;
@@ -60,9 +61,17 @@ class RencanaTindakLanjutController extends Controller
             $rtl = RencanaTindakLanjut::create($validated);
             $this->storeBuktiFiles($request, $rtl);
 
-            $rtl->temuan()->update([
-                'status' => WorkflowStatus::DITUTUP,
-            ]);
+            $temuan = $rtl->temuan;
+            if ($temuan) {
+                $temuan->update([
+                    'status' => WorkflowStatus::DITUTUP,
+                ]);
+
+                if ($temuan->evaluasi_indikator_id) {
+                    EvaluasiIndikator::where('id', $temuan->evaluasi_indikator_id)
+                        ->update(['status_capaian' => 'tercapai']);
+                }
+            }
         });
 
         return redirect()
@@ -113,9 +122,17 @@ class RencanaTindakLanjutController extends Controller
         }
 
         DB::transaction(function () use ($rtl) {
-            $rtl->temuan()->update([
-                'status' => WorkflowStatus::TERBUKA,
-            ]);
+            $temuan = $rtl->temuan;
+            if ($temuan) {
+                $temuan->update([
+                    'status' => WorkflowStatus::TERBUKA,
+                ]);
+
+                if ($temuan->evaluasi_indikator_id) {
+                    EvaluasiIndikator::where('id', $temuan->evaluasi_indikator_id)
+                        ->update(['status_capaian' => 'dalam_proses']);
+                }
+            }
 
             $rtl->delete();
         });

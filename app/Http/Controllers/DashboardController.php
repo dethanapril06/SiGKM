@@ -151,7 +151,7 @@ class DashboardController extends Controller
     {
         return [
             'tercapai' => EvaluasiIndikator::where('status_capaian', 'tercapai')->count(),
-            'hampir_tercapai' => EvaluasiIndikator::where('status_capaian', 'hampir_tercapai')->count(),
+            'dalam_proses' => EvaluasiIndikator::where('status_capaian', 'dalam_proses')->count(),
             'belum_tercapai' => EvaluasiIndikator::where('status_capaian', 'belum_tercapai')->count(),
         ];
     }

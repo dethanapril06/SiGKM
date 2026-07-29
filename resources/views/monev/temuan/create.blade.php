@@ -48,7 +48,7 @@
                     @enderror
 
                     <small class="text-muted">
-                        Hanya indikator dengan status hampir tercapai atau belum tercapai yang ditampilkan.
+                        Hanya indikator dengan status dalam proses atau belum tercapai yang ditampilkan.
                     </small>
                 </div>
 

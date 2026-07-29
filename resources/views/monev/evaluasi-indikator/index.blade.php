@@ -64,8 +64,8 @@
                             <td>
                                 @if ($item->status_capaian === 'tercapai')
                                     <span class="badge bg-label-success">Tercapai</span>
-                                @elseif ($item->status_capaian === 'hampir_tercapai')
-                                    <span class="badge bg-label-warning">Hampir Tercapai</span>
+                                @elseif ($item->status_capaian === 'dalam_proses')
+                                    <span class="badge bg-label-warning">Dalam Proses</span>
                                 @else
                                     <span class="badge bg-label-danger">Belum Tercapai</span>
                                 @endif

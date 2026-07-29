@@ -42,7 +42,7 @@
         $evaluasi = $indikatorMutu->map(fn ($item) => $item->evaluasiIndikators->first())->filter();
         $total = $indikatorMutu->count();
         $tercapai = $evaluasi->where('status_capaian', 'tercapai')->count();
-        $hampir = $evaluasi->where('status_capaian', 'hampir_tercapai')->count();
+        $hampir = $evaluasi->where('status_capaian', 'dalam_proses')->count();
         $belum = $evaluasi->where('status_capaian', 'belum_tercapai')->count();
         $denganTemuan = $evaluasi->filter(fn ($item) => $item->temuans->isNotEmpty())->count();
     @endphp
@@ -145,8 +145,8 @@
                                     <span class="badge bg-label-secondary">Belum Dievaluasi</span>
                                 @elseif ($evaluasiItem->status_capaian === 'tercapai')
                                     <span class="badge bg-label-success">Tercapai</span>
-                                @elseif ($evaluasiItem->status_capaian === 'hampir_tercapai')
-                                    <span class="badge bg-label-warning">Hampir Tercapai</span>
+                                @elseif ($evaluasiItem->status_capaian === 'dalam_proses')
+                                    <span class="badge bg-label-warning">Dalam Proses</span>
                                 @else
                                     <span class="badge bg-label-danger">Belum Tercapai</span>
                                 @endif

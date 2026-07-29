@@ -338,7 +338,7 @@ class LaporanStandarMutuExcelService
     {
         return match ($status) {
             'tercapai' => 'Tercapai',
-            'hampir_tercapai' => 'Hampir Tercapai',
+            'dalam_proses' => 'Dalam Proses',
             default => 'Belum Tercapai',
         };
     }

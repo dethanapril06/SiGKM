@@ -143,7 +143,7 @@ class EvaluasiIndikatorController extends Controller
         $validated = $request->validate([
             'semester_id' => ['required', 'exists:semesters,id'],
             'evaluatable_key' => ['required', 'regex:/^(indikator_mutu|ikks):[1-9][0-9]*$/'],
-            'status_capaian' => ['required', 'in:tercapai,hampir_tercapai,belum_tercapai'],
+            'status_capaian' => ['required', 'in:tercapai,dalam_proses,belum_tercapai'],
             'bukti_capaian' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png', 'max:2048'],
             'catatan' => ['nullable', 'string'],
         ], [

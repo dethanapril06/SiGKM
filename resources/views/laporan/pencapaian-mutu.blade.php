@@ -20,7 +20,7 @@
     @php
         $total = $evaluasiIndikator->count();
         $tercapai = $evaluasiIndikator->where('status_capaian', 'tercapai')->count();
-        $hampir = $evaluasiIndikator->where('status_capaian', 'hampir_tercapai')->count();
+        $hampir = $evaluasiIndikator->where('status_capaian', 'dalam_proses')->count();
         $tidak = $evaluasiIndikator->where('status_capaian', 'tidak_tercapai')->count();
         $tidakDinilai = $evaluasiIndikator->where('status_capaian', 'tidak_dinilai')->count();
 
@@ -51,7 +51,7 @@
         <div class="col-lg-3 col-md-6 col-12 mb-4">
             <div class="card">
                 <div class="card-body">
-                    <span class="fw-semibold d-block mb-1">Hampir Tercapai</span>
+                    <span class="fw-semibold d-block mb-1">Dalam Proses</span>
                     <h3 class="card-title mb-2">{{ $hampir }}</h3>
                     <small class="text-muted">Perlu perhatian</small>
                 </div>
@@ -80,7 +80,7 @@
                         <th>Standar Mutu</th>
                         <th>Total Indikator</th>
                         <th>Tercapai</th>
-                        <th>Hampir Tercapai</th>
+                        <th>Dalam Proses</th>
                         <th>Tidak Tercapai</th>
                         <th>Tidak Dinilai</th>
                     </tr>
@@ -101,7 +101,7 @@
                             </td>
                             <td>{{ $items->count() }}</td>
                             <td>{{ $items->where('status_capaian', 'tercapai')->count() }}</td>
-                            <td>{{ $items->where('status_capaian', 'hampir_tercapai')->count() }}</td>
+                            <td>{{ $items->where('status_capaian', 'dalam_proses')->count() }}</td>
                             <td>{{ $items->where('status_capaian', 'tidak_tercapai')->count() }}</td>
                             <td>{{ $items->where('status_capaian', 'tidak_dinilai')->count() }}</td>
                         </tr>
@@ -191,8 +191,8 @@
                             <td>
                                 @if ($item->status_capaian === 'tercapai')
                                     <span class="badge bg-label-success">Tercapai</span>
-                                @elseif($item->status_capaian === 'hampir_tercapai')
-                                    <span class="badge bg-label-warning">Hampir Tercapai</span>
+                                @elseif($item->status_capaian === 'dalam_proses')
+                                    <span class="badge bg-label-warning">Dalam Proses</span>
                                 @elseif($item->status_capaian === 'tidak_tercapai')
                                     <span class="badge bg-label-danger">Tidak Tercapai</span>
                                 @else

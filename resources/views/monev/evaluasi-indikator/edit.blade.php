@@ -74,9 +74,9 @@
                             {{ old('status_capaian', $evaluasiIndikator->status_capaian) === 'tercapai' ? 'selected' : '' }}>
                             Tercapai
                         </option>
-                        <option value="hampir_tercapai"
-                            {{ old('status_capaian', $evaluasiIndikator->status_capaian) === 'hampir_tercapai' ? 'selected' : '' }}>
-                            Hampir Tercapai
+                        <option value="dalam_proses"
+                            {{ old('status_capaian', $evaluasiIndikator->status_capaian) === 'dalam_proses' ? 'selected' : '' }}>
+                            Dalam Proses
                         </option>
                         <option value="belum_tercapai"
                             {{ old('status_capaian', $evaluasiIndikator->status_capaian) === 'belum_tercapai' ? 'selected' : '' }}>

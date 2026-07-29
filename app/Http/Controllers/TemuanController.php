@@ -167,7 +167,7 @@ class TemuanController extends Controller
             'semester.tahunAkademik',
             'evaluatable',
         ])
-            ->whereIn('status_capaian', ['hampir_tercapai', 'belum_tercapai'])
+            ->whereIn('status_capaian', ['dalam_proses', 'belum_tercapai'])
             ->when($temuan, function ($query) use ($temuan) {
                 $query->orWhere('id', $temuan->evaluasi_indikator_id);
             })
