@@ -9,6 +9,7 @@
         <x-detail-row label="Lingkup">{{ $evaluasiIndikator->sumber_jenis }} · {{ $evaluasiIndikator->sumber_konteks }}</x-detail-row>
         <x-detail-row label="Indikator">{{ $evaluasiIndikator->sumber_kode }} — {{ $evaluasiIndikator->sumber_uraian }}</x-detail-row>
         <x-detail-row label="Status Capaian"><span class="badge bg-label-primary">{{ str($evaluasiIndikator->status_capaian)->replace('_', ' ')->title() }}</span></x-detail-row>
+        <x-detail-row label="Penanggung Jawab">{{ $evaluasiIndikator->nama_penanggung_jawab ?: '-' }}</x-detail-row>
         <x-detail-row label="Catatan"><span style="white-space:pre-line">{{ $evaluasiIndikator->catatan ?: '-' }}</span></x-detail-row>
         <x-detail-row label="Bukti">
             @if ($evaluasiIndikator->bukti_capaian)

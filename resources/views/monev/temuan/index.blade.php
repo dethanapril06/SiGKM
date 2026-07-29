@@ -36,7 +36,6 @@
                         <th>Kode</th>
                         <th>Semester</th>
                         <th>Indikator</th>
-                        <th>Penanggung Jawab</th>
                         <th>Temuan</th>
                         <th>Risiko</th>
                         <th>Target</th>
@@ -76,7 +75,6 @@
                                     {{ \Illuminate\Support\Str::limit($item->evaluasiIndikator->sumber_uraian, 55) }}
                                 </small>
                             </td>
-                            <td>{{ $item->nama_penanggung_jawab ?? '-' }}</td>
                             <td>{{ \Illuminate\Support\Str::limit($item->pernyataan, 70) }}</td>
                             <td>
                                 @if ($risiko)
@@ -123,7 +121,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" class="text-center">
+                            <td colspan="9" class="text-center">
                                 Data temuan evaluasi belum tersedia.
                             </td>
                         </tr>

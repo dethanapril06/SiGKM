@@ -18,6 +18,7 @@ class EvaluasiIndikator extends Model
         'evaluatable_type',
         'evaluatable_id',
         'status_capaian',
+        'nama_penanggung_jawab',
         'bukti_capaian',
         'catatan',
         'input_by',

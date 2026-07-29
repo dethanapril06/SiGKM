@@ -183,7 +183,6 @@ class TemuanController extends Controller
     {
         return $request->validate([
             'evaluasi_indikator_id' => ['required', 'exists:evaluasi_indikators,id'],
-            'nama_penanggung_jawab' => ['nullable', 'string', 'max:255'],
             'kode_temuan' => [
                 'required',
                 'string',

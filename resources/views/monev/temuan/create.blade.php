@@ -63,18 +63,6 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Penanggung Jawab</label>
-                    <input type="text" name="nama_penanggung_jawab"
-                        class="form-control @error('nama_penanggung_jawab') is-invalid @enderror"
-                        value="{{ old('nama_penanggung_jawab') }}"
-                        placeholder="Tuliskan nama penanggung jawab tindak lanjut">
-
-                    @error('nama_penanggung_jawab')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="mb-3">
                     <label class="form-label">Pernyataan Temuan</label>
                     <textarea name="pernyataan" rows="4" class="form-control @error('pernyataan') is-invalid @enderror"
                         placeholder="Tuliskan pernyataan temuan berdasarkan hasil evaluasi indikator">{{ old('pernyataan') }}</textarea>

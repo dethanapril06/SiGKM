@@ -35,6 +35,7 @@
                         <th>No</th>
                         <th>Semester</th>
                         <th>Sumber Indikator</th>
+                        <th>Penanggung Jawab</th>
                         <th>Status Capaian</th>
                         <th>Pembuat</th>
                         <th width="180">Aksi</th>
@@ -61,6 +62,7 @@
                                     {{ $item->sumber_jenis }} · {{ $item->sumber_konteks }}
                                 </small>
                             </td>
+                            <td>{{ $item->nama_penanggung_jawab ?: '-' }}</td>
                             <td>
                                 @if ($item->status_capaian === 'tercapai')
                                     <span class="badge bg-label-success">Tercapai</span>

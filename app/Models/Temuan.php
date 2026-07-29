@@ -16,7 +16,6 @@ class Temuan extends Model
     protected $fillable = [
         'kode_temuan',
         'evaluasi_indikator_id',
-        'nama_penanggung_jawab',
         'pernyataan',
         'rencana_awal',
         'target_selesai',
@@ -27,6 +26,11 @@ class Temuan extends Model
     protected function casts(): array
     {
         return [];
+    }
+
+    public function getNamaPenanggungJawabAttribute(): ?string
+    {
+        return $this->evaluasiIndikator?->nama_penanggung_jawab;
     }
 
     public function evaluasiIndikator(): BelongsTo
