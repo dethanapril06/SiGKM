@@ -34,7 +34,7 @@
                     <tr>
                         <th>No</th>
                         <th>Semester</th>
-                        <th>Sumber Indikator</th>
+                        <th style="min-width: 380px;">Sumber Indikator</th>
                         <th>Penanggung Jawab</th>
                         <th>Status Capaian</th>
                         <th>Pembuat</th>
@@ -51,7 +51,7 @@
                                 <br>
                                 <small class="text-muted">{{ ucfirst($item->semester->nama ?? '-') }}</small>
                             </td>
-                            <td style="max-width: 320px; white-space: normal;">
+                            <td style="min-width: 380px; max-width: 500px; white-space: normal;">
                                 <span class="badge bg-label-primary">
                                     {{ $item->sumber_kode }}
                                 </span>
