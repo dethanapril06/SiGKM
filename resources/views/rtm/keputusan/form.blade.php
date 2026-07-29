@@ -40,18 +40,6 @@
         <div class="invalid-feedback">{{ $message }}</div>
     @enderror
 </div>
-<div class="row">
-    <div class="col-md-6 mb-3"><label class="form-label">Target Selesai</label><input type="text"
-            name="target_selesai" class="form-control @error('target_selesai') is-invalid @enderror"
-            value="{{ old('target_selesai', $current?->target_selesai) }}"
-            placeholder="Contoh: Semester depan, Akhir Tahun, dsb.">
-            @error('target_selesai')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
-    <div class="col-md-6 mb-3"><label class="form-label">Status</label><select name="status" class="form-select">
-            @foreach (['belum_dikerjakan' => 'Belum Dikerjakan', 'proses' => 'Proses', 'selesai' => 'Selesai'] as $value => $label)
-                <option value="{{ $value }}" @selected(old('status', $current?->status ?? 'belum_dikerjakan') === $value)>{{ $label }}</option>
-            @endforeach
-        </select></div>
-</div>
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', () => {

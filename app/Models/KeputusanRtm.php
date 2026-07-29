@@ -16,8 +16,6 @@ class KeputusanRtm extends Model
         'temuan_id',
         'uraian_keputusan',
         'strategi',
-        'target_selesai',
-        'status',
     ];
 
     protected function casts(): array
@@ -42,7 +40,7 @@ class KeputusanRtm extends Model
 
     public function scopeBelumSelesai(Builder $query): Builder
     {
-        return $query->where('status', '!=', 'selesai');
+        return $query->whereHas('temuan', fn ($q) => $q->where('status', '!=', 'selesai'));
     }
 
     public function isOverdue(): bool

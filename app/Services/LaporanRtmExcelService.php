@@ -164,7 +164,7 @@ class LaporanRtmExcelService
             $this->setText($dom, $xpath, 'K'.$row, $keputusan->strategi ?: '-');
             $this->setText($dom, $xpath, 'L'.$row, $temuan?->nama_penanggung_jawab ?: '-');
             $this->setText($dom, $xpath, 'M'.$row, $this->targetText($keputusan));
-            $this->setText($dom, $xpath, 'N'.$row, $this->statusLabel($keputusan->status));
+            $this->setText($dom, $xpath, 'N'.$row, $this->statusLabel($temuan?->status));
         }
     }
 
@@ -175,7 +175,7 @@ class LaporanRtmExcelService
         foreach ($keputusanRtm->values() as $index => $keputusan) {
             $row = self::FIRST_DATA_ROW + $index;
             $rtl = $keputusan->rencanaTindakLanjut;
-            $temuan = $rtl?->temuan;
+            $temuan = $rtl?->temuan ?? $keputusan->temuan;
             $ikks = $temuan?->evaluasiIndikator?->evaluatable;
 
             if (! $ikks instanceof IndikatorKinerjaKegiatanSatuan) {
@@ -208,7 +208,7 @@ class LaporanRtmExcelService
             $this->setText($dom, $xpath, 'M'.$row, $keputusan->strategi ?: '-');
             $this->setText($dom, $xpath, 'N'.$row, $temuan?->nama_penanggung_jawab ?: '-');
             $this->setText($dom, $xpath, 'O'.$row, $this->targetText($keputusan));
-            $this->setText($dom, $xpath, 'P'.$row, $this->statusLabel($keputusan->status));
+            $this->setText($dom, $xpath, 'P'.$row, $this->statusLabel($temuan?->status));
         }
     }
 
@@ -466,12 +466,12 @@ class LaporanRtmExcelService
 
     private function targetText(KeputusanRtm $keputusan): string
     {
-        return $keputusan->target_selesai ?: '-';
+        return $keputusan->temuan?->target_selesai ?: '-';
     }
 
-    private function statusLabel(string $status): string
+    private function statusLabel(?string $status): string
     {
-        return str($status)->replace('_', ' ')->title()->toString();
+        return str($status ?? 'draft')->replace('_', ' ')->title()->toString();
     }
 
     private function codeAndText(?string $code, ?string $text): string

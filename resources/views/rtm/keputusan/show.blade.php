@@ -24,14 +24,6 @@
                     {{ $keputusanRtm->strategi ?: '-' }}
                 </span>
             </x-detail-row>
-            <x-detail-row label="Target Selesai">
-                {{ $keputusanRtm->target_selesai ?: '-' }}
-            </x-detail-row>
-            <x-detail-row label="Status">
-                <span class="badge bg-label-primary">
-                    {{ str($keputusanRtm->status)->replace('_', ' ')->title() }}
-                </span>
-            </x-detail-row>
         </div>
     </div>
     @php($temuan = $keputusanRtm->temuan)<div class="card">

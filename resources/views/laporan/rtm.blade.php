@@ -123,16 +123,17 @@
                 <tbody>
                     @forelse ($keputusanRtm as $item)
                         @php
-                            $rtl = $item->rencanaTindakLanjut;
-                            $temuan = $rtl?->temuan;
+                            $temuan = $item->temuan;
+                            $rtl = $temuan?->rencanaTindakLanjuts?->first();
                             $evaluatable = $temuan?->evaluasiIndikator?->evaluatable;
                             $ikk = $isFakultas ? null : $evaluatable?->indikatorKinerjaKegiatan;
                             $iku = $ikk?->indikatorKinerjaUtama;
                             $sasaran = $iku?->sasaranStrategis;
                             $risiko = $temuan?->risikoTemuans ?? collect();
-                            $statusClass = match ($item->status) {
+                            $statusClass = match ($temuan?->status) {
                                 'selesai' => 'bg-label-success',
                                 'proses' => 'bg-label-warning',
+                                'terbuka' => 'bg-label-info',
                                 default => 'bg-label-secondary',
                             };
                         @endphp
@@ -173,10 +174,10 @@
                             <td style="min-width: 260px; white-space: normal;">{{ $rtl?->uraian_realisasi ?: '-' }}</td>
                             <td style="min-width: 220px; white-space: normal;">{{ $item->strategi ?: '-' }}</td>
                             <td style="min-width: 180px; white-space: normal;">{{ $temuan?->nama_penanggung_jawab ?? '-' }}</td>
-                            <td style="min-width: 150px; white-space: normal;">{{ $item->target_selesai ?: '-' }}</td>
+                            <td style="min-width: 150px; white-space: normal;">{{ $temuan?->target_selesai ?: '-' }}</td>
                             <td>
                                 <span class="badge {{ $statusClass }}">
-                                    {{ str($item->status)->replace('_', ' ')->title() }}
+                                    {{ str($temuan?->status ?? 'draft')->replace('_', ' ')->title() }}
                                 </span>
                             </td>
                         </tr>

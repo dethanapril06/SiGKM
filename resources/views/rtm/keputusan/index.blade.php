@@ -19,8 +19,6 @@
                         <th>Temuan yang Ditinjau</th>
                         <th>Keputusan</th>
                         <th>Strategi</th>
-                        <th>Target</th>
-                        <th>Status</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -30,16 +28,19 @@
                             <td>{{ $keputusanRtm->firstItem() + $loop->index }}</td>
                             <td><strong>{{ $item->notulenRtm?->jadwalRtm?->judul }}</strong><br><small>{{ $item->notulenRtm?->jadwalRtm?->semester?->label }}</small>
                             </td>
-                            <td style="min-width:220px;white-space:normal">
-                                <strong>{{ $item->temuan?->kode_temuan }}</strong><br>{{ Str::limit($item->temuan?->pernyataan, 100) }}<br><small>{{ $item->temuan?->nama_penanggung_jawab ?? '-' }}</small>
+                            <td style="min-width:240px;white-space:normal">
+                                <strong>{{ $item->temuan?->kode_temuan }}</strong>
+                                @if ($item->temuan?->status)
+                                    <span class="badge bg-label-{{ $item->temuan->status === 'selesai' ? 'success' : ($item->temuan->status === 'proses' ? 'warning' : 'secondary') }} ms-1">
+                                        {{ str($item->temuan->status)->replace('_', ' ')->title() }}
+                                    </span>
+                                @endif
+                                <br>{{ Str::limit($item->temuan?->pernyataan, 100) }}
+                                <br><small class="text-muted">Target Temuan: {{ $item->temuan?->target_selesai ?: '-' }} | PJ: {{ $item->temuan?->nama_penanggung_jawab ?? '-' }}</small>
                             </td>
                             <td style="min-width:220px;white-space:normal">{{ Str::limit($item->uraian_keputusan, 110) }}
                             </td>
                             <td style="min-width:180px;white-space:normal">{{ Str::limit($item->strategi, 100) ?: '-' }}
-                            </td>
-                            <td>{{ $item->target_selesai ?: '-' }}</td>
-                            <td><span
-                                    class="badge bg-label-{{ $item->status === 'selesai' ? 'success' : ($item->status === 'proses' ? 'warning' : 'secondary') }}">{{ str($item->status)->replace('_', ' ')->title() }}</span>
                             </td>
                             <td><a href="{{ route('keputusan-rtm.show', $item) }}"
                                     class="btn btn-sm btn-icon btn-info" title="Detail"><i class="bx bx-show"></i></a> <a
@@ -50,7 +51,7 @@
                                 </form>
                             </td>
                     </tr>@empty<tr>
-                            <td colspan="8" class="text-center">Belum ada keputusan RTM.</td>
+                            <td colspan="6" class="text-center">Belum ada keputusan RTM.</td>
                         </tr>
                     @endforelse
                 </tbody>
