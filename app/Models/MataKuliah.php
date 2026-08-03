@@ -40,4 +40,11 @@ class MataKuliah extends Model
     {
         return "{$this->kode_mk} - {$this->nama_mk}";
     }
+
+    public function getNamaLengkapAttribute(): string
+    {
+        $sksFormatted = number_format((float) $this->sks, 2);
+
+        return "{$this->kode_mk} - {$this->nama_mk} ({$sksFormatted} SKS)";
+    }
 }

@@ -382,10 +382,19 @@ class LaporanController extends Controller
                 ->where('jadwal_monev_id', $selectedJadwalMonev->id)
                 ->whereHas('perkuliahan', fn ($query) => $query->where('semester_id', $selectedSemester->id))
                 ->get()
-                ->sortBy(fn ($item) => mb_strtolower(
-                    ($item->perkuliahan?->mataKuliah?->nama_mk ?? '').'|'.
-                    ($item->perkuliahan?->kelas?->nama_kelas ?? '')
-                ))
+                ->sortBy(function ($item) {
+                    $mk = $item->perkuliahan?->mataKuliah;
+                    $kode = strtoupper($mk?->kode_mk ?? '');
+                    $isMku = str_starts_with($kode, 'MKU') ? 1 : 2;
+
+                    return sprintf(
+                        '%d|%s|%s|%s',
+                        $isMku,
+                        $kode,
+                        mb_strtolower($mk?->nama_mk ?? ''),
+                        mb_strtolower($item->perkuliahan?->kelas?->nama_kelas ?? '')
+                    );
+                })
                 ->values();
 
             $totalPerkuliahanCount = Perkuliahan::where('semester_id', $selectedSemester->id)

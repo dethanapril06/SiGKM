@@ -169,9 +169,7 @@
                         <tr>
                             <td class="text-center">{{ $loop->iteration }}</td>
                             <td>
-                                <strong>{{ $item->perkuliahan?->mataKuliah?->nama_mk ?? '-' }}</strong>
-                                <small
-                                    class="d-block text-muted">{{ $item->perkuliahan?->mataKuliah?->kode_mk ?? '-' }}</small>
+                                <strong>{{ $item->perkuliahan?->mataKuliah?->nama_lengkap ?? '-' }}</strong>
                             </td>
                             <td class="text-center">{{ $item->perkuliahan?->kelas?->nama_kelas ?? '-' }}</td>
                             <td>{{ $item->perkuliahan?->pengajars?->pluck('dosen.nama_dosen')->filter()->join(', ') ?: '-' }}

@@ -394,8 +394,38 @@ class LaporanStandarMutuExcelService
     {
         $cell = $xpath->query('//x:c[@r="'.$coordinate.'"]')->item(0);
 
-        if (! $cell instanceof DOMElement) {
-            throw new RuntimeException("Sel {$coordinate} tidak ditemukan pada template laporan.");
+        if ($cell instanceof DOMElement) {
+            return $cell;
+        }
+
+        preg_match('/^([A-Z]+)(\d+)$/', $coordinate, $matches);
+        $column = $matches[1] ?? '';
+        $rowNumber = (int) ($matches[2] ?? 0);
+
+        $row = $xpath->query('//x:sheetData/x:row[@r="'.$rowNumber.'"]')->item(0);
+
+        if (! $row instanceof DOMElement) {
+            throw new RuntimeException("Sel {$coordinate} dan baris {$rowNumber} tidak ditemukan pada template laporan.");
+        }
+
+        $dom = $row->ownerDocument;
+        $cell = $dom->createElementNS($row->namespaceURI, 'c');
+        $cell->setAttribute('r', $coordinate);
+
+        $inserted = false;
+        foreach ($row->childNodes as $child) {
+            if ($child instanceof DOMElement && $child->localName === 'c') {
+                $childCol = preg_replace('/\d+$/', '', $child->getAttribute('r'));
+                if (strcmp($childCol, $column) > 0) {
+                    $row->insertBefore($cell, $child);
+                    $inserted = true;
+                    break;
+                }
+            }
+        }
+
+        if (! $inserted) {
+            $row->appendChild($cell);
         }
 
         return $cell;
