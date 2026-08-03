@@ -116,7 +116,7 @@
                         <th>Tindak Lanjut</th>
                         <th>Strategi</th>
                         <th>Penanggung Jawab</th>
-                        <th>Target</th>
+                        <th>Target Selesai</th>
                         <th>Status</th>
                     </tr>
                 </thead>

@@ -15,7 +15,11 @@ class LaporanPerkuliahanExcelService
 {
     private const FIRST_DATA_ROW = 16;
 
-    private const LAST_TEMPLATE_DATA_ROW = 30;
+    private const LAST_TEMPLATE_DATA_ROW = 88;
+
+    private const TEMPLATE_FOOTER_DATE_ROW = 92;
+
+    private const TEMPLATE_TOTAL_ROWS = 102;
 
     public function generate(
         Collection $ringkasanPerkuliahan,
@@ -24,7 +28,7 @@ class LaporanPerkuliahanExcelService
         string $programStudi,
         CarbonInterface $tanggalLaporan,
     ): string {
-        $templatePath = resource_path('templates/Template Laporan Pelaksanaan Perkuliahan FST.xlsx');
+        $templatePath = resource_path('templates/Laporan Pelaksanaan Perkuliahan Prodi Ilmu Komputer.xlsx');
 
         if (! File::exists($templatePath)) {
             throw new RuntimeException('Template laporan pelaksanaan perkuliahan tidak ditemukan.');
@@ -56,7 +60,6 @@ class LaporanPerkuliahanExcelService
 
             $xpath = new DOMXPath($dom);
             $xpath->registerNamespace('x', 'http://schemas.openxmlformats.org/spreadsheetml/2006/main');
-            $centeredStyles = $this->createCenteredStyles($zip);
 
             $extraRows = max(0, $ringkasanPerkuliahan->count() - $this->templateDataRowCount());
 
@@ -70,12 +73,16 @@ class LaporanPerkuliahanExcelService
 
             $this->setText($dom, $xpath, 'A11', $title);
             $this->setText($dom, $xpath, 'A12', $subtitle);
+
+            $footerDateRow = self::TEMPLATE_FOOTER_DATE_ROW + $extraRows;
             $this->setText(
                 $dom,
                 $xpath,
-                'G'.(33 + $extraRows),
-                'Kupang, '.$tanggalLaporan->locale('id')->translatedFormat('d F Y')
+                'D'.$footerDateRow,
+                'KUPANG, '.mb_strtoupper($tanggalLaporan->locale('id')->translatedFormat('d F Y'))
             );
+
+            $this->clearTemplateDataRows($dom, $xpath, $ringkasanPerkuliahan->count());
 
             foreach ($ringkasanPerkuliahan->values() as $index => $item) {
                 $row = self::FIRST_DATA_ROW + $index;
@@ -85,18 +92,15 @@ class LaporanPerkuliahanExcelService
                 $this->setText($dom, $xpath, 'B'.$row, $item->perkuliahan?->mataKuliah?->nama_mk ?? '-');
                 $this->setText($dom, $xpath, 'C'.$row, $item->perkuliahan?->kelas?->nama_kelas ?? '-');
                 $this->setText($dom, $xpath, 'D'.$row, $dosen ?: '-');
-                $this->setNumber($dom, $xpath, 'E'.$row, $item->jumlah_pertemuan);
-                $this->setText($dom, $xpath, 'F'.$row, $item->kesesuaian_materi === 'sesuai' ? '√' : '');
-                $this->setText($dom, $xpath, 'G'.$row, $item->kesesuaian_materi !== 'sesuai' ? '√' : '');
-                $this->setText($dom, $xpath, 'H'.$row, $item->keterangan ?: '-');
-
-                foreach (['C', 'E', 'F', 'G'] as $column) {
-                    $this->applyCenteredStyle($xpath, $column.$row, $centeredStyles);
-                }
+                $this->setNumber($dom, $xpath, 'E'.$row, (int) $item->jumlah_pertemuan);
+                $this->setText($dom, $xpath, 'F'.$row, $item->kontrak_kuliah === 'ada' ? '√' : '-');
+                $this->setText($dom, $xpath, 'G'.$row, $item->kesesuaian_materi === 'sesuai' ? '√' : '');
+                $this->setText($dom, $xpath, 'H'.$row, $item->kesesuaian_materi !== 'sesuai' ? '√' : '');
+                $this->setText($dom, $xpath, 'I'.$row, $item->keterangan ?: '-');
             }
 
             $dimension = $xpath->query('//x:dimension')->item(0);
-            $dimension?->setAttribute('ref', 'A1:K'.(35 + $extraRows));
+            $dimension?->setAttribute('ref', 'A1:I'.(self::TEMPLATE_TOTAL_ROWS + $extraRows));
 
             $zip->addFromString('xl/worksheets/sheet1.xml', $dom->saveXML());
             $this->extendPrintArea($zip, $extraRows);
@@ -105,6 +109,17 @@ class LaporanPerkuliahanExcelService
         }
 
         return $outputPath;
+    }
+
+    private function clearTemplateDataRows(DOMDocument $dom, DOMXPath $xpath, int $dataRows): void
+    {
+        $lastRow = self::FIRST_DATA_ROW + max($this->templateDataRowCount(), $dataRows) - 1;
+
+        for ($row = self::FIRST_DATA_ROW; $row <= $lastRow; $row++) {
+            foreach (range('A', 'I') as $column) {
+                $this->setText($dom, $xpath, $column.$row, '');
+            }
+        }
     }
 
     private function insertAdditionalRows(DOMXPath $xpath, int $extraRows): void
@@ -196,68 +211,8 @@ class LaporanPerkuliahanExcelService
         $workbook = $zip->getFromName('xl/workbook.xml');
 
         if ($workbook !== false) {
-            $workbook = str_replace('$H$35', '$H$'.(35 + $extraRows), $workbook);
+            $workbook = str_replace('$I$102', '$I$'.(self::TEMPLATE_TOTAL_ROWS + $extraRows), $workbook);
             $zip->addFromString('xl/workbook.xml', $workbook);
-        }
-    }
-
-    private function createCenteredStyles(ZipArchive $zip): array
-    {
-        $stylesXml = $zip->getFromName('xl/styles.xml');
-
-        if ($stylesXml === false) {
-            throw new RuntimeException('Format tampilan Excel tidak ditemukan pada template.');
-        }
-
-        $dom = new DOMDocument('1.0', 'UTF-8');
-        $dom->preserveWhiteSpace = false;
-        $dom->formatOutput = false;
-        $dom->loadXML($stylesXml);
-
-        $xpath = new DOMXPath($dom);
-        $xpath->registerNamespace('x', 'http://schemas.openxmlformats.org/spreadsheetml/2006/main');
-        $cellXfs = $xpath->query('//x:cellXfs')->item(0);
-        $styles = $xpath->query('//x:cellXfs/x:xf');
-        $mapping = [];
-
-        foreach ([10, 11, 12, 13, 14, 15] as $styleId) {
-            $source = $styles->item($styleId);
-
-            if (! $source instanceof DOMElement) {
-                continue;
-            }
-
-            $centered = $source->cloneNode(true);
-
-            foreach (iterator_to_array($centered->childNodes) as $child) {
-                if ($child instanceof DOMElement && $child->localName === 'alignment') {
-                    $centered->removeChild($child);
-                }
-            }
-
-            $alignment = $dom->createElementNS($source->namespaceURI, 'alignment');
-            $alignment->setAttribute('horizontal', 'center');
-            $alignment->setAttribute('vertical', 'center');
-            $centered->appendChild($alignment);
-            $centered->setAttribute('applyAlignment', '1');
-
-            $mapping[$styleId] = $cellXfs->childNodes->length;
-            $cellXfs->appendChild($centered);
-        }
-
-        $cellXfs->setAttribute('count', (string) $cellXfs->childNodes->length);
-        $zip->addFromString('xl/styles.xml', $dom->saveXML());
-
-        return $mapping;
-    }
-
-    private function applyCenteredStyle(DOMXPath $xpath, string $coordinate, array $centeredStyles): void
-    {
-        $cell = $this->cell($xpath, $coordinate);
-        $styleId = (int) $cell->getAttribute('s');
-
-        if (isset($centeredStyles[$styleId])) {
-            $cell->setAttribute('s', (string) $centeredStyles[$styleId]);
         }
     }
 

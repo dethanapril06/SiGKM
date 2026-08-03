@@ -112,7 +112,7 @@
                         <th>Temuan</th>
                         <th>Tindak Lanjut</th>
                         <th>Penanggung Jawab</th>
-                        <th>Target Waktu</th>
+                        <th>Target Selesai</th>
                         <th>Status</th>
                     </tr>
                 </thead>

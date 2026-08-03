@@ -44,6 +44,7 @@ class RencanaTindakLanjutController extends Controller
             'temuan.evaluasiIndikator.semester.tahunAkademik',
             'temuan.evaluasiIndikator.evaluatable',
             'buktiTindakLanjuts.pengunggah',
+            'keputusanRtms',
         ]);
 
         return view('monev.rtl.show', compact('rtl'));

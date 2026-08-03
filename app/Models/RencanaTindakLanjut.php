@@ -38,7 +38,7 @@ class RencanaTindakLanjut extends Model
 
     public function keputusanRtms(): HasMany
     {
-        return $this->hasMany(KeputusanRtm::class);
+        return $this->hasMany(KeputusanRtm::class, 'temuan_id', 'temuan_id');
     }
 
     public function hasEvidence(): bool
