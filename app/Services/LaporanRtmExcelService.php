@@ -104,11 +104,13 @@ class LaporanRtmExcelService
             $xpath = new DOMXPath($dom);
             $xpath->registerNamespace('x', 'http://schemas.openxmlformats.org/spreadsheetml/2006/main');
 
-            $rowCount = max(1, $keputusanRtm->count());
-            $deltaRows = $this->resizeDataArea($xpath, $config['last_template_row'], $rowCount);
-            $footerDateRow = $config['footer_date_row'] + $deltaRows;
+            [$lastTemplateRow, $footerDateRow] = $this->detectBoundaries($zip, $xpath, self::FIRST_DATA_ROW);
 
-            $this->removeTemplateDataMerges($xpath, $config['last_template_row']);
+            $rowCount = max(1, $keputusanRtm->count());
+            $deltaRows = $this->resizeDataArea($xpath, $lastTemplateRow, $rowCount);
+            $footerDateRow = $footerDateRow + $deltaRows;
+
+            $this->removeTemplateDataMerges($xpath, $lastTemplateRow);
             $this->clearDataRows($dom, $xpath, $config['columns'], $rowCount);
             $this->setText($dom, $xpath, $config['title_cell'], $config['title']);
             $this->setText($dom, $xpath, $config['semester_cell'], 'SEMESTER '.mb_strtoupper($semester ?: '........').' '.($tahunAkademik ?: '........'));
@@ -119,7 +121,7 @@ class LaporanRtmExcelService
                 : $this->fillProdiRows($dom, $xpath, $keputusanRtm);
 
             $this->mergeGroupRows($dom, $xpath, $keputusanRtm, $jenis);
-            $this->setDimension($xpath, end($config['columns']), $config['dimension_bottom'] + $deltaRows);
+            $this->setDimension($xpath, end($config['columns']), $footerDateRow + 10);
 
             $zip->addFromString($sheetPath, $dom->saveXML());
             $this->keepOnlySheet($zip, $config['sheet'], $config['sheet_name']);
@@ -210,6 +212,68 @@ class LaporanRtmExcelService
             $this->setText($dom, $xpath, 'O'.$row, $this->targetText($keputusan));
             $this->setText($dom, $xpath, 'P'.$row, $this->statusLabel($temuan?->status));
         }
+    }
+
+    private function detectBoundaries(ZipArchive $zip, DOMXPath $xpath, int $firstDataRow): array
+    {
+        $sharedStrings = [];
+        $stringsXml = $zip->getFromName('xl/sharedStrings.xml');
+        if ($stringsXml !== false) {
+            $sdom = new DOMDocument;
+            $sdom->loadXML($stringsXml);
+            foreach ($sdom->getElementsByTagName('si') as $index => $si) {
+                $tNodes = $si->getElementsByTagName('t');
+                $txt = '';
+                foreach ($tNodes as $node) {
+                    $txt .= $node->nodeValue;
+                }
+                $sharedStrings[$index] = $txt;
+            }
+        }
+
+        $rows = $xpath->query('//x:sheetData/x:row');
+        $lastTemplateRow = $firstDataRow;
+        $footerDateRow = null;
+
+        foreach ($rows as $row) {
+            $r = (int) $row->getAttribute('r');
+            if ($r < $firstDataRow) {
+                continue;
+            }
+
+            $cellTexts = [];
+            foreach ($row->getElementsByTagName('c') as $c) {
+                $vNode = $c->getElementsByTagName('v')->item(0);
+                $t = $c->getAttribute('t');
+                if ($vNode) {
+                    $vVal = $vNode->nodeValue;
+                    if ($t === 's' && isset($sharedStrings[(int) $vVal])) {
+                        $cellTexts[] = $sharedStrings[(int) $vVal];
+                    } else {
+                        $cellTexts[] = $vVal;
+                    }
+                } else {
+                    $isNode = $c->getElementsByTagName('is')->item(0);
+                    if ($isNode) {
+                        $cellTexts[] = $isNode->textContent;
+                    }
+                }
+            }
+            $rowText = mb_strtolower(implode(' ', $cellTexts));
+
+            if (str_contains($rowText, 'kupang') || str_contains($rowText, 'mengetahui')) {
+                $footerDateRow = $r;
+                break;
+            }
+
+            $lastTemplateRow = $r;
+        }
+
+        if (! $footerDateRow) {
+            $footerDateRow = $lastTemplateRow + 4;
+        }
+
+        return [$lastTemplateRow, $footerDateRow];
     }
 
     private function resizeDataArea(DOMXPath $xpath, int $lastTemplateRow, int $requiredRows): int
@@ -570,7 +634,30 @@ class LaporanRtmExcelService
         $row = $xpath->query('//x:sheetData/x:row[@r="'.$rowNumber.'"]')->item(0);
 
         if (! $row instanceof DOMElement) {
-            throw new RuntimeException("Sel {$coordinate} dan baris {$rowNumber} tidak ditemukan pada template RTM.");
+            $sheetData = $xpath->query('//x:sheetData')->item(0);
+            if (! $sheetData instanceof DOMElement) {
+                throw new RuntimeException("Sel {$coordinate} dan baris {$rowNumber} tidak dapat dibuat.");
+            }
+
+            $dom = $sheetData->ownerDocument;
+            $row = $dom->createElementNS($sheetData->namespaceURI, 'row');
+            $row->setAttribute('r', (string) $rowNumber);
+
+            $inserted = false;
+            foreach ($sheetData->childNodes as $childRow) {
+                if ($childRow instanceof DOMElement && $childRow->localName === 'row') {
+                    $childRowNum = (int) $childRow->getAttribute('r');
+                    if ($childRowNum > $rowNumber) {
+                        $sheetData->insertBefore($row, $childRow);
+                        $inserted = true;
+                        break;
+                    }
+                }
+            }
+
+            if (! $inserted) {
+                $sheetData->appendChild($row);
+            }
         }
 
         $dom = $row->ownerDocument;

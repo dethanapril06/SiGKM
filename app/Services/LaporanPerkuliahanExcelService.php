@@ -199,7 +199,30 @@ class LaporanPerkuliahanExcelService
         $row = $xpath->query('//x:sheetData/x:row[@r="'.$rowNumber.'"]')->item(0);
 
         if (! $row instanceof DOMElement) {
-            throw new RuntimeException("Sel {$coordinate} dan baris {$rowNumber} tidak ditemukan pada template laporan.");
+            $sheetData = $xpath->query('//x:sheetData')->item(0);
+            if (! $sheetData instanceof DOMElement) {
+                throw new RuntimeException("Sel {$coordinate} dan baris {$rowNumber} tidak dapat dibuat.");
+            }
+
+            $dom = $sheetData->ownerDocument;
+            $row = $dom->createElementNS($sheetData->namespaceURI, 'row');
+            $row->setAttribute('r', (string) $rowNumber);
+
+            $inserted = false;
+            foreach ($sheetData->childNodes as $childRow) {
+                if ($childRow instanceof DOMElement && $childRow->localName === 'row') {
+                    $childRowNum = (int) $childRow->getAttribute('r');
+                    if ($childRowNum > $rowNumber) {
+                        $sheetData->insertBefore($row, $childRow);
+                        $inserted = true;
+                        break;
+                    }
+                }
+            }
+
+            if (! $inserted) {
+                $sheetData->appendChild($row);
+            }
         }
 
         $dom = $row->ownerDocument;
