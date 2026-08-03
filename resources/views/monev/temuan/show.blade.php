@@ -34,6 +34,11 @@
             <x-detail-row label="Target Selesai">
                 {{ $temuan->target_selesai ?: '-' }}
             </x-detail-row>
+            <x-detail-row label="Target Capaian">
+                <span style="white-space:pre-line">
+                    {{ $temuan->target_capaian ?: '-' }}
+                </span>
+            </x-detail-row>
             <x-detail-row label="Status">
                 <span class="badge bg-label-primary">
                     {{ ucfirst($temuan->status) }}

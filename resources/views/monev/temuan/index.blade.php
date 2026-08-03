@@ -38,7 +38,7 @@
                         <th>Indikator</th>
                         <th>Temuan</th>
                         <th>Risiko</th>
-                        <th>Target</th>
+                        <th>Target Selesai</th>
                         <th>Status</th>
                         <th width="180">Aksi</th>
                     </tr>

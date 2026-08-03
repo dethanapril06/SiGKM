@@ -317,12 +317,12 @@ class LaporanStandarMutuExcelService
 
     private function targetCapaianText(EvaluasiIndikator $evaluasiIndikator): string
     {
-        $initialDates = $evaluasiIndikator->temuans
-            ->pluck('target_selesai')
+        $targets = $evaluasiIndikator->temuans
+            ->pluck('target_capaian')
             ->filter()
             ->values();
 
-        return $initialDates->isNotEmpty() ? $initialDates->join("\n") : '-';
+        return $targets->isNotEmpty() ? $targets->join("\n") : '-';
     }
 
     private function keteranganText(EvaluasiIndikator $evaluasiIndikator): string

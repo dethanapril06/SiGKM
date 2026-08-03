@@ -19,6 +19,7 @@ class Temuan extends Model
         'pernyataan',
         'rencana_awal',
         'target_selesai',
+        'target_capaian',
         'status',
         'created_by',
     ];

@@ -103,7 +103,7 @@
                         <th class="text-center">Indikator</th>
                         <th>Status</th>
                         <th>Temuan</th>
-                        <th>Rencana Perbaikan</th>
+                        <th>Rencana Tindak Lanjut</th>
                         <th>Target Capaian</th>
                         <th>Keterangan</th>
                     </tr>
@@ -118,17 +118,8 @@
                                 ->pluck('rencana_awal')
                                 ->filter();
                             $targets = $temuanItems
-                                ->pluck('target_selesai')
-                                ->filter()
-                                ->map(function ($date) {
-                                    if ($date instanceof \Carbon\CarbonInterface) {
-                                        return $date->translatedFormat('d M Y');
-                                    }
-                                    if (is_string($date) && strtotime($date) !== false) {
-                                        return \Carbon\Carbon::parse($date)->locale('id')->isoFormat('D MMM YYYY');
-                                    }
-                                    return (string) $date;
-                                });
+                                ->pluck('target_capaian')
+                                ->filter();
                         @endphp
                         <tr>
                             <td class="text-center">{{ $loop->iteration }}</td>
@@ -153,7 +144,7 @@
                             </td>
                             <td style="min-width: 240px; white-space: normal;">{{ $temuan->isNotEmpty() ? $temuan->join('; ') : ($evaluasiItem?->status_capaian === 'tercapai' ? 'Tidak ada temuan' : ($evaluasiItem?->catatan ?: '-')) }}</td>
                             <td style="min-width: 240px; white-space: normal;">{{ $plans->isNotEmpty() ? $plans->join('; ') : ($temuanItems->pluck('rencana_awal')->filter()->join('; ') ?: '-') }}</td>
-                            <td style="min-width: 160px; white-space: normal;">{{ $targets->isNotEmpty() ? $targets->join('; ') : ($temuanItems->pluck('target_selesai')->filter()->join('; ') ?: '-') }}</td>
+                            <td style="min-width: 160px; white-space: normal;">{{ $targets->isNotEmpty() ? $targets->join('; ') : '-' }}</td>
                             <td style="min-width: 220px; white-space: normal;">{{ $evaluasiItem?->catatan ?: '-' }}</td>
                         </tr>
                     @empty

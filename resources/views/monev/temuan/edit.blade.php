@@ -67,7 +67,7 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Rencana Awal</label>
+                    <label class="form-label">Rencana Tindak Lanjut</label>
                     <textarea name="rencana_awal" rows="3" class="form-control @error('rencana_awal') is-invalid @enderror">{{ old('rencana_awal', $temuanEvaluasi->rencana_awal) }}</textarea>
 
                     @error('rencana_awal')
@@ -83,6 +83,16 @@
                         placeholder="Contoh: Semester depan, Akhir Semester 2024/2025, dsb.">
 
                     @error('target_selesai')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Target Capaian</label>
+                    <textarea name="target_capaian" rows="3" class="form-control @error('target_capaian') is-invalid @enderror"
+                        placeholder="Tuliskan target capaian yang diharapkan">{{ old('target_capaian', $temuanEvaluasi->target_capaian) }}</textarea>
+
+                    @error('target_capaian')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
