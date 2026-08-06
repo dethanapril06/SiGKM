@@ -4,7 +4,7 @@
     <div class="d-flex justify-content-between align-items-center py-3 mb-4">
         <h4 class="fw-bold mb-0">Catat Realisasi RTL</h4>
 
-        <a href="{{ route('rtl.index') }}" class="btn btn-secondary">
+        <a href="{{ route('rtl.fakultas') }}" class="btn btn-secondary">
             <i class="bx bx-arrow-back"></i> Kembali
         </a>
     </div>

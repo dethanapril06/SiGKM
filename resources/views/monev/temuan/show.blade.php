@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('content')
     <div class="d-flex justify-content-between py-3 mb-4">
-        <h4 class="fw-bold">Detail Temuan {{ $temuan->kode_temuan }}</h4><a href="{{ route('temuan-evaluasi.index') }}"
+        <h4 class="fw-bold">Detail Temuan {{ $temuan->kode_temuan }}</h4><a href="{{ route('temuan-evaluasi.fakultas') }}"
             class="btn btn-secondary">Kembali</a>
     </div>
     <div class="card mb-4">

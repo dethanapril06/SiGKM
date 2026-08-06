@@ -19,12 +19,13 @@ return new class extends Migration
             $table->unique(['notulen_rtm_id', 'temuan_id'], 'keputusan_rtm_notulen_temuan_unique');
         });
 
-        $foreignKeys = array_column(Schema::getForeignKeys('keputusan_rtms'), 'name');
-        Schema::table('keputusan_rtms', function (Blueprint $table) use ($foreignKeys) {
-            if (in_array('keputusan_rtms_rencana_tindak_lanjut_id_foreign', $foreignKeys)) {
-                $table->dropForeign('keputusan_rtms_rencana_tindak_lanjut_id_foreign');
-            }
-        });
+        try {
+            Schema::table('keputusan_rtms', function (Blueprint $table) {
+                $table->dropForeign(['rencana_tindak_lanjut_id']);
+            });
+        } catch (\Throwable $e) {
+            // Ignore if foreign key doesn't exist or SQLite
+        }
 
         Schema::table('keputusan_rtms', function (Blueprint $table) {
             $table->dropUnique('keputusan_rtm_notulen_rtl_unique');

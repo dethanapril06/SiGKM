@@ -25,6 +25,45 @@
         </div>
     @endif
 
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ route('evaluasi-indikator.index') }}">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label for="semester_id" class="form-label">Semester</label>
+                        <select id="semester_id" name="semester_id" class="form-select select2">
+                            <option value="">-- Semua Semester --</option>
+                            @foreach ($semesters as $semester)
+                                <option value="{{ $semester->id }}" @selected($selectedSemester == $semester->id)>
+                                    {{ $semester->tahunAkademik->nama ?? '-' }} - {{ ucfirst($semester->nama) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="status_capaian" class="form-label">Status Capaian</label>
+                        <select id="status_capaian" name="status_capaian" class="form-select">
+                            <option value="">-- Semua Status --</option>
+                            <option value="tercapai" @selected($selectedStatusCapaian === 'tercapai')>Tercapai</option>
+                            <option value="dalam_proses" @selected($selectedStatusCapaian === 'dalam_proses')>Dalam Proses</option>
+                            <option value="belum_tercapai" @selected($selectedStatusCapaian === 'belum_tercapai')>Belum Tercapai</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bx bx-filter-alt me-1"></i> Filter
+                        </button>
+                        @if ($selectedSemester || $selectedStatusCapaian)
+                            <a href="{{ route('evaluasi-indikator.index') }}" class="btn btn-outline-secondary">
+                                <i class="bx bx-reset me-1"></i> Reset
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="card">
         <h5 class="card-header">Data Evaluasi Indikator</h5>
 

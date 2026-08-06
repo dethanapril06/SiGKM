@@ -72,7 +72,7 @@ class LaporanStandarMutuExcelService
             $this->setReportHeader($dom, $xpath, $semester, $tahunAkademik, $fakultas, $tanggalLaporan, $footerDateRow);
             $this->fillIndicatorRows($dom, $xpath, $indikatorMutu);
             $this->mergeStandardRows($dom, $xpath, $indikatorMutu);
-            $this->setDimension($xpath, 'H', $footerDateRow + 10);
+            $this->setDimension($xpath, 'I', $footerDateRow + 10);
 
             $zip->addFromString('xl/worksheets/sheet1.xml', $dom->saveXML());
         } finally {
@@ -127,7 +127,8 @@ class LaporanStandarMutuExcelService
             $this->setText($dom, $xpath, 'E'.$row, $evaluasi ? $this->temuanText($evaluasi) : '');
             $this->setText($dom, $xpath, 'F'.$row, $evaluasi ? $this->rencanaPerbaikanText($evaluasi) : '');
             $this->setText($dom, $xpath, 'G'.$row, $evaluasi ? $this->targetCapaianText($evaluasi) : '');
-            $this->setText($dom, $xpath, 'H'.$row, $evaluasi ? $this->keteranganText($evaluasi) : '');
+            $this->setText($dom, $xpath, 'H'.$row, $evaluasi ? $this->statusText($evaluasi) : '');
+            $this->setText($dom, $xpath, 'I'.$row, $evaluasi ? $this->keteranganText($evaluasi) : '');
         }
     }
 
@@ -175,7 +176,7 @@ class LaporanStandarMutuExcelService
         $lastRow = self::FIRST_DATA_ROW + max($this->templateDataRowCount(), $dataRows) - 1;
 
         for ($row = self::FIRST_DATA_ROW; $row <= $lastRow; $row++) {
-            foreach (range('A', 'H') as $column) {
+            foreach (range('A', 'I') as $column) {
                 $this->setText($dom, $xpath, $column.$row, '');
             }
         }
@@ -443,10 +444,14 @@ class LaporanStandarMutuExcelService
         return $targets->isNotEmpty() ? $targets->join("\n") : '-';
     }
 
+    private function statusText(EvaluasiIndikator $evaluasiIndikator): string
+    {
+        return $this->statusLabel($evaluasiIndikator->status_capaian);
+    }
+
     private function keteranganText(EvaluasiIndikator $evaluasiIndikator): string
     {
         return collect([
-            'Status: '.$this->statusLabel($evaluasiIndikator->status_capaian),
             $evaluasiIndikator->catatan ? 'Catatan: '.$evaluasiIndikator->catatan : null,
             $evaluasiIndikator->bukti_capaian ? 'Bukti capaian tersedia' : null,
         ])->filter()->join("\n");

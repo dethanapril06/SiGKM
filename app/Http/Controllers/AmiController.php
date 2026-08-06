@@ -3,19 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ami;
-use App\Models\DokumenAmi;
 use App\Models\TahunAkademik;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class AmiController extends Controller
 {
     public function index(): View
     {
-        $ami = Ami::with(['tahunAkademik', 'penginput', 'dokumenAmis.pengunggah'])
+        $ami = Ami::with(['tahunAkademik', 'penginput'])
             ->latest('tanggal_pelaksanaan')
             ->paginate(10)
             ->withQueryString();
@@ -32,7 +30,7 @@ class AmiController extends Controller
 
     public function show(Ami $ami): View
     {
-        $ami->load(['tahunAkademik', 'penginput', 'dokumenAmis.pengunggah']);
+        $ami->load(['tahunAkademik', 'penginput']);
 
         return view('ami.show', compact('ami'));
     }
@@ -40,11 +38,12 @@ class AmiController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $this->ensureManager();
+
         $data = $this->validated($request);
         $data['input_by'] = auth()->id();
-        $ami = Ami::create($data);
+        $data = array_merge($data, $this->handleFileUploads($request));
 
-        $this->handleDocumentUpload($request, $ami);
+        Ami::create($data);
 
         return redirect()->route('ami.index')->with('success', 'Data AMI berhasil dibuat.');
     }
@@ -62,9 +61,10 @@ class AmiController extends Controller
     public function update(Request $request, Ami $ami): RedirectResponse
     {
         $this->ensureManager();
-        $ami->update($this->validated($request));
 
-        $this->handleDocumentUpload($request, $ami);
+        $data = $this->validated($request);
+        $uploads = $this->handleFileUploads($request, $ami);
+        $ami->update(array_merge($data, $uploads));
 
         return redirect()->route('ami.index')->with('success', 'Data AMI berhasil diperbarui.');
     }
@@ -73,9 +73,9 @@ class AmiController extends Controller
     {
         $this->ensureManager();
 
-        foreach ($ami->dokumenAmis as $document) {
-            if ($document->file_path) {
-                Storage::disk('public')->delete($document->file_path);
+        foreach (['file_ami', 'file_tindak_lanjut', 'file_dokumentasi', 'file_absensi'] as $field) {
+            if ($ami->$field) {
+                Storage::disk('public')->delete($ami->$field);
             }
         }
 
@@ -84,87 +84,42 @@ class AmiController extends Controller
         return back()->with('success', 'Data AMI berhasil dihapus.');
     }
 
-    public function storeDocument(Request $request, Ami $ami): RedirectResponse
-    {
-        $this->ensureManager();
-        $data = $request->validate([
-            'nama_dokumen' => ['required', 'string', 'max:255'],
-            'document_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png', 'max:5120'],
-            'link_url' => ['nullable', 'url', 'max:2048'],
-        ], [
-            'nama_dokumen.required' => 'Nama bukti wajib diisi.',
-            'document_file.mimes' => 'File harus berupa PDF, Word, Excel, JPG, JPEG, atau PNG.',
-            'document_file.max' => 'Ukuran file maksimal 5 MB.',
-            'link_url.url' => 'Link Google Drive harus berupa URL yang valid.',
-        ]);
-
-        if (! $request->hasFile('document_file') && blank($data['link_url'] ?? null)) {
-            throw ValidationException::withMessages([
-                'document_file' => 'Unggah file atau isi link Google Drive sebagai bukti AMI.',
-            ]);
-        }
-
-        $ami->dokumenAmis()->create([
-            'nama_dokumen' => $data['nama_dokumen'],
-            'file_path' => $request->hasFile('document_file')
-                ? $request->file('document_file')->store('dokumen-ami', 'public')
-                : null,
-            'link_url' => $data['link_url'] ?? null,
-            'uploaded_by' => auth()->id(),
-        ]);
-
-        return back()->with('success', 'Bukti AMI berhasil ditambahkan.');
-    }
-
-    public function destroyDocument(DokumenAmi $dokumenAmi): RedirectResponse
-    {
-        $this->ensureManager();
-
-        if ($dokumenAmi->file_path) {
-            Storage::disk('public')->delete($dokumenAmi->file_path);
-        }
-
-        $dokumenAmi->delete();
-
-        return back()->with('success', 'Bukti AMI berhasil dihapus.');
-    }
-
     private function validated(Request $request): array
     {
         return $request->validate([
             'tahun_akademik_id' => ['required', 'exists:tahun_akademiks,id'],
             'tanggal_pelaksanaan' => ['required', 'date'],
-            'temuan' => ['required', 'string'],
-            'rekomendasi' => ['required', 'string'],
-            'tindak_lanjut' => ['nullable', 'string'],
-            'target_selesai' => ['nullable', 'string', 'max:255'],
-            'status' => ['required', 'in:draft,aktif,selesai'],
+        ], [
+            'tahun_akademik_id.required' => 'Tahun Akademik wajib dipilih.',
+            'tanggal_pelaksanaan.required' => 'Tanggal wajib diisi.',
         ]);
     }
 
-    private function handleDocumentUpload(Request $request, Ami $ami): void
+    private function handleFileUploads(Request $request, ?Ami $existing = null): array
     {
-        $docData = $request->validate([
-            'nama_dokumen' => ['nullable', 'string', 'max:255'],
-            'document_file' => ['nullable', 'file', 'mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png', 'max:5120'],
-            'link_url' => ['nullable', 'url', 'max:2048'],
+        $request->validate([
+            'file_ami'           => ['nullable', 'file', 'mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png', 'max:5120'],
+            'file_tindak_lanjut' => ['nullable', 'file', 'mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png', 'max:5120'],
+            'file_dokumentasi'   => ['nullable', 'file', 'mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png', 'max:5120'],
+            'file_absensi'       => ['nullable', 'file', 'mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png', 'max:5120'],
         ], [
-            'document_file.mimes' => 'File harus berupa PDF, Word, Excel, JPG, JPEG, atau PNG.',
-            'document_file.max' => 'Ukuran file maksimal 5 MB.',
-            'link_url.url' => 'Link Google Drive harus berupa URL yang valid.',
+            '*.mimes' => 'File harus berupa PDF, Word, Excel, JPG, JPEG, atau PNG.',
+            '*.max'   => 'Ukuran file maksimal 5 MB.',
         ]);
 
-        if ($request->hasFile('document_file') || ! empty($docData['link_url'])) {
-            $namaDokumen = $docData['nama_dokumen'] ?: 'Bukti AMI';
-            $ami->dokumenAmis()->create([
-                'nama_dokumen' => $namaDokumen,
-                'file_path' => $request->hasFile('document_file')
-                    ? $request->file('document_file')->store('dokumen-ami', 'public')
-                    : null,
-                'link_url' => $docData['link_url'] ?? null,
-                'uploaded_by' => auth()->id(),
-            ]);
+        $uploads = [];
+
+        foreach (['file_ami', 'file_tindak_lanjut', 'file_dokumentasi', 'file_absensi'] as $field) {
+            if ($request->hasFile($field)) {
+                // Hapus file lama jika ada
+                if ($existing && $existing->$field) {
+                    Storage::disk('public')->delete($existing->$field);
+                }
+                $uploads[$field] = $request->file($field)->store('ami-files', 'public');
+            }
         }
+
+        return $uploads;
     }
 
     private function academicYears()

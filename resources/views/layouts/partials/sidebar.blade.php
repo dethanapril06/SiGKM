@@ -196,15 +196,27 @@
                         </a>
                     </li>
 
-                    <li class="menu-item {{ request()->routeIs('temuan-evaluasi.*') ? 'active' : '' }}">
-                        <a href="{{ route('temuan-evaluasi.index') }}" class="menu-link">
-                            <div>Temuan Evaluasi</div>
+                    <li class="menu-item {{ request()->routeIs('temuan-evaluasi.fakultas') ? 'active' : '' }}">
+                        <a href="{{ route('temuan-evaluasi.fakultas') }}" class="menu-link">
+                            <div>Temuan Fakultas</div>
                         </a>
                     </li>
 
-                    <li class="menu-item {{ request()->routeIs('rtl.*') ? 'active' : '' }}">
-                        <a href="{{ route('rtl.index') }}" class="menu-link">
-                            <div>RTL</div>
+                    <li class="menu-item {{ request()->routeIs('temuan-evaluasi.prodi') ? 'active' : '' }}">
+                        <a href="{{ route('temuan-evaluasi.prodi') }}" class="menu-link">
+                            <div>Temuan Prodi</div>
+                        </a>
+                    </li>
+
+                    <li class="menu-item {{ request()->routeIs('rtl.fakultas') ? 'active' : '' }}">
+                        <a href="{{ route('rtl.fakultas') }}" class="menu-link">
+                            <div>RTL Fakultas</div>
+                        </a>
+                    </li>
+
+                    <li class="menu-item {{ request()->routeIs('rtl.prodi') ? 'active' : '' }}">
+                        <a href="{{ route('rtl.prodi') }}" class="menu-link">
+                            <div>RTL Prodi</div>
                         </a>
                     </li>
 
@@ -442,15 +454,27 @@
                         </a>
                     </li>
 
-                    <li class="menu-item {{ request()->routeIs('temuan-evaluasi.*') ? 'active' : '' }}">
-                        <a href="{{ route('temuan-evaluasi.index') }}" class="menu-link">
-                            <div>Temuan Evaluasi</div>
+                    <li class="menu-item {{ request()->routeIs('temuan-evaluasi.fakultas') ? 'active' : '' }}">
+                        <a href="{{ route('temuan-evaluasi.fakultas') }}" class="menu-link">
+                            <div>Temuan Fakultas</div>
                         </a>
                     </li>
 
-                    <li class="menu-item {{ request()->routeIs('rtl.*') ? 'active' : '' }}">
-                        <a href="{{ route('rtl.index') }}" class="menu-link">
-                            <div>RTL</div>
+                    <li class="menu-item {{ request()->routeIs('temuan-evaluasi.prodi') ? 'active' : '' }}">
+                        <a href="{{ route('temuan-evaluasi.prodi') }}" class="menu-link">
+                            <div>Temuan Prodi</div>
+                        </a>
+                    </li>
+
+                    <li class="menu-item {{ request()->routeIs('rtl.fakultas') ? 'active' : '' }}">
+                        <a href="{{ route('rtl.fakultas') }}" class="menu-link">
+                            <div>RTL Fakultas</div>
+                        </a>
+                    </li>
+
+                    <li class="menu-item {{ request()->routeIs('rtl.prodi') ? 'active' : '' }}">
+                        <a href="{{ route('rtl.prodi') }}" class="menu-link">
+                            <div>RTL Prodi</div>
                         </a>
                     </li>
 

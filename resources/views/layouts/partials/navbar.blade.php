@@ -23,11 +23,11 @@
     <div class="navbar-nav-right d-flex align-items-center" id="navbar-collapse">
 
         <div class="navbar-nav align-items-center">
-            <div class="nav-item d-flex align-items-center">
-                <i class="bx bx-search fs-4 lh-0"></i>
-                <input type="text" class="form-control border-0 shadow-none" placeholder="Cari data..."
-                    aria-label="Cari data..." />
-            </div>
+            <form action="{{ route('global-search') }}" method="GET" class="nav-item d-flex align-items-center mb-0">
+                <i class="bx bx-search fs-4 lh-0 me-2 text-muted"></i>
+                <input type="text" name="q" class="form-control border-0 shadow-none" placeholder="Cari data (MK, Temuan, RTL, RTM)..."
+                    aria-label="Cari data..." value="{{ request('q') }}" />
+            </form>
         </div>
 
         <ul class="navbar-nav flex-row align-items-center ms-auto">

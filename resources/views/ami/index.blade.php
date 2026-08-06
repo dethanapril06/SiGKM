@@ -1,99 +1,92 @@
 @extends('layouts.app')
 @section('content')
-    @php(
-    $canManage = auth()->user()->hasAnyRole(['ketua-gkm', 'anggota-gkm'])
-)
-    <div class="d-flex justify-content-between align-items-center py-3 mb-4">
-        <div>
-            <h4 class="fw-bold mb-1">Audit Mutu Internal (AMI)</h4>
-            <p class="text-muted mb-0">Rekapan AMI per tahun akademik.</p>
-        </div>
-        @if ($canManage)
-            <a href="{{ route('ami.create') }}" class="btn btn-primary"> <i class="bx bx-plus"></i> Tambah AMI</a>
-        @endif
+@php
+    $canManage = auth()->user()->hasAnyRole(['ketua-gkm', 'anggota-gkm']);
+    $fileFields = [
+        'file_ami'           => ['label' => 'File AMI',           'icon' => 'bx-file'],
+        'file_tindak_lanjut' => ['label' => 'File Tindak Lanjut', 'icon' => 'bx-list-check'],
+        'file_dokumentasi'   => ['label' => 'File Dokumentasi',   'icon' => 'bx-folder-open'],
+        'file_absensi'       => ['label' => 'File Absensi',       'icon' => 'bx-group'],
+    ];
+@endphp
+
+<div class="d-flex justify-content-between align-items-center py-3 mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">Audit Mutu Internal (AMI)</h4>
+        <p class="text-muted mb-0">Rekapan AMI per tahun akademik.</p>
     </div>
-    @if (session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
+    @if ($canManage)
+        <a href="{{ route('ami.create') }}" class="btn btn-primary"><i class="bx bx-plus"></i> Tambah AMI</a>
     @endif
-    @if ($errors->any())
-        <div class="alert alert-danger">{{ $errors->first() }}</div>
-    @endif
-    @forelse($ami as $item)
-        <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-start">
-                <div>
-                    <h5 class="mb-1">AMI {{ $item->tahunAkademik?->nama }}</h5>
-                    <small>{{ $item->tanggal_pelaksanaan?->format('d-m-Y') }} · Diinput oleh
-                        {{ $item->penginput?->name ?? '-' }}</small>
-                </div>
-                <span
-                    class="badge bg-label-{{ $item->status === 'selesai' ? 'success' : ($item->status === 'aktif' ? 'primary' : 'secondary') }}">{{ ucfirst($item->status) }}</span>
+</div>
+
+@if (session('success'))
+    <div class="alert alert-success alert-dismissible" role="alert">
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+@endif
+@if ($errors->any())
+    <div class="alert alert-danger">{{ $errors->first() }}</div>
+@endif
+
+@forelse($ami as $item)
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-1">AMI {{ $item->tahunAkademik?->nama }}</h5>
+                <small class="text-muted">
+                    Tanggal: {{ $item->tanggal_pelaksanaan?->format('d-m-Y') }} ·
+                    Diinput oleh {{ $item->penginput?->name ?? '-' }}
+                </small>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4">
-                        <h6>Temuan</h6>
-                        <p style="white-space:pre-line">{{ $item->temuan }}</p>
-                    </div>
-                    <div class="col-md-4">
-                        <h6>Rekomendasi</h6>
-                        <p style="white-space:pre-line">{{ $item->rekomendasi }}</p>
-                    </div>
-                    <div class="col-md-4">
-                        <h6>Tindak Lanjut</h6>
-                        <p style="white-space:pre-line">{{ $item->tindak_lanjut ?: '-' }}</p><small>Target:
-                            {{ $item->target_selesai ?: '-' }}</small>
-                    </div>
-                </div>
-                <hr>
-                <h6>Bukti AMI</h6>
-                <div class="d-flex flex-wrap gap-2 mb-3">
-                    @forelse($item->dokumenAmis as $dokumen)
-                        <div class="border rounded p-2">
-                            <strong>{{ $dokumen->nama_dokumen }}</strong>
-                            @if ($dokumen->file_path)
-                                <a href="{{ asset('storage/' . $dokumen->file_path) }}" target="_blank"
-                                    class="btn btn-sm btn-outline-primary ms-2">File</a>
-                            @endif
-                            @if ($dokumen->link_url)
-                                <a href="{{ $dokumen->link_url }}" target="_blank" rel="noopener noreferrer"
-                                    class="btn btn-sm btn-outline-info ms-1">Google Drive</a>
-                            @endif
-                            @if ($canManage)
-                                <form action="{{ route('ami.dokumen.destroy', $dokumen) }}" method="POST"
-                                    class="d-inline">@csrf @method('DELETE')<button
-                                        class="btn btn-sm btn-outline-danger ms-1"
-                                        onclick="return confirm('Hapus bukti ini?')"><i class="bx bx-trash"></i> Hapus</button></form>
-                            @endif
-                        </div>
-                    @empty<span class="text-muted">Belum ada bukti.</span>
-                    @endforelse
-                </div>
-                <a href="{{ route('ami.show', $item) }}" class="btn btn-info mb-3"><i class="bx bx-show"></i> Detail</a>
+            <div class="d-flex gap-2">
+                <a href="{{ route('ami.show', $item) }}" class="btn btn-sm btn-info">
+                    <i class="bx bx-show"></i> Detail
+                </a>
                 @if ($canManage)
-                    <form action="{{ route('ami.dokumen.store', $item) }}" method="POST" enctype="multipart/form-data"
-                        class="border rounded p-3 mb-3">@csrf
-                        <h6>Tambah Bukti</h6>
-                        <div class="row">
-                            <div class="col-md-4 mb-2"><input name="nama_dokumen" class="form-control"
-                                    placeholder="Nama bukti" required></div>
-                            <div class="col-md-4 mb-2"><input type="file" name="document_file"
-                                    class="form-control"><small class="text-muted">Opsional, maksimal 5 MB.</small></div>
-                            <div class="col-md-4 mb-2"><input type="url" name="link_url" class="form-control"
-                                    placeholder="https://drive.google.com/..."><small class="text-muted">Boleh hanya mengisi
-                                    link.</small></div>
-                        </div><button class="btn btn-sm btn-primary">Tambah Bukti</button>
+                    <a href="{{ route('ami.edit', $item) }}" class="btn btn-sm btn-warning">
+                        <i class="bx bx-edit"></i> Edit
+                    </a>
+                    <form action="{{ route('ami.destroy', $item) }}" method="POST" class="d-inline"
+                        data-confirm-form data-confirm-title="Hapus data AMI?"
+                        data-confirm-text="Semua file terkait akan dihapus permanen."
+                        data-confirm-icon="warning" data-confirm-button-text="Ya, hapus"
+                        data-confirm-button-color="#ff3e1d">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-sm btn-danger">
+                            <i class="bx bx-trash"></i> Hapus
+                        </button>
                     </form>
-                    <a href="{{ route('ami.edit', $item) }}" class="btn btn-warning"><i class="bx bx-edit"></i> Edit</a>
-                    <form action="{{ route('ami.destroy', $item) }}" method="POST" class="d-inline">@csrf
-                        @method('DELETE')<button class="btn btn-danger"
-                            onclick="return confirm('Hapus data AMI ini?')"><i class="bx bx-trash"></i> Hapus</button></form>
                 @endif
             </div>
         </div>
-    @empty<div class="alert alert-info">Belum ada data AMI.</div>
-    @endforelse
-    <div class="card">
-        <div class="card-body">@include('components._pagination', ['paginator' => $ami])</div>
+
+        <div class="card-body">
+            <div class="row">
+                @foreach($fileFields as $field => $meta)
+                    <div class="col-md-3 mb-3">
+                        <div class="border rounded p-3 h-100 text-center">
+                            <i class="bx {{ $meta['icon'] }} fs-3 text-primary mb-2 d-block"></i>
+                            <div class="fw-semibold small mb-2">{{ $meta['label'] }}</div>
+                            @if($item->$field)
+                                <a href="{{ asset('storage/' . $item->$field) }}" target="_blank"
+                                    class="btn btn-sm btn-outline-primary">
+                                    <i class="bx bx-download"></i> Unduh
+                                </a>
+                            @else
+                                <span class="badge bg-label-secondary">Belum ada</span>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
     </div>
+@empty
+    <div class="alert alert-info">Belum ada data AMI.</div>
+@endforelse
+
+<div class="mt-3">@include('components._pagination', ['paginator' => $ami])</div>
 @endsection

@@ -2,7 +2,7 @@
 @section('content')
     <div class="d-flex justify-content-between py-3 mb-4">
         <h4 class="fw-bold">Detail Realisasi Rencana Tindak Lanjut</h4>
-        <a href="{{ route('rtl.index') }}" class="btn btn-secondary">Kembali</a>
+        <a href="{{ route('rtl.fakultas') }}" class="btn btn-secondary">Kembali</a>
     </div>
     <div class="card mb-4">
         <div class="card-body">

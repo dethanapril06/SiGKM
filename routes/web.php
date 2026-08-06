@@ -19,6 +19,7 @@ use App\Http\Controllers\NotulenRtmController;
 use App\Http\Controllers\PerkuliahanController;
 use App\Http\Controllers\RencanaTindakLanjutController;
 use App\Http\Controllers\RingkasanPerkuliahanController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SemesterController;
 use App\Http\Controllers\StandarMutuController;
 use App\Http\Controllers\TahunAkademikController;
@@ -34,6 +35,9 @@ Route::get('/', function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
+
+    Route::get('/search', [SearchController::class, 'index'])
+        ->name('global-search');
 
     Route::get('/profile', [DashboardController::class, 'profile'])
         ->name('profile.edit');
@@ -214,8 +218,20 @@ Route::middleware(['auth', 'role:ketua-gkm,anggota-gkm,koordinator-prodi'])
         Route::resource('evaluasi-indikator', EvaluasiIndikatorController::class)
             ->parameters(['evaluasi-indikator' => 'evaluasiIndikator']);
 
+        Route::get('/temuan-evaluasi/fakultas', [TemuanController::class, 'indexFakultas'])
+            ->name('temuan-evaluasi.fakultas');
+
+        Route::get('/temuan-evaluasi/prodi', [TemuanController::class, 'indexProdi'])
+            ->name('temuan-evaluasi.prodi');
+
         Route::resource('temuan-evaluasi', TemuanController::class)
             ->parameters(['temuan-evaluasi' => 'temuan']);
+
+        Route::get('/rtl/fakultas', [RencanaTindakLanjutController::class, 'indexFakultas'])
+            ->name('rtl.fakultas');
+
+        Route::get('/rtl/prodi', [RencanaTindakLanjutController::class, 'indexProdi'])
+            ->name('rtl.prodi');
 
         Route::resource('rtl', RencanaTindakLanjutController::class)
             ->parameters(['rtl' => 'rtl']);
@@ -236,10 +252,6 @@ Route::middleware(['auth', 'role:ketua-gkm,anggota-gkm,koordinator-prodi'])
         Route::delete('/kinerja-program-studi/{jenis}/{id}', [KinerjaProgramStudiController::class, 'destroy'])
             ->name('kinerja-program-studi.destroy');
 
-        Route::post('/ami/{ami}/dokumen', [AmiController::class, 'storeDocument'])
-            ->name('ami.dokumen.store');
-        Route::delete('/ami/dokumen/{dokumenAmi}', [AmiController::class, 'destroyDocument'])
-            ->name('ami.dokumen.destroy');
         Route::resource('ami', AmiController::class);
     });
 

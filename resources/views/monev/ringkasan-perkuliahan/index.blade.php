@@ -25,6 +25,70 @@
         </div>
     @endif
 
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ route('ringkasan-perkuliahan.index') }}">
+                <div class="row g-3 align-items-end mb-3">
+                    <div class="col-md-4">
+                        <label for="semester_id" class="form-label">Semester</label>
+                        <select id="semester_id" name="semester_id" class="form-select select2">
+                            <option value="">-- Semua Semester --</option>
+                            @foreach ($semesters as $semester)
+                                <option value="{{ $semester->id }}" @selected($selectedSemester == $semester->id)>
+                                    {{ $semester->tahunAkademik->nama ?? '-' }} - {{ ucfirst($semester->nama) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="termin_id" class="form-label">Termin Monev</label>
+                        <select id="termin_id" name="termin_id" class="form-select select2">
+                            <option value="">-- Semua Termin --</option>
+                            @foreach ($termins as $termin)
+                                <option value="{{ $termin->id }}" @selected($selectedTermin == $termin->id)>
+                                    {{ $termin->nama_termin }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="kesesuaian_materi" class="form-label">Materi Tercapai</label>
+                        <select id="kesesuaian_materi" name="kesesuaian_materi" class="form-select">
+                            <option value="">-- Semua --</option>
+                            <option value="sesuai" @selected($selectedKesesuaian === 'sesuai')>Sesuai</option>
+                            <option value="sebagian" @selected($selectedKesesuaian === 'sebagian')>Sebagian</option>
+                            <option value="tidak_sesuai" @selected($selectedKesesuaian === 'tidak_sesuai')>Tidak Sesuai</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pt-2 border-top">
+                    <div class="d-flex align-items-center gap-2">
+                        <label for="status" class="form-label mb-0 me-1">Status Verifikasi:</label>
+                        <select id="status" name="status" class="form-select form-select-sm" style="width: auto;">
+                            <option value="">-- Semua Status --</option>
+                            <option value="draft" @selected($selectedStatus === 'draft')>Draft</option>
+                            <option value="diajukan" @selected($selectedStatus === 'diajukan')>Diajukan</option>
+                            <option value="diverifikasi" @selected($selectedStatus === 'diverifikasi')>Diverifikasi</option>
+                            <option value="ditolak" @selected($selectedStatus === 'ditolak')>Ditolak</option>
+                        </select>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bx bx-filter-alt me-1"></i> Terapkan Filter
+                        </button>
+                        @if ($selectedSemester || $selectedTermin || $selectedKesesuaian || $selectedStatus)
+                            <a href="{{ route('ringkasan-perkuliahan.index') }}" class="btn btn-outline-secondary btn-sm">
+                                <i class="bx bx-reset me-1"></i> Reset Filter
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="card">
         <h5 class="card-header">Data Ringkasan Perkuliahan</h5>
 

@@ -13,11 +13,22 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
+use App\Models\Semester;
+
 class TemuanController extends Controller
 {
     public function index(): View
     {
+        return $this->indexFakultas(request());
+    }
+
+    public function indexFakultas(Request $request): View
+    {
         $user = auth()->user();
+        $selectedSemester = $request->query('semester_id');
+        $selectedStatus = $request->query('status');
+
+        $semesters = Semester::with('tahunAkademik')->orderByDesc('tanggal_mulai')->get();
 
         $temuanEvaluasi = Temuan::with([
             'evaluasiIndikator.semester.tahunAkademik',
@@ -25,6 +36,14 @@ class TemuanController extends Controller
             'risikoTemuans.tingkatRisiko',
             'pembuat',
         ])
+            ->whereHas('evaluasiIndikator', function ($query) use ($selectedSemester) {
+                $query->where('evaluatable_type', 'indikator_mutu')
+                    ->whereIn('status_capaian', ['dalam_proses', 'belum_tercapai'])
+                    ->when($selectedSemester, fn ($q) => $q->where('semester_id', $selectedSemester));
+            })
+            ->when($selectedStatus, function ($query) use ($selectedStatus) {
+                $query->where('status', $selectedStatus);
+            })
             ->when($user->hasRole('anggota-gkm'), function ($query) use ($user) {
                 $query->where('created_by', $user->id);
             })
@@ -35,7 +54,55 @@ class TemuanController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('monev.temuan.index', compact('temuanEvaluasi'));
+        return view('monev.temuan.index', [
+            'temuanEvaluasi' => $temuanEvaluasi,
+            'judul' => 'Temuan Evaluasi — Fakultas',
+            'activeRoute' => 'temuan-evaluasi.fakultas',
+            'semesters' => $semesters,
+            'selectedSemester' => $selectedSemester,
+            'selectedStatus' => $selectedStatus,
+        ]);
+    }
+
+    public function indexProdi(Request $request): View
+    {
+        $user = auth()->user();
+        $selectedSemester = $request->query('semester_id');
+        $selectedStatus = $request->query('status');
+
+        $semesters = Semester::with('tahunAkademik')->orderByDesc('tanggal_mulai')->get();
+
+        $temuanEvaluasi = Temuan::with([
+            'evaluasiIndikator.semester.tahunAkademik',
+            'evaluasiIndikator.evaluatable',
+            'risikoTemuans.tingkatRisiko',
+            'pembuat',
+        ])
+            ->whereHas('evaluasiIndikator', function ($query) use ($selectedSemester) {
+                $query->where('evaluatable_type', 'ikks')
+                    ->when($selectedSemester, fn ($q) => $q->where('semester_id', $selectedSemester));
+            })
+            ->when($selectedStatus, function ($query) use ($selectedStatus) {
+                $query->where('status', $selectedStatus);
+            })
+            ->when($user->hasRole('anggota-gkm'), function ($query) use ($user) {
+                $query->where('created_by', $user->id);
+            })
+            ->when($user->hasRole('koordinator-prodi'), function ($query) {
+                $query->whereIn('status', [WorkflowStatus::TERBUKA, WorkflowStatus::DITUTUP]);
+            })
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('monev.temuan.index', [
+            'temuanEvaluasi' => $temuanEvaluasi,
+            'judul' => 'Temuan Evaluasi — Program Studi',
+            'activeRoute' => 'temuan-evaluasi.prodi',
+            'semesters' => $semesters,
+            'selectedSemester' => $selectedSemester,
+            'selectedStatus' => $selectedStatus,
+        ]);
     }
 
     public function show(Temuan $temuan): View
@@ -92,7 +159,7 @@ class TemuanController extends Controller
         });
 
         return redirect()
-            ->route('temuan-evaluasi.index')
+            ->route('temuan-evaluasi.fakultas')
             ->with('success', 'Temuan evaluasi berhasil disimpan.');
     }
 
@@ -140,7 +207,7 @@ class TemuanController extends Controller
         });
 
         return redirect()
-            ->route('temuan-evaluasi.index')
+            ->route('temuan-evaluasi.fakultas')
             ->with('success', 'Temuan evaluasi berhasil diperbarui.');
     }
 
@@ -157,7 +224,7 @@ class TemuanController extends Controller
         $temuan->delete();
 
         return redirect()
-            ->route('temuan-evaluasi.index')
+            ->route('temuan-evaluasi.fakultas')
             ->with('success', 'Temuan evaluasi berhasil dihapus.');
     }
 

@@ -9,6 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('keputusan_rtms', function (Blueprint $table) {
+            $table->dropIndex(['status']);
             $table->dropColumn(['target_selesai', 'status']);
         });
     }

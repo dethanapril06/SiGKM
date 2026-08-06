@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="d-flex justify-content-between align-items-center py-3 mb-4">
-        <h4 class="fw-bold mb-0">Temuan Evaluasi</h4>
+        <h4 class="fw-bold mb-0">{{ $judul ?? 'Temuan Evaluasi' }}</h4>
 
         @if (auth()->user()->hasAnyRole(['ketua-gkm', 'anggota-gkm']))
             <a href="{{ route('temuan-evaluasi.create') }}" class="btn btn-primary">
@@ -25,8 +25,47 @@
         </div>
     @endif
 
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ route($activeRoute ?? 'temuan-evaluasi.fakultas') }}">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label for="semester_id" class="form-label">Semester</label>
+                        <select id="semester_id" name="semester_id" class="form-select select2">
+                            <option value="">-- Semua Semester --</option>
+                            @foreach ($semesters ?? [] as $semester)
+                                <option value="{{ $semester->id }}" @selected(($selectedSemester ?? null) == $semester->id)>
+                                    {{ $semester->tahunAkademik->nama ?? '-' }} - {{ ucfirst($semester->nama) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="status" class="form-label">Status Temuan</label>
+                        <select id="status" name="status" class="form-select">
+                            <option value="">-- Semua Status --</option>
+                            <option value="draft" @selected(($selectedStatus ?? null) === 'draft')>Draft</option>
+                            <option value="terbuka" @selected(($selectedStatus ?? null) === 'terbuka')>Terbuka</option>
+                            <option value="ditutup" @selected(($selectedStatus ?? null) === 'ditutup')>Ditutup</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bx bx-filter-alt me-1"></i> Filter
+                        </button>
+                        @if (($selectedSemester ?? null) || ($selectedStatus ?? null))
+                            <a href="{{ route($activeRoute ?? 'temuan-evaluasi.fakultas') }}" class="btn btn-outline-secondary">
+                                <i class="bx bx-reset me-1"></i> Reset
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="card">
-        <h5 class="card-header">Data Temuan Evaluasi</h5>
+        <h5 class="card-header">Data {{ $judul ?? 'Temuan Evaluasi' }}</h5>
 
         <div class="table-responsive text-nowrap">
             <table class="table">

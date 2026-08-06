@@ -13,20 +13,79 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
+use App\Models\Semester;
+
 class RencanaTindakLanjutController extends Controller
 {
-    public function index(): View
+    public function index(): \Illuminate\Http\RedirectResponse
     {
+        return redirect()->route('rtl.fakultas');
+    }
+
+    public function indexFakultas(Request $request): View
+    {
+        $selectedSemester = $request->query('semester_id');
+        $selectedStatus = $request->query('status');
+
+        $semesters = Semester::with('tahunAkademik')->orderByDesc('tanggal_mulai')->get();
+
         $rtl = RencanaTindakLanjut::with([
             'temuan.evaluasiIndikator.semester.tahunAkademik',
             'temuan.evaluasiIndikator.evaluatable',
             'buktiTindakLanjuts.pengunggah',
         ])
+            ->whereHas('temuan.evaluasiIndikator', function ($query) use ($selectedSemester) {
+                $query->where('evaluatable_type', 'indikator_mutu')
+                    ->when($selectedSemester, fn ($q) => $q->where('semester_id', $selectedSemester));
+            })
+            ->when($selectedStatus, function ($query) use ($selectedStatus) {
+                $query->whereHas('temuan', fn ($q) => $q->where('status', $selectedStatus));
+            })
             ->latest()
             ->paginate(10)
             ->withQueryString();
 
-        return view('monev.rtl.index', compact('rtl'));
+        return view('monev.rtl.index', [
+            'rtl' => $rtl,
+            'judul' => 'RTL Fakultas',
+            'activeRoute' => 'rtl.fakultas',
+            'semesters' => $semesters,
+            'selectedSemester' => $selectedSemester,
+            'selectedStatus' => $selectedStatus,
+        ]);
+    }
+
+    public function indexProdi(Request $request): View
+    {
+        $selectedSemester = $request->query('semester_id');
+        $selectedStatus = $request->query('status');
+
+        $semesters = Semester::with('tahunAkademik')->orderByDesc('tanggal_mulai')->get();
+
+        $rtl = RencanaTindakLanjut::with([
+            'temuan.evaluasiIndikator.semester.tahunAkademik',
+            'temuan.evaluasiIndikator.evaluatable',
+            'buktiTindakLanjuts.pengunggah',
+        ])
+            ->whereHas('temuan.evaluasiIndikator', function ($query) use ($selectedSemester) {
+                $query->where('evaluatable_type', 'ikks')
+                    ->when($selectedSemester, fn ($q) => $q->where('semester_id', $selectedSemester));
+            })
+            ->when($selectedStatus, function ($query) use ($selectedStatus) {
+                $query->whereHas('temuan', fn ($q) => $q->where('status', $selectedStatus));
+            })
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('monev.rtl.index', [
+            'rtl' => $rtl,
+            'judul' => 'RTL Program Studi',
+            'activeRoute' => 'rtl.prodi',
+            'semesters' => $semesters,
+            'selectedSemester' => $selectedSemester,
+            'selectedStatus' => $selectedStatus,
+        ]);
     }
 
     public function create(): View
@@ -76,7 +135,7 @@ class RencanaTindakLanjutController extends Controller
         });
 
         return redirect()
-            ->route('rtl.index')
+            ->route('rtl.fakultas')
             ->with('success', 'Realisasi Rencana Tindak Lanjut berhasil disimpan.');
     }
 
@@ -106,7 +165,7 @@ class RencanaTindakLanjutController extends Controller
         });
 
         return redirect()
-            ->route('rtl.index')
+            ->route('rtl.fakultas')
             ->with('success', 'Realisasi Rencana Tindak Lanjut berhasil diperbarui.');
     }
 
@@ -139,7 +198,7 @@ class RencanaTindakLanjutController extends Controller
         });
 
         return redirect()
-            ->route('rtl.index')
+            ->route('rtl.fakultas')
             ->with('success', 'Realisasi Rencana Tindak Lanjut berhasil dihapus.');
     }
 

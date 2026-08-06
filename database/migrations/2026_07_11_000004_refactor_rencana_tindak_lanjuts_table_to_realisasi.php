@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::table('rencana_tindak_lanjuts', function (Blueprint $table) {
             $table->dropForeign(['verified_by']);
+            $table->dropIndex(['status']);
             $table->dropColumn([
                 'uraian_rencana_tindak_lanjut',
                 'uraian_tindak_koreksi',

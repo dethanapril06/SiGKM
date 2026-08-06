@@ -40,21 +40,12 @@
                     <select name="evaluatable_key" class="form-select select2 @error('evaluatable_key') is-invalid @enderror" data-placeholder="-- Pilih Sumber Indikator --">
                         <option value="">-- Pilih Sumber Indikator --</option>
 
-                        <optgroup label="Fakultas — Indikator Mutu">
                         @foreach ($indikatorMutu as $item)
                             <option value="indikator_mutu:{{ $item->id }}" @selected(old('evaluatable_key') === 'indikator_mutu:'.$item->id)>
                                 {{ $item->kode_indikator ? $item->kode_indikator . ' - ' : '' }}
                                 {{ $item->isi_indikator }}
                             </option>
                         @endforeach
-                        </optgroup>
-                        <optgroup label="Program Studi — IKKS">
-                            @foreach ($ikks as $item)
-                                <option value="ikks:{{ $item->id }}" @selected(old('evaluatable_key') === 'ikks:'.$item->id)>
-                                    {{ $item->kode_ikks ? $item->kode_ikks.' - ' : '' }}{{ $item->uraian_ikks }}
-                                </option>
-                            @endforeach
-                        </optgroup>
                     </select>
 
                     @error('evaluatable_key')

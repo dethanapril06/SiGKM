@@ -143,7 +143,7 @@ class DashboardController extends Controller
             'ringkasanTerbaru' => RingkasanPerkuliahan::with(['perkuliahan.mataKuliah', 'perkuliahan.kelas', 'jadwalMonev.semester.tahunAkademik'])->where('status', 'diverifikasi')->latest()->limit(5)->get(),
             'temuanTerbuka' => Temuan::with('evaluasiIndikator.semester.tahunAkademik')->where('status', 'terbuka')->latest()->limit(5)->get(),
             'rtmTerbaru' => JadwalRtm::with(['semester.tahunAkademik', 'notulenRtm.keputusanRtms'])->latest('tanggal')->limit(5)->get(),
-            'amiTerbaru' => Ami::with(['tahunAkademik', 'dokumenAmis'])->latest('tanggal_pelaksanaan')->limit(5)->get(),
+            'amiTerbaru' => Ami::with('tahunAkademik')->latest('tanggal_pelaksanaan')->limit(5)->get(),
         ]);
     }
 

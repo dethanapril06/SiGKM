@@ -6,6 +6,8 @@ use App\Models\JadwalMonev;
 use App\Models\Laporan;
 use App\Models\Perkuliahan;
 use App\Models\RingkasanPerkuliahan;
+use App\Models\Semester;
+use App\Models\Termin;
 use App\Services\WorkflowNotificationService;
 use App\Support\WorkflowStatus;
 use Illuminate\Http\RedirectResponse;
@@ -21,6 +23,14 @@ class RingkasanPerkuliahanController extends Controller
     {
         $user = auth()->user();
 
+        $selectedSemester = $request->query('semester_id');
+        $selectedTermin = $request->query('termin_id');
+        $selectedKesesuaian = $request->query('kesesuaian_materi');
+        $selectedStatus = $request->query('status');
+
+        $semesters = Semester::with('tahunAkademik')->orderByDesc('tanggal_mulai')->get();
+        $termins = Termin::orderBy('nama_termin')->get();
+
         $ringkasanPerkuliahan = RingkasanPerkuliahan::with([
             'jadwalMonev.semester.tahunAkademik',
             'jadwalMonev.termin',
@@ -31,6 +41,22 @@ class RingkasanPerkuliahanController extends Controller
             'penginput',
             'verifikator',
         ])
+            ->when($selectedSemester, function ($query) use ($selectedSemester) {
+                $query->whereHas('jadwalMonev', function ($q) use ($selectedSemester) {
+                    $q->where('semester_id', $selectedSemester);
+                });
+            })
+            ->when($selectedTermin, function ($query) use ($selectedTermin) {
+                $query->whereHas('jadwalMonev', function ($q) use ($selectedTermin) {
+                    $q->where('termin_id', $selectedTermin);
+                });
+            })
+            ->when($selectedKesesuaian, function ($query) use ($selectedKesesuaian) {
+                $query->where('kesesuaian_materi', $selectedKesesuaian);
+            })
+            ->when($selectedStatus, function ($query) use ($selectedStatus) {
+                $query->where('status', $selectedStatus);
+            })
             ->when($user->hasRole('anggota-gkm'), function ($query) use ($user) {
                 $query->where('input_by', $user->id);
             })
@@ -41,7 +67,15 @@ class RingkasanPerkuliahanController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('monev.ringkasan-perkuliahan.index', compact('ringkasanPerkuliahan'));
+        return view('monev.ringkasan-perkuliahan.index', compact(
+            'ringkasanPerkuliahan',
+            'semesters',
+            'termins',
+            'selectedSemester',
+            'selectedTermin',
+            'selectedKesesuaian',
+            'selectedStatus'
+        ));
     }
 
     public function create(): View

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\EvaluasiIndikator;
-use App\Models\IndikatorKinerjaKegiatanSatuan;
 use App\Models\IndikatorMutu;
 use App\Models\Semester;
 use Illuminate\Http\RedirectResponse;
@@ -14,18 +13,34 @@ use Illuminate\View\View;
 
 class EvaluasiIndikatorController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $selectedSemester = $request->query('semester_id');
+        $selectedStatusCapaian = $request->query('status_capaian');
+
+        $semesters = Semester::with('tahunAkademik')->orderByDesc('tanggal_mulai')->get();
+
         $evaluasiIndikator = EvaluasiIndikator::with([
             'semester.tahunAkademik',
             'evaluatable',
             'penginput',
         ])
+            ->when($selectedSemester, function ($query) use ($selectedSemester) {
+                $query->where('semester_id', $selectedSemester);
+            })
+            ->when($selectedStatusCapaian, function ($query) use ($selectedStatusCapaian) {
+                $query->where('status_capaian', $selectedStatusCapaian);
+            })
             ->latest()
             ->paginate(10)
             ->withQueryString();
 
-        return view('monev.evaluasi-indikator.index', compact('evaluasiIndikator'));
+        return view('monev.evaluasi-indikator.index', compact(
+            'evaluasiIndikator',
+            'semesters',
+            'selectedSemester',
+            'selectedStatusCapaian'
+        ));
     }
 
     public function create(): View
@@ -128,21 +143,14 @@ class EvaluasiIndikatorController extends Controller
             ->latest()
             ->get();
 
-        $ikks = IndikatorKinerjaKegiatanSatuan::with([
-            'indikatorKinerjaKegiatan.indikatorKinerjaUtama.sasaranStrategis',
-        ])
-            ->when($activeOnly, fn ($query) => $query->where('is_active', true))
-            ->latest()
-            ->get();
-
-        return compact('semester', 'indikatorMutu', 'ikks');
+        return compact('semester', 'indikatorMutu');
     }
 
     private function validatedData(Request $request): array
     {
         $validated = $request->validate([
             'semester_id' => ['required', 'exists:semesters,id'],
-            'evaluatable_key' => ['required', 'regex:/^(indikator_mutu|ikks):[1-9][0-9]*$/'],
+            'evaluatable_key' => ['required', 'regex:/^indikator_mutu:[1-9][0-9]*$/'],
             'status_capaian' => ['required', 'in:tercapai,dalam_proses,belum_tercapai'],
             'nama_penanggung_jawab' => ['nullable', 'string', 'max:255'],
             'bukti_capaian' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png', 'max:2048'],
@@ -157,7 +165,7 @@ class EvaluasiIndikatorController extends Controller
         ]);
 
         [$type, $id] = explode(':', $validated['evaluatable_key']);
-        $model = $type === 'indikator_mutu' ? IndikatorMutu::class : IndikatorKinerjaKegiatanSatuan::class;
+        $model = IndikatorMutu::class;
 
         if (! $model::whereKey($id)->exists()) {
             throw ValidationException::withMessages(['evaluatable_key' => 'Sumber indikator tidak ditemukan.']);
