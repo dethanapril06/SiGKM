@@ -5,7 +5,10 @@
         <h4 class="fw-bold mb-0">{{ $judul ?? 'Temuan Evaluasi' }}</h4>
 
         @if (auth()->user()->hasAnyRole(['ketua-gkm', 'anggota-gkm']))
-            <a href="{{ route('temuan-evaluasi.create') }}" class="btn btn-primary">
+            @php
+                $currentScope = ($activeRoute ?? '') === 'temuan-evaluasi.prodi' ? 'prodi' : 'fakultas';
+            @endphp
+            <a href="{{ route('temuan-evaluasi.create', ['scope' => $currentScope]) }}" class="btn btn-primary">
                 <i class="bx bx-plus"></i> Tambah Temuan
             </a>
         @endif

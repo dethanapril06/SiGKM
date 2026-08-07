@@ -94,7 +94,12 @@ class RencanaTindakLanjutController extends Controller
             abort(403, 'Hanya Ketua GKM dan Anggota GKM yang dapat mencatat Realisasi RTL.');
         }
 
-        return view('monev.rtl.create', $this->formData());
+        $scope = request()->query('scope', 'fakultas');
+
+        return view('monev.rtl.create', array_merge(
+            ['selectedScope' => $scope],
+            $this->formData(null, $scope)
+        ));
     }
 
     public function show(RencanaTindakLanjut $rtl): View
@@ -134,8 +139,13 @@ class RencanaTindakLanjutController extends Controller
             }
         });
 
+        $temuan = Temuan::with('evaluasiIndikator')->find($validated['temuan_id']);
+        $redirectRoute = ($temuan?->evaluasiIndikator?->evaluatable_type === 'ikks')
+            ? 'rtl.prodi'
+            : 'rtl.fakultas';
+
         return redirect()
-            ->route('rtl.fakultas')
+            ->route($redirectRoute)
             ->with('success', 'Realisasi Rencana Tindak Lanjut berhasil disimpan.');
     }
 
@@ -164,8 +174,13 @@ class RencanaTindakLanjutController extends Controller
             $this->storeBuktiFiles($request, $rtl);
         });
 
+        $temuan = Temuan::with('evaluasiIndikator')->find($validated['temuan_id']);
+        $redirectRoute = ($temuan?->evaluasiIndikator?->evaluatable_type === 'ikks')
+            ? 'rtl.prodi'
+            : 'rtl.fakultas';
+
         return redirect()
-            ->route('rtl.fakultas')
+            ->route($redirectRoute)
             ->with('success', 'Realisasi Rencana Tindak Lanjut berhasil diperbarui.');
     }
 
@@ -180,6 +195,10 @@ class RencanaTindakLanjutController extends Controller
                 Storage::disk('public')->delete($bukti->file_path);
             }
         }
+
+        $redirectRoute = ($rtl->temuan?->evaluasiIndikator?->evaluatable_type === 'ikks')
+            ? 'rtl.prodi'
+            : 'rtl.fakultas';
 
         DB::transaction(function () use ($rtl) {
             $temuan = $rtl->temuan;
@@ -198,17 +217,22 @@ class RencanaTindakLanjutController extends Controller
         });
 
         return redirect()
-            ->route('rtl.fakultas')
+            ->route($redirectRoute)
             ->with('success', 'Realisasi Rencana Tindak Lanjut berhasil dihapus.');
     }
 
-    private function formData(?RencanaTindakLanjut $rtl = null): array
+    private function formData(?RencanaTindakLanjut $rtl = null, ?string $scope = null): array
     {
+        $typeFilter = $scope === 'prodi' ? 'ikks' : ($scope === 'fakultas' ? 'indikator_mutu' : null);
+
         $temuan = Temuan::with([
             'evaluasiIndikator.semester.tahunAkademik',
             'evaluasiIndikator.evaluatable',
         ])
             ->whereIn('status', [WorkflowStatus::TERBUKA, WorkflowStatus::DRAFT])
+            ->when($typeFilter, function ($query) use ($typeFilter) {
+                $query->whereHas('evaluasiIndikator', fn ($q) => $q->where('evaluatable_type', $typeFilter));
+            })
             ->when($rtl, function ($query) use ($rtl) {
                 $query->where(function ($q) use ($rtl) {
                     $q->whereDoesntHave('rencanaTindakLanjuts')
@@ -231,6 +255,7 @@ class RencanaTindakLanjutController extends Controller
                 Rule::exists('temuans', 'id'),
                 Rule::unique('rencana_tindak_lanjuts', 'temuan_id')->ignore($rtl),
             ],
+            'penanggung_jawab' => ['nullable', 'string', 'max:255'],
             'uraian_realisasi' => ['required', 'string'],
             'waktu_pelaksanaan' => ['required', 'date'],
             'catatan' => ['nullable', 'string'],

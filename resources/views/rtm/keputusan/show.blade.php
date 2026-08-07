@@ -1,8 +1,8 @@
 @extends('layouts.app')
 @section('content')
     <div class="d-flex justify-content-between py-3 mb-4">
-        <h4 class="fw-bold">Detail Keputusan RTM</h4><a href="{{ route('keputusan-rtm.index') }}"
-            class="btn btn-secondary">Kembali</a>
+        <h4 class="fw-bold">Detail Keputusan RTM</h4>
+        <a href="{{ route('keputusan-rtm.fakultas') }}" class="btn btn-secondary">Kembali</a>
     </div>
     <div class="card mb-4">
         <div class="card-body">
@@ -26,11 +26,12 @@
             </x-detail-row>
         </div>
     </div>
-    @php($temuan = $keputusanRtm->temuan)<div class="card">
+    @php($temuan = $keputusanRtm->temuan)
+    <div class="card">
         <div class="card-header d-flex justify-content-between">
             <h5>Temuan yang Ditinjau</h5>
             @if ($temuan)
-                <a href="{{ route('temuan.show', $temuan) }}" class="btn btn-sm btn-info">Detail Temuan</a>
+                <a href="{{ route('temuan-evaluasi.show', $temuan) }}" class="btn btn-sm btn-info">Detail Temuan</a>
             @endif
         </div>
         <div class="card-body">

@@ -14,14 +14,75 @@ use Illuminate\View\View;
 
 class KeputusanRtmController extends Controller
 {
-    public function index(): View
+    public function index(): RedirectResponse
     {
+        return redirect()->route('keputusan-rtm.fakultas');
+    }
+
+    public function indexFakultas(Request $request): View
+    {
+        $selectedSemester = $request->query('semester_id');
+        $selectedStatus = $request->query('status');
+
+        $semesters = Semester::with('tahunAkademik')->orderByDesc('tanggal_mulai')->get();
+
         $keputusanRtm = KeputusanRtm::with([
             'notulenRtm.jadwalRtm.semester.tahunAkademik',
             'temuan.evaluasiIndikator.semester.tahunAkademik',
-        ])->latest()->paginate(10)->withQueryString();
+            'temuan.evaluasiIndikator.evaluatable',
+        ])
+            ->whereHas('temuan.evaluasiIndikator', function ($query) use ($selectedSemester) {
+                $query->where('evaluatable_type', 'indikator_mutu')
+                    ->when($selectedSemester, fn ($q) => $q->where('semester_id', $selectedSemester));
+            })
+            ->when($selectedStatus, function ($query) use ($selectedStatus) {
+                $query->whereHas('temuan', fn ($q) => $q->where('status', $selectedStatus));
+            })
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
 
-        return view('rtm.keputusan.index', compact('keputusanRtm'));
+        return view('rtm.keputusan.index', [
+            'keputusanRtm' => $keputusanRtm,
+            'judul' => 'Keputusan RTM — Fakultas',
+            'activeRoute' => 'keputusan-rtm.fakultas',
+            'semesters' => $semesters,
+            'selectedSemester' => $selectedSemester,
+            'selectedStatus' => $selectedStatus,
+        ]);
+    }
+
+    public function indexProdi(Request $request): View
+    {
+        $selectedSemester = $request->query('semester_id');
+        $selectedStatus = $request->query('status');
+
+        $semesters = Semester::with('tahunAkademik')->orderByDesc('tanggal_mulai')->get();
+
+        $keputusanRtm = KeputusanRtm::with([
+            'notulenRtm.jadwalRtm.semester.tahunAkademik',
+            'temuan.evaluasiIndikator.semester.tahunAkademik',
+            'temuan.evaluasiIndikator.evaluatable',
+        ])
+            ->whereHas('temuan.evaluasiIndikator', function ($query) use ($selectedSemester) {
+                $query->where('evaluatable_type', 'ikks')
+                    ->when($selectedSemester, fn ($q) => $q->where('semester_id', $selectedSemester));
+            })
+            ->when($selectedStatus, function ($query) use ($selectedStatus) {
+                $query->whereHas('temuan', fn ($q) => $q->where('status', $selectedStatus));
+            })
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('rtm.keputusan.index', [
+            'keputusanRtm' => $keputusanRtm,
+            'judul' => 'Keputusan RTM — Program Studi',
+            'activeRoute' => 'keputusan-rtm.prodi',
+            'semesters' => $semesters,
+            'selectedSemester' => $selectedSemester,
+            'selectedStatus' => $selectedStatus,
+        ]);
     }
 
     public function create(): View
@@ -44,7 +105,7 @@ class KeputusanRtmController extends Controller
     {
         KeputusanRtm::create($this->validated($request));
 
-        return redirect()->route('keputusan-rtm.index')->with('success', 'Keputusan RTM berhasil dibuat.');
+        return redirect()->route('keputusan-rtm.fakultas')->with('success', 'Keputusan RTM berhasil dibuat.');
     }
 
     public function edit(KeputusanRtm $keputusanRtm): View
@@ -59,7 +120,7 @@ class KeputusanRtmController extends Controller
     {
         $keputusanRtm->update($this->validated($request, $keputusanRtm));
 
-        return redirect()->route('keputusan-rtm.index')->with('success', 'Keputusan RTM berhasil diperbarui.');
+        return redirect()->route('keputusan-rtm.fakultas')->with('success', 'Keputusan RTM berhasil diperbarui.');
     }
 
     public function destroy(KeputusanRtm $keputusanRtm): RedirectResponse

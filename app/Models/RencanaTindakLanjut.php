@@ -14,6 +14,7 @@ class RencanaTindakLanjut extends Model
 
     protected $fillable = [
         'temuan_id',
+        'penanggung_jawab',
         'uraian_realisasi',
         'waktu_pelaksanaan',
         'catatan',

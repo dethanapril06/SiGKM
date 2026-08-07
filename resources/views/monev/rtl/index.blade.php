@@ -5,7 +5,10 @@
         <h4 class="fw-bold mb-0">{{ $judul ?? 'Realisasi Rencana Tindak Lanjut (RTL)' }}</h4>
 
         @if (auth()->user()->hasAnyRole(['ketua-gkm', 'anggota-gkm']))
-            <a href="{{ route('rtl.create') }}" class="btn btn-primary">
+            @php
+                $currentScope = ($activeRoute ?? '') === 'rtl.prodi' ? 'prodi' : 'fakultas';
+            @endphp
+            <a href="{{ route('rtl.create', ['scope' => $currentScope]) }}" class="btn btn-primary">
                 <i class="bx bx-plus"></i> Catat Realisasi RTL
             </a>
         @endif
@@ -101,6 +104,12 @@
                             </td>
                             <td>
                                 <strong>{{ \Illuminate\Support\Str::limit($item->uraian_realisasi ?? '-', 60) }}</strong>
+                                @if ($item->penanggung_jawab)
+                                    <br>
+                                    <small class="text-primary">
+                                        PJ: {{ $item->penanggung_jawab }}
+                                    </small>
+                                @endif
                                 @if ($item->catatan)
                                     <br>
                                     <small class="text-muted">

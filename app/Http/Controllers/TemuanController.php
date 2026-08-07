@@ -14,6 +14,8 @@ use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 use App\Models\Semester;
+use App\Models\StandarMutu;
+use App\Models\SasaranStrategis;
 
 class TemuanController extends Controller
 {
@@ -24,7 +26,6 @@ class TemuanController extends Controller
 
     public function indexFakultas(Request $request): View
     {
-        $user = auth()->user();
         $selectedSemester = $request->query('semester_id');
         $selectedStatus = $request->query('status');
 
@@ -44,10 +45,10 @@ class TemuanController extends Controller
             ->when($selectedStatus, function ($query) use ($selectedStatus) {
                 $query->where('status', $selectedStatus);
             })
-            ->when($user->hasRole('anggota-gkm'), function ($query) use ($user) {
-                $query->where('created_by', $user->id);
+            ->when(auth()->user()->hasRole('anggota-gkm'), function ($query) {
+                $query->where('created_by', auth()->id());
             })
-            ->when($user->hasRole('koordinator-prodi'), function ($query) {
+            ->when(auth()->user()->hasRole('koordinator-prodi'), function ($query) {
                 $query->whereIn('status', [WorkflowStatus::TERBUKA, WorkflowStatus::DITUTUP]);
             })
             ->latest()
@@ -133,6 +134,7 @@ class TemuanController extends Controller
 
         return view('monev.temuan.create', $this->formData() + [
             'kodeTemuan' => CodeGenerator::kodeTemuan(),
+            'selectedScope' => request()->query('scope', 'fakultas'),
         ]);
     }
 
@@ -146,85 +148,105 @@ class TemuanController extends Controller
         $risikoData = $this->validatedRisikoData($request);
 
         DB::transaction(function () use ($validated, $risikoData) {
-            $validated['status'] = request('aksi') === 'terbuka'
-                ? WorkflowStatus::TERBUKA
-                : WorkflowStatus::DRAFT;
-            $validated['created_by'] = auth()->id();
+            $temuan = Temuan::create($validated + [
+                'status' => WorkflowStatus::DRAFT,
+                'created_by' => auth()->id(),
+            ]);
 
-            $temuan = Temuan::create($validated);
-
-            if ($risikoData['tingkat_risiko_id'] && $risikoData['deskripsi_risiko']) {
+            if (! empty($risikoData['tingkat_risiko_id']) && ! empty($risikoData['deskripsi_risiko'])) {
                 $temuan->risikoTemuans()->create($risikoData);
             }
         });
 
+        $evaluasi = EvaluasiIndikator::find($validated['evaluasi_indikator_id']);
+        $redirectRoute = ($evaluasi?->evaluatable_type === 'ikks')
+            ? 'temuan-evaluasi.prodi'
+            : 'temuan-evaluasi.fakultas';
+
         return redirect()
-            ->route('temuan-evaluasi.fakultas')
-            ->with('success', 'Temuan evaluasi berhasil disimpan.');
+            ->route($redirectRoute)
+            ->with('success', 'Temuan evaluasi berhasil dibuat.');
     }
 
     public function edit(Temuan $temuan): View
     {
-        if (! $temuan->canBeEditedBy(auth()->user())) {
-            abort(403, 'Temuan ini tidak dapat diedit.');
+        if (! auth()->user()->hasAnyRole(['ketua-gkm', 'anggota-gkm'])) {
+            abort(403, 'Hanya Ketua GKM dan Anggota GKM yang dapat mengubah temuan.');
         }
 
-        $temuan->load('risikoTemuans.tingkatRisiko');
+        $user = auth()->user();
+        if ($user->hasRole('anggota-gkm') && $temuan->created_by !== $user->id) {
+            abort(403, 'Anda hanya dapat mengubah temuan yang Anda buat.');
+        }
+
+        $temuan->load(['risikoTemuans.tingkatRisiko']);
 
         return view('monev.temuan.edit', array_merge(
-            ['temuanEvaluasi' => $temuan],
+            ['temuan' => $temuan],
             $this->formData($temuan)
         ));
     }
 
     public function update(Request $request, Temuan $temuan): RedirectResponse
     {
-        if (! $temuan->canBeEditedBy(auth()->user())) {
-            abort(403, 'Temuan ini tidak dapat diedit.');
+        if (! auth()->user()->hasAnyRole(['ketua-gkm', 'anggota-gkm'])) {
+            abort(403, 'Hanya Ketua GKM dan Anggota GKM yang dapat mengubah temuan.');
+        }
+
+        $user = auth()->user();
+        if ($user->hasRole('anggota-gkm') && $temuan->created_by !== $user->id) {
+            abort(403, 'Anda hanya dapat mengubah temuan yang Anda buat.');
         }
 
         $validated = $this->validatedData($request, $temuan);
         $risikoData = $this->validatedRisikoData($request);
 
         DB::transaction(function () use ($temuan, $validated, $risikoData) {
-            $validated['status'] = request('aksi') === 'terbuka'
-                ? WorkflowStatus::TERBUKA
-                : WorkflowStatus::DRAFT;
-
             $temuan->update($validated);
 
-            $risiko = $temuan->risikoTemuans()->first();
-
-            if ($risikoData['tingkat_risiko_id'] && $risikoData['deskripsi_risiko']) {
-                $risiko
-                    ? $risiko->update($risikoData)
-                    : $temuan->risikoTemuans()->create($risikoData);
-
-                return;
+            if (! empty($risikoData['tingkat_risiko_id']) && ! empty($risikoData['deskripsi_risiko'])) {
+                $temuan->risikoTemuans()->updateOrCreate(
+                    ['temuan_id' => $temuan->id],
+                    $risikoData
+                );
+            } else {
+                $temuan->risikoTemuans()->delete();
             }
-
-            $risiko?->delete();
         });
 
+        $evaluasi = EvaluasiIndikator::find($validated['evaluasi_indikator_id']);
+        $redirectRoute = ($evaluasi?->evaluatable_type === 'ikks')
+            ? 'temuan-evaluasi.prodi'
+            : 'temuan-evaluasi.fakultas';
+
         return redirect()
-            ->route('temuan-evaluasi.fakultas')
+            ->route($redirectRoute)
             ->with('success', 'Temuan evaluasi berhasil diperbarui.');
     }
 
     public function destroy(Temuan $temuan): RedirectResponse
     {
-        if (! $temuan->canBeEditedBy(auth()->user())) {
-            abort(403, 'Temuan ini tidak dapat dihapus.');
+        if (! auth()->user()->hasAnyRole(['ketua-gkm', 'anggota-gkm'])) {
+            abort(403, 'Hanya Ketua GKM dan Anggota GKM yang dapat menghapus temuan.');
+        }
+
+        $user = auth()->user();
+        if ($user->hasRole('anggota-gkm') && $temuan->created_by !== $user->id) {
+            abort(403, 'Anda hanya dapat menghapus temuan yang Anda buat.');
         }
 
         if ($temuan->rencanaTindakLanjuts()->exists()) {
             return back()->with('error', 'Temuan tidak dapat dihapus karena sudah digunakan pada RTL.');
         }
 
+        $redirectRoute = ($temuan->evaluasiIndikator?->evaluatable_type === 'ikks')
+            ? 'temuan-evaluasi.prodi'
+            : 'temuan-evaluasi.fakultas';
+
         $temuan->delete();
 
         return redirect()
-            ->route('temuan-evaluasi.fakultas')
+            ->route($redirectRoute)
             ->with('success', 'Temuan evaluasi berhasil dihapus.');
     }
 
@@ -243,7 +265,35 @@ class TemuanController extends Controller
 
         $tingkatRisiko = TingkatRisiko::orderBy('nama_tingkat')->get();
 
-        return compact('evaluasiIndikator', 'tingkatRisiko');
+        $standarMutus = StandarMutu::active()
+            ->with(['indikatorMutus' => function ($q) use ($temuan) {
+                $q->where('is_active', true)
+                    ->with(['evaluasiIndikators' => function ($eq) use ($temuan) {
+                        $eq->whereIn('status_capaian', ['dalam_proses', 'belum_tercapai'])
+                            ->when($temuan, fn ($q2) => $q2->orWhere('id', $temuan->evaluasi_indikator_id))
+                            ->with('semester.tahunAkademik');
+                    }]);
+            }])
+            ->get();
+
+        $sasaranStrategises = SasaranStrategis::where('is_active', true)
+            ->with(['indikatorKinerjaUtamas' => function ($q) use ($temuan) {
+                $q->where('is_active', true)
+                    ->with(['indikatorKinerjaKegiatans' => function ($iq) use ($temuan) {
+                        $iq->where('is_active', true)
+                            ->with(['indikatorKinerjaKegiatanSatuan' => function ($isq) use ($temuan) {
+                                $isq->where('is_active', true)
+                                    ->with(['evaluasiIndikators' => function ($eq) use ($temuan) {
+                                        $eq->whereIn('status_capaian', ['dalam_proses', 'belum_tercapai'])
+                                            ->when($temuan, fn ($q2) => $q2->orWhere('id', $temuan->evaluasi_indikator_id))
+                                            ->with('semester.tahunAkademik');
+                                    }]);
+                            }]);
+                    }]);
+            }])
+            ->get();
+
+        return compact('evaluasiIndikator', 'tingkatRisiko', 'standarMutus', 'sasaranStrategises');
     }
 
     private function validatedData(Request $request, ?Temuan $temuan = null): array

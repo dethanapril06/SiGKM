@@ -2,9 +2,9 @@
 
 @section('content')
     <div class="d-flex justify-content-between align-items-center py-3 mb-4">
-        <h4 class="fw-bold mb-0">Catat Realisasi RTL</h4>
+        <h4 class="fw-bold mb-0">Catat Realisasi RTL — {{ ($selectedScope ?? '') === 'prodi' ? 'Program Studi' : 'Fakultas' }}</h4>
 
-        <a href="{{ route('rtl.fakultas') }}" class="btn btn-secondary">
+        <a href="{{ ($selectedScope ?? '') === 'prodi' ? route('rtl.prodi') : route('rtl.fakultas') }}" class="btn btn-secondary">
             <i class="bx bx-arrow-back"></i> Kembali
         </a>
     </div>
@@ -52,6 +52,17 @@
                     </select>
 
                     @error('temuan_id')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Penanggung Jawab (PJ Realisasi)</label>
+                    <input type="text" name="penanggung_jawab"
+                        class="form-control @error('penanggung_jawab') is-invalid @enderror"
+                        value="{{ old('penanggung_jawab') }}"
+                        placeholder="Masukkan nama penanggung jawab realisasi RTL">
+                    @error('penanggung_jawab')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>

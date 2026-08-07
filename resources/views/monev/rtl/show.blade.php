@@ -2,7 +2,7 @@
 @section('content')
     <div class="d-flex justify-content-between py-3 mb-4">
         <h4 class="fw-bold">Detail Realisasi Rencana Tindak Lanjut</h4>
-        <a href="{{ route('rtl.fakultas') }}" class="btn btn-secondary">Kembali</a>
+        <a href="{{ $rtl->temuan?->evaluasiIndikator?->evaluatable_type === 'ikks' ? route('rtl.prodi') : route('rtl.fakultas') }}" class="btn btn-secondary">Kembali</a>
     </div>
     <div class="card mb-4">
         <div class="card-body">
@@ -18,9 +18,9 @@
                 {{ $rtl->temuan?->evaluasiIndikator?->sumber_kode }} —
                 {{ $rtl->temuan?->evaluasiIndikator?->sumber_uraian }}
             </x-detail-row>
-            <x-detail-row label="Penanggung Jawab Temuan">
+            <x-detail-row label="Penanggung Jawab Realisasi">
                 <span>
-                    {{ $rtl->temuan?->nama_penanggung_jawab ?? '-' }}
+                    {{ $rtl->penanggung_jawab ?? '-' }}
                 </span>
             </x-detail-row>
             <x-detail-row label="Rencana Awal RTL">

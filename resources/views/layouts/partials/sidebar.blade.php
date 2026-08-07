@@ -233,9 +233,13 @@
                             href="{{ route('notulen-rtm.index') }}" class="menu-link">
                             <div>Notulen RTM</div>
                         </a></li>
-                    <li class="menu-item {{ request()->routeIs('keputusan-rtm.*') ? 'active' : '' }}"><a
-                            href="{{ route('keputusan-rtm.index') }}" class="menu-link">
-                            <div>Keputusan RTM</div>
+                    <li class="menu-item {{ request()->routeIs('keputusan-rtm.fakultas') ? 'active' : '' }}"><a
+                            href="{{ route('keputusan-rtm.fakultas') }}" class="menu-link">
+                            <div>Keputusan RTM Fakultas</div>
+                        </a></li>
+                    <li class="menu-item {{ request()->routeIs('keputusan-rtm.prodi') ? 'active' : '' }}"><a
+                            href="{{ route('keputusan-rtm.prodi') }}" class="menu-link">
+                            <div>Keputusan RTM Prodi</div>
                         </a></li>
                 </ul>
             </li>
@@ -491,9 +495,13 @@
                             href="{{ route('notulen-rtm.index') }}" class="menu-link">
                             <div>Notulen RTM</div>
                         </a></li>
-                    <li class="menu-item {{ request()->routeIs('keputusan-rtm.*') ? 'active' : '' }}"><a
-                            href="{{ route('keputusan-rtm.index') }}" class="menu-link">
-                            <div>Keputusan RTM</div>
+                    <li class="menu-item {{ request()->routeIs('keputusan-rtm.fakultas') ? 'active' : '' }}"><a
+                            href="{{ route('keputusan-rtm.fakultas') }}" class="menu-link">
+                            <div>Keputusan RTM Fakultas</div>
+                        </a></li>
+                    <li class="menu-item {{ request()->routeIs('keputusan-rtm.prodi') ? 'active' : '' }}"><a
+                            href="{{ route('keputusan-rtm.prodi') }}" class="menu-link">
+                            <div>Keputusan RTM Prodi</div>
                         </a></li>
                 </ul>
             </li>

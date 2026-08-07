@@ -15,7 +15,7 @@ use App\Models\User;
 
 function rtmUser(string $role): User
 {
-    $roleModel = Role::create(['name' => $role, 'slug' => $role]);
+    $roleModel = Role::firstOrCreate(['slug' => $role], ['name' => $role]);
 
     return User::factory()->create(['role_id' => $roleModel->id]);
 }
@@ -82,7 +82,7 @@ it('allows an Anggota GKM to submit a notulen and Ketua GKM to verify it', funct
     $this->actingAs($member)->patch(route('notulen-rtm.verifikasi', $notulen))->assertForbidden();
     $this->actingAs($chair)->patch(route('notulen-rtm.verifikasi', $notulen))->assertRedirect();
     expect($notulen->fresh()->status)->toBe('diverifikasi')
-        ->and($notulen->verified_by)->toBe($chair->id);
+        ->and($notulen->fresh()->verified_by)->toBe($chair->id);
 });
 
 it('accepts any Temuan for a decision in an RTM as long as it has not been decided in the same RTM', function () {
@@ -115,7 +115,7 @@ it('accepts any Temuan for a decision in an RTM as long as it has not been decid
     // Dapat menggunakan temuan dari semester lalu
     $this->actingAs($member)->post(route('keputusan-rtm.store'), $payload + [
         'temuan_id' => $finding1->id,
-    ])->assertRedirect(route('keputusan-rtm.index'));
+    ])->assertRedirect(route('keputusan-rtm.fakultas'));
 
     $this->assertDatabaseHas('keputusan_rtms', [
         'temuan_id' => $finding1->id,
@@ -130,5 +130,5 @@ it('accepts any Temuan for a decision in an RTM as long as it has not been decid
     // Dapat menggunakan temuan dari semester berjalan
     $this->actingAs($member)->post(route('keputusan-rtm.store'), $payload + [
         'temuan_id' => $finding2->id,
-    ])->assertRedirect(route('keputusan-rtm.index'));
+    ])->assertRedirect(route('keputusan-rtm.fakultas'));
 });

@@ -155,6 +155,12 @@ Route::middleware(['auth', 'role:ketua-gkm,anggota-gkm'])
         Route::resource('notulen-rtm', NotulenRtmController::class)
             ->parameters(['notulen-rtm' => 'notulenRtm']);
 
+        Route::get('/keputusan-rtm/fakultas', [KeputusanRtmController::class, 'indexFakultas'])
+            ->name('keputusan-rtm.fakultas');
+
+        Route::get('/keputusan-rtm/prodi', [KeputusanRtmController::class, 'indexProdi'])
+            ->name('keputusan-rtm.prodi');
+
         Route::resource('keputusan-rtm', KeputusanRtmController::class)
             ->parameters(['keputusan-rtm' => 'keputusanRtm']);
     });
