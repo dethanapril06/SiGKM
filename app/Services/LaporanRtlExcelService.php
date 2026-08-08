@@ -16,12 +16,6 @@ use ZipArchive;
 
 class LaporanRtlExcelService
 {
-    private const TEMPLATE = 'templates/Template Laporan Rencana Tindak Lanjut FST.xlsx';
-
-    private const SHEET_FAKULTAS = 1;
-
-    private const SHEET_PRODI = 2;
-
     private const FIRST_DATA_ROW = 14;
 
     public function generateFakultas(
@@ -32,12 +26,10 @@ class LaporanRtlExcelService
         CarbonInterface $tanggalLaporan,
     ): string {
         $config = [
-            'sheet' => self::SHEET_FAKULTAS,
+            'template' => 'templates/Template Laporan Rencana Tindak Lanjut FST.xlsx',
+            'sheet' => 1,
             'sheet_name' => 'RTL Fakultas',
             'columns' => range('A', 'H'),
-            'last_template_row' => 329,
-            'footer_date_row' => 333,
-            'dimension_bottom' => 342,
             'footer_date_cell' => 'F',
             'title_cell' => 'B8',
             'semester_cell' => 'B9',
@@ -55,12 +47,10 @@ class LaporanRtlExcelService
         CarbonInterface $tanggalLaporan,
     ): string {
         $config = [
-            'sheet' => self::SHEET_PRODI,
+            'template' => 'templates/Template Laporan Rencana Tindak Lanjut Program Studi.xlsx',
+            'sheet' => 1,
             'sheet_name' => 'RTL Prodi',
             'columns' => range('A', 'J'),
-            'last_template_row' => 28,
-            'footer_date_row' => 32,
-            'dimension_bottom' => 41,
             'footer_date_cell' => 'H',
             'title_cell' => 'B8',
             'semester_cell' => 'B9',
@@ -78,7 +68,7 @@ class LaporanRtlExcelService
         CarbonInterface $tanggalLaporan,
         string $jenis,
     ): string {
-        $templatePath = resource_path(self::TEMPLATE);
+        $templatePath = resource_path($config['template']);
 
         if (! File::exists($templatePath)) {
             throw new RuntimeException('Template laporan RTL tidak ditemukan.');

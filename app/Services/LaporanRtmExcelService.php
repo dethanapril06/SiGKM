@@ -16,8 +16,6 @@ use ZipArchive;
 
 class LaporanRtmExcelService
 {
-    private const TEMPLATE = 'templates/Template Laporan RTM FST.xlsx';
-
     private const FIRST_DATA_ROW = 14;
 
     public function generateFakultas(
@@ -28,12 +26,10 @@ class LaporanRtmExcelService
         CarbonInterface $tanggalLaporan,
     ): string {
         return $this->generate($keputusanRtm, [
+            'template' => 'templates/Template Laporan RTM FST.xlsx',
             'sheet' => 1,
             'sheet_name' => 'RTM Fakultas',
             'columns' => range('A', 'N'),
-            'last_template_row' => 329,
-            'footer_date_row' => 333,
-            'dimension_bottom' => 342,
             'footer_date_cell' => 'J',
             'title_cell' => 'B8',
             'semester_cell' => 'B9',
@@ -49,12 +45,10 @@ class LaporanRtmExcelService
         CarbonInterface $tanggalLaporan,
     ): string {
         return $this->generate($keputusanRtm, [
-            'sheet' => 2,
+            'template' => 'templates/Template Laporan RTM Program Studi.xlsx',
+            'sheet' => 1,
             'sheet_name' => 'RTM Prodi',
             'columns' => range('A', 'P'),
-            'last_template_row' => 28,
-            'footer_date_row' => 32,
-            'dimension_bottom' => 41,
             'footer_date_cell' => 'L',
             'title_cell' => 'B8',
             'semester_cell' => 'B9',
@@ -70,7 +64,7 @@ class LaporanRtmExcelService
         CarbonInterface $tanggalLaporan,
         string $jenis,
     ): string {
-        $templatePath = resource_path(self::TEMPLATE);
+        $templatePath = resource_path($config['template']);
 
         if (! File::exists($templatePath)) {
             throw new RuntimeException('Template laporan RTM tidak ditemukan.');

@@ -263,6 +263,18 @@ class TemuanController extends Controller
             ->latest()
             ->get();
 
+        $evaluasiFakultas = EvaluasiIndikator::with([
+            'semester.tahunAkademik',
+            'evaluatable.standarMutu',
+        ])
+            ->where('evaluatable_type', 'indikator_mutu')
+            ->whereIn('status_capaian', ['dalam_proses', 'belum_tercapai'])
+            ->when($temuan && $temuan->evaluasiIndikator?->evaluatable_type === 'indikator_mutu', function ($query) use ($temuan) {
+                $query->orWhere('id', $temuan->evaluasi_indikator_id);
+            })
+            ->latest()
+            ->get();
+
         $tingkatRisiko = TingkatRisiko::orderBy('nama_tingkat')->get();
 
         $standarMutus = StandarMutu::active()
@@ -293,7 +305,7 @@ class TemuanController extends Controller
             }])
             ->get();
 
-        return compact('evaluasiIndikator', 'tingkatRisiko', 'standarMutus', 'sasaranStrategises');
+        return compact('evaluasiIndikator', 'evaluasiFakultas', 'tingkatRisiko', 'standarMutus', 'sasaranStrategises');
     }
 
     private function validatedData(Request $request, ?Temuan $temuan = null): array

@@ -34,40 +34,60 @@
 
                         <input type="radio" class="btn-check" name="scope_type" id="scope_prodi" value="prodi" @checked(($selectedScope ?? '') === 'prodi')>
                         <label class="btn btn-outline-primary" for="scope_prodi">
-                            <i class="bx bx-git-branch me-1"></i> Program Studi (Sasaran $\rightarrow$ IKU $\rightarrow$ IKK $\rightarrow$ IKKS)
+                            <i class="bx bx-git-branch me-1"></i> Program Studi (Sasaran &rarr; IKU &rarr; IKK &rarr; IKKS)
                         </label>
                     </div>
                 </div>
 
                 <div class="card bg-lighter border mb-4">
                     <div class="card-body">
-                        <h6 class="fw-bold text-primary mb-3">Pilihan Indikator Evaluasi (Bertingkat)</h6>
+                        <h6 class="fw-bold text-primary mb-3">Pilihan Evaluasi Indikator</h6>
 
                         {{-- Section 1: Fakultas Selection --}}
                         <div id="section_fakultas">
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <label class="form-label">1. Pilih Standar Mutu</label>
-                                    <select id="fakultas_standar_id" class="form-select">
-                                        <option value="">-- Pilih Standar Mutu --</option>
-                                        @foreach ($standarMutus as $sm)
-                                            <option value="{{ $sm->id }}">
-                                                [{{ $sm->kode_standar }}] {{ $sm->nama_standar }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Pilih Evaluasi Indikator Mutu <span class="text-danger">*</span></label>
+                                <select id="fakultas_evaluasi_id" class="form-select @error('evaluasi_indikator_id') is-invalid @enderror">
+                                    <option value="">-- Pilih Evaluasi Indikator (Hampir Tercapai / Belum Tercapai) --</option>
+                                    @foreach ($evaluasiFakultas as $ev)
+                                        @php
+                                            $indikator = $ev->evaluatable;
+                                            $standar = $indikator?->standarMutu;
+                                            $sem = $ev->semester ? ($ev->semester->tahunAkademik?->nama . ' ' . $ev->semester->nama) : '-';
+                                            $statusLabel = $ev->status_capaian === 'dalam_proses' ? 'Hampir Tercapai' : ($ev->status_capaian === 'belum_tercapai' ? 'Belum Tercapai' : str($ev->status_capaian)->replace('_', ' ')->title());
+                                            $isSelected = (string) old('evaluasi_indikator_id') === (string) $ev->id;
+                                        @endphp
+                                        <option value="{{ $ev->id }}"
+                                            @selected($isSelected)
+                                            data-standar="[{{ $standar?->kode_standar }}] {{ $standar?->nama_standar }}"
+                                            data-indikator="[{{ $indikator?->kode_indikator }}] {{ $indikator?->isi_indikator }}"
+                                            data-semester="{{ $sem }}"
+                                            data-status="{{ $statusLabel }}"
+                                            data-status-badge="{{ $ev->status_capaian === 'dalam_proses' ? 'warning' : 'danger' }}">
+                                            [{{ $standar?->kode_standar ?? '-' }} &bull; {{ $indikator?->kode_indikator ?? '-' }}] {{ \Illuminate\Support\Str::limit($indikator?->isi_indikator, 65) }} ({{ $sem }} | {{ $statusLabel }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <div class="form-text text-muted">
+                                    <i class="bx bx-info-circle me-1"></i> Menampilkan evaluasi indikator mutu dengan capaian <strong>Hampir Tercapai</strong> atau <strong>Belum Tercapai</strong>.
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">2. Pilih Indikator Mutu</label>
-                                    <select id="fakultas_indikator_id" class="form-select" disabled>
-                                        <option value="">-- Pilih Indikator Mutu --</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">3. Pilih Evaluasi Indikator <span class="text-danger">*</span></label>
-                                    <select id="fakultas_evaluasi_id" class="form-select" disabled>
-                                        <option value="">-- Pilih Evaluasi Indikator --</option>
-                                    </select>
+                            </div>
+
+                            <div id="fakultas_evaluasi_detail" class="card bg-light border p-3 d-none">
+                                <h6 class="fw-bold mb-2 text-primary"><i class="bx bx-info-circle me-1"></i> Detail Indikator Terpilih</h6>
+                                <div class="row g-2 small">
+                                    <div class="col-md-6">
+                                        <strong>Standar Mutu:</strong> <span id="detail_standar">-</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>Semester:</strong> <span id="detail_semester">-</span>
+                                    </div>
+                                    <div class="col-12">
+                                        <strong>Indikator Mutu:</strong> <span id="detail_indikator">-</span>
+                                    </div>
+                                    <div class="col-12">
+                                        <strong>Status Capaian:</strong> <span id="detail_status">-</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -219,7 +239,6 @@
 
     {{-- JSON Data Serialization for Cascading Dropdowns --}}
     <script>
-        const standarMutusData = @json($standarMutus);
         const sasaranStrategisesData = @json($sasaranStrategises);
 
         document.addEventListener('DOMContentLoaded', function () {
@@ -230,9 +249,33 @@
             const hiddenEvaluasiIdInput = document.getElementById('evaluasi_indikator_id');
 
             // Fakultas Elements
-            const fakultasStandarSelect = document.getElementById('fakultas_standar_id');
-            const fakultasIndikatorSelect = document.getElementById('fakultas_indikator_id');
             const fakultasEvaluasiSelect = document.getElementById('fakultas_evaluasi_id');
+            const detailCard = document.getElementById('fakultas_evaluasi_detail');
+            const detailStandar = document.getElementById('detail_standar');
+            const detailSemester = document.getElementById('detail_semester');
+            const detailIndikator = document.getElementById('detail_indikator');
+            const detailStatus = document.getElementById('detail_status');
+
+            function updateFakultasDetail() {
+                const selectedOpt = fakultasEvaluasiSelect.options[fakultasEvaluasiSelect.selectedIndex];
+                if (fakultasEvaluasiSelect.value && selectedOpt) {
+                    detailStandar.textContent = selectedOpt.dataset.standar || '-';
+                    detailSemester.textContent = selectedOpt.dataset.semester || '-';
+                    detailIndikator.textContent = selectedOpt.dataset.indikator || '-';
+                    const badgeClass = selectedOpt.dataset.statusBadge === 'warning' ? 'bg-warning text-dark' : 'bg-danger';
+                    detailStatus.innerHTML = `<span class="badge ${badgeClass}">${selectedOpt.dataset.status || '-'}</span>`;
+                    detailCard.classList.remove('d-none');
+                } else {
+                    detailCard.classList.add('d-none');
+                }
+            }
+
+            fakultasEvaluasiSelect.addEventListener('change', function () {
+                if (scopeFakultasRadio.checked) {
+                    hiddenEvaluasiIdInput.value = this.value;
+                }
+                updateFakultasDetail();
+            });
 
             // Prodi Elements
             const prodiSasaranSelect = document.getElementById('prodi_sasaran_id');
@@ -247,6 +290,7 @@
                     sectionFakultas.classList.remove('d-none');
                     sectionProdi.classList.add('d-none');
                     hiddenEvaluasiIdInput.value = fakultasEvaluasiSelect.value;
+                    updateFakultasDetail();
                 }
             });
 
@@ -258,63 +302,21 @@
                 }
             });
 
+            // Initialize Scope & Detail
             if (scopeProdiRadio.checked) {
-                scopeProdiRadio.dispatchEvent(new Event('change'));
+                sectionProdi.classList.remove('d-none');
+                sectionFakultas.classList.add('d-none');
+                hiddenEvaluasiIdInput.value = prodiEvaluasiSelect.value;
+            } else {
+                sectionFakultas.classList.remove('d-none');
+                sectionProdi.classList.add('d-none');
+                if (fakultasEvaluasiSelect.value) {
+                    hiddenEvaluasiIdInput.value = fakultasEvaluasiSelect.value;
+                    updateFakultasDetail();
+                }
             }
 
-            // 1. FAKULTAS CASCADE
-            fakultasStandarSelect.addEventListener('change', function () {
-                const standarId = parseInt(this.value);
-                fakultasIndikatorSelect.innerHTML = '<option value="">-- Pilih Indikator Mutu --</option>';
-                fakultasEvaluasiSelect.innerHTML = '<option value="">-- Pilih Evaluasi Indikator --</option>';
-                fakultasIndikatorSelect.disabled = true;
-                fakultasEvaluasiSelect.disabled = true;
-                hiddenEvaluasiIdInput.value = '';
-
-                if (!standarId) return;
-
-                const selectedStandar = standarMutusData.find(s => s.id === standarId);
-                if (selectedStandar && selectedStandar.indikator_mutus) {
-                    selectedStandar.indikator_mutus.forEach(im => {
-                        const opt = document.createElement('option');
-                        opt.value = im.id;
-                        opt.textContent = `[${im.kode_indikator}] ${im.isi_indikator}`;
-                        fakultasIndikatorSelect.appendChild(opt);
-                    });
-                    fakultasIndikatorSelect.disabled = false;
-                }
-            });
-
-            fakultasIndikatorSelect.addEventListener('change', function () {
-                const indikatorId = parseInt(this.value);
-                const standarId = parseInt(fakultasStandarSelect.value);
-                fakultasEvaluasiSelect.innerHTML = '<option value="">-- Pilih Evaluasi Indikator --</option>';
-                fakultasEvaluasiSelect.disabled = true;
-                hiddenEvaluasiIdInput.value = '';
-
-                if (!indikatorId) return;
-
-                const selectedStandar = standarMutusData.find(s => s.id === standarId);
-                if (selectedStandar) {
-                    const selectedIndikator = selectedStandar.indikator_mutus.find(im => im.id === indikatorId);
-                    if (selectedIndikator && selectedIndikator.evaluasi_indikators) {
-                        selectedIndikator.evaluasi_indikators.forEach(ev => {
-                            const opt = document.createElement('option');
-                            opt.value = ev.id;
-                            const sem = ev.semester ? `${ev.semester.tahun_akademik?.nama || ''} ${ev.semester.nama}` : '';
-                            opt.textContent = `${sem} | Capaian: ${ev.status_capaian.replace('_', ' ')}`;
-                            fakultasEvaluasiSelect.appendChild(opt);
-                        });
-                        fakultasEvaluasiSelect.disabled = false;
-                    }
-                }
-            });
-
-            fakultasEvaluasiSelect.addEventListener('change', function () {
-                hiddenEvaluasiIdInput.value = this.value;
-            });
-
-            // 2. PRODI CASCADE
+            // PRODI CASCADE
             prodiSasaranSelect.addEventListener('change', function () {
                 const sasaranId = parseInt(this.value);
                 prodiIkuSelect.innerHTML = '<option value="">-- Pilih IKU --</option>';
@@ -325,7 +327,7 @@
                 prodiIkkSelect.disabled = true;
                 prodiIkksSelect.disabled = true;
                 prodiEvaluasiSelect.disabled = true;
-                hiddenEvaluasiIdInput.value = '';
+                if (scopeProdiRadio.checked) hiddenEvaluasiIdInput.value = '';
 
                 if (!sasaranId) return;
 
@@ -350,7 +352,7 @@
                 prodiIkkSelect.disabled = true;
                 prodiIkksSelect.disabled = true;
                 prodiEvaluasiSelect.disabled = true;
-                hiddenEvaluasiIdInput.value = '';
+                if (scopeProdiRadio.checked) hiddenEvaluasiIdInput.value = '';
 
                 if (!ikuId) return;
 
@@ -377,7 +379,7 @@
                 prodiEvaluasiSelect.innerHTML = '<option value="">-- Pilih Evaluasi Indikator --</option>';
                 prodiIkksSelect.disabled = true;
                 prodiEvaluasiSelect.disabled = true;
-                hiddenEvaluasiIdInput.value = '';
+                if (scopeProdiRadio.checked) hiddenEvaluasiIdInput.value = '';
 
                 if (!ikkId) return;
 
@@ -405,7 +407,7 @@
                 const sasaranId = parseInt(prodiSasaranSelect.value);
                 prodiEvaluasiSelect.innerHTML = '<option value="">-- Pilih Evaluasi Indikator --</option>';
                 prodiEvaluasiSelect.disabled = true;
-                hiddenEvaluasiIdInput.value = '';
+                if (scopeProdiRadio.checked) hiddenEvaluasiIdInput.value = '';
 
                 if (!ikksId) return;
 
@@ -432,7 +434,9 @@
             });
 
             prodiEvaluasiSelect.addEventListener('change', function () {
-                hiddenEvaluasiIdInput.value = this.value;
+                if (scopeProdiRadio.checked) {
+                    hiddenEvaluasiIdInput.value = this.value;
+                }
             });
         });
     </script>
