@@ -102,14 +102,11 @@ class LaporanRtlExcelService
             $xpath = new DOMXPath($dom);
             $xpath->registerNamespace('x', 'http://schemas.openxmlformats.org/spreadsheetml/2006/main');
 
-            [$lastTemplateRow, $footerDateRow] = $this->detectBoundaries($zip, $xpath, self::FIRST_DATA_ROW);
-
+            $footerStartRow = $this->detectFooterStartRow($zip, $xpath, self::FIRST_DATA_ROW);
             $rowCount = max(1, $rtl->count());
-            $deltaRows = $this->resizeDataArea($xpath, $lastTemplateRow, $rowCount);
-            $footerDateRow = $footerDateRow + $deltaRows;
 
-            $this->removeTemplateDataMerges($xpath, $lastTemplateRow);
-            $this->clearDataRows($dom, $xpath, $config['columns'], $rowCount);
+            $footerDateRow = $this->prepareDataArea($dom, $xpath, self::FIRST_DATA_ROW, $footerStartRow, $rowCount, $config['columns']);
+
             $this->setText($dom, $xpath, $config['title_cell'], $config['title']);
             $this->setText(
                 $dom,
@@ -205,7 +202,7 @@ class LaporanRtlExcelService
         }
     }
 
-    private function detectBoundaries(ZipArchive $zip, DOMXPath $xpath, int $firstDataRow): array
+    private function detectFooterStartRow(ZipArchive $zip, DOMXPath $xpath, int $firstDataRow): int
     {
         $sharedStrings = [];
         $stringsXml = $zip->getFromName('xl/sharedStrings.xml');
@@ -223,8 +220,6 @@ class LaporanRtlExcelService
         }
 
         $rows = $xpath->query('//x:sheetData/x:row');
-        $lastTemplateRow = $firstDataRow;
-        $footerDateRow = null;
 
         foreach ($rows as $row) {
             $r = (int) $row->getAttribute('r');
@@ -253,101 +248,78 @@ class LaporanRtlExcelService
             $rowText = mb_strtolower(implode(' ', $cellTexts));
 
             if (str_contains($rowText, 'kupang') || str_contains($rowText, 'mengetahui')) {
-                $footerDateRow = $r;
-                break;
+                return $r;
             }
-
-            $lastTemplateRow = $r;
         }
 
-        if (! $footerDateRow) {
-            $footerDateRow = $lastTemplateRow + 4;
-        }
-
-        return [$lastTemplateRow, $footerDateRow];
+        return 17;
     }
 
-    private function resizeDataArea(DOMXPath $xpath, int $lastTemplateRow, int $requiredRows): int
+    private function prepareDataArea(DOMDocument $dom, DOMXPath $xpath, int $firstDataRow, int $footerStartRow, int $rowCount, array $columns): int
     {
-        $templateRows = $lastTemplateRow - self::FIRST_DATA_ROW + 1;
-        $deltaRows = $requiredRows - $templateRows;
+        $existingRows = [];
+        foreach ($xpath->query('//x:sheetData/x:row') as $row) {
+            $r = (int) $row->getAttribute('r');
+            if ($r >= $firstDataRow && $r < $footerStartRow) {
+                $existingRows[] = $row;
+            }
+        }
+        $existingCount = count($existingRows);
+        $deltaRows = $rowCount - $existingCount;
 
-        if ($deltaRows > 0) {
-            $this->insertRows($xpath, $lastTemplateRow, $deltaRows);
-            $this->shiftMergeRows($xpath, $lastTemplateRow, $deltaRows);
+        if ($deltaRows !== 0) {
+            $footerRows = [];
+            foreach ($xpath->query('//x:sheetData/x:row') as $row) {
+                if ((int) $row->getAttribute('r') >= $footerStartRow) {
+                    $footerRows[] = $row;
+                }
+            }
+            usort($footerRows, fn ($a, $b) => (int) $b->getAttribute('r') <=> (int) $a->getAttribute('r'));
+            foreach ($footerRows as $row) {
+                $this->renumberRow($row, (int) $row->getAttribute('r') + $deltaRows);
+            }
 
-            return $deltaRows;
+            $this->shiftMergeRows($xpath, $footerStartRow - 1, $deltaRows);
+        }
+
+        $protoRow = $xpath->query('//x:sheetData/x:row[@r="'.($firstDataRow - 1).'"]')->item(0)
+            ?? $xpath->query('//x:sheetData/x:row')->item(0);
+
+        $sheetData = $xpath->query('//x:sheetData')->item(0);
+        $newFooterStartRow = $footerStartRow + $deltaRows;
+        $firstFooterRow = $xpath->query('//x:sheetData/x:row[@r="'.$newFooterStartRow.'"]')->item(0);
+
+        for ($i = 0; $i < $rowCount; $i++) {
+            $targetRowNumber = $firstDataRow + $i;
+            $rowNode = $xpath->query('//x:sheetData/x:row[@r="'.$targetRowNumber.'"]')->item(0);
+
+            if (! $rowNode instanceof DOMElement) {
+                $newRow = $protoRow->cloneNode(true);
+                $this->renumberRow($newRow, $targetRowNumber);
+                foreach ($newRow->getElementsByTagName('c') as $c) {
+                    $this->clearCell($c);
+                }
+                if ($firstFooterRow instanceof DOMElement) {
+                    $sheetData->insertBefore($newRow, $firstFooterRow);
+                } else {
+                    $sheetData->appendChild($newRow);
+                }
+            } else {
+                foreach ($rowNode->getElementsByTagName('c') as $c) {
+                    $this->clearCell($c);
+                }
+            }
         }
 
         if ($deltaRows < 0) {
-            $this->deleteRows($xpath, self::FIRST_DATA_ROW + $requiredRows, $lastTemplateRow);
-            $this->shiftMergeRows($xpath, $lastTemplateRow, $deltaRows);
-
-            return $deltaRows;
-        }
-
-        return 0;
-    }
-
-    private function insertRows(DOMXPath $xpath, int $lastTemplateRow, int $count): void
-    {
-        $rowsToShift = [];
-
-        foreach ($xpath->query('//x:sheetData/x:row') as $row) {
-            if ((int) $row->getAttribute('r') > $lastTemplateRow) {
-                $rowsToShift[] = $row;
+            foreach ($existingRows as $index => $row) {
+                if ($index >= $rowCount) {
+                    $sheetData->removeChild($row);
+                }
             }
         }
 
-        foreach ($rowsToShift as $row) {
-            $this->renumberRow($row, (int) $row->getAttribute('r') + $count);
-        }
-
-        $templateRow = $xpath->query('//x:sheetData/x:row[@r="'.$lastTemplateRow.'"]')->item(0);
-        $firstShiftedRow = $rowsToShift[0] ?? null;
-
-        if (! $templateRow instanceof DOMElement || ! $firstShiftedRow instanceof DOMElement) {
-            throw new RuntimeException('Struktur baris pada template RTL tidak valid.');
-        }
-
-        for ($i = 1; $i <= $count; $i++) {
-            $newRow = $templateRow->cloneNode(true);
-            $this->renumberRow($newRow, $lastTemplateRow + $i);
-            $firstShiftedRow->parentNode->insertBefore($newRow, $firstShiftedRow);
-        }
-    }
-
-    private function deleteRows(DOMXPath $xpath, int $fromRow, int $toRow): void
-    {
-        if ($fromRow > $toRow) {
-            return;
-        }
-
-        $count = $toRow - $fromRow + 1;
-        $sheetData = $xpath->query('//x:sheetData')->item(0);
-
-        foreach (iterator_to_array($xpath->query('//x:sheetData/x:row')) as $row) {
-            if (! $row instanceof DOMElement) {
-                continue;
-            }
-
-            $rowNumber = (int) $row->getAttribute('r');
-
-            if ($rowNumber >= $fromRow && $rowNumber <= $toRow) {
-                $sheetData?->removeChild($row);
-            } elseif ($rowNumber > $toRow) {
-                $this->renumberRow($row, $rowNumber - $count);
-            }
-        }
-    }
-
-    private function clearDataRows(DOMDocument $dom, DOMXPath $xpath, array $columns, int $rowCount): void
-    {
-        for ($row = self::FIRST_DATA_ROW; $row < self::FIRST_DATA_ROW + $rowCount; $row++) {
-            foreach ($columns as $column) {
-                $this->setText($dom, $xpath, $column.$row, '');
-            }
-        }
+        return $newFooterStartRow;
     }
 
     private function mergeGroupRows(DOMDocument $dom, DOMXPath $xpath, Collection $rtl, string $jenis): void
