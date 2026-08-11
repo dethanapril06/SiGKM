@@ -61,14 +61,11 @@ class LaporanStandarMutuExcelService
             $xpath = new DOMXPath($dom);
             $xpath->registerNamespace('x', 'http://schemas.openxmlformats.org/spreadsheetml/2006/main');
 
-            [$lastTemplateRow, $footerDateRow] = $this->detectBoundaries($zip, $xpath, self::FIRST_DATA_ROW);
-
+            $footerStartRow = $this->detectFooterStartRow($zip, $xpath, self::FIRST_DATA_ROW);
             $rowCount = max(1, $indikatorMutu->count());
-            $deltaRows = $this->resizeDataArea($xpath, $lastTemplateRow, $rowCount);
-            $footerDateRow = $footerDateRow + $deltaRows;
 
-            $this->removeTemplateDataMerges($xpath, $lastTemplateRow);
-            $this->clearTemplateDataRows($dom, $xpath, $rowCount);
+            $footerDateRow = $this->prepareDataArea($dom, $xpath, self::FIRST_DATA_ROW, $footerStartRow, $rowCount, range('A', 'I'));
+
             $this->setReportHeader($dom, $xpath, $semester, $tahunAkademik, $fakultas, $tanggalLaporan, $footerDateRow);
             $this->fillIndicatorRows($dom, $xpath, $indikatorMutu);
             $this->mergeStandardRows($dom, $xpath, $indikatorMutu);
@@ -171,18 +168,7 @@ class LaporanStandarMutuExcelService
         }
     }
 
-    private function clearTemplateDataRows(DOMDocument $dom, DOMXPath $xpath, int $dataRows): void
-    {
-        $lastRow = self::FIRST_DATA_ROW + max($this->templateDataRowCount(), $dataRows) - 1;
-
-        for ($row = self::FIRST_DATA_ROW; $row <= $lastRow; $row++) {
-            foreach (range('A', 'I') as $column) {
-                $this->setText($dom, $xpath, $column.$row, '');
-            }
-        }
-    }
-
-    private function detectBoundaries(ZipArchive $zip, DOMXPath $xpath, int $firstDataRow): array
+    private function detectFooterStartRow(ZipArchive $zip, DOMXPath $xpath, int $firstDataRow): int
     {
         $sharedStrings = [];
         $stringsXml = $zip->getFromName('xl/sharedStrings.xml');
@@ -200,8 +186,6 @@ class LaporanStandarMutuExcelService
         }
 
         $rows = $xpath->query('//x:sheetData/x:row');
-        $lastTemplateRow = $firstDataRow;
-        $footerDateRow = null;
 
         foreach ($rows as $row) {
             $r = (int) $row->getAttribute('r');
@@ -230,86 +214,78 @@ class LaporanStandarMutuExcelService
             $rowText = mb_strtolower(implode(' ', $cellTexts));
 
             if (str_contains($rowText, 'kupang') || str_contains($rowText, 'mengetahui')) {
-                $footerDateRow = $r;
-                break;
+                return $r;
             }
-
-            $lastTemplateRow = $r;
         }
 
-        if (! $footerDateRow) {
-            $footerDateRow = $lastTemplateRow + 4;
-        }
-
-        return [$lastTemplateRow, $footerDateRow];
+        return 16;
     }
 
-    private function resizeDataArea(DOMXPath $xpath, int $lastTemplateRow, int $requiredRows): int
+    private function prepareDataArea(DOMDocument $dom, DOMXPath $xpath, int $firstDataRow, int $footerStartRow, int $rowCount, array $columns): int
     {
-        $templateRows = $lastTemplateRow - self::FIRST_DATA_ROW + 1;
-        $deltaRows = $requiredRows - $templateRows;
-
-        if ($deltaRows > 0) {
-            $this->insertRows($xpath, $lastTemplateRow, $deltaRows);
-            $this->shiftMergeRows($xpath, $lastTemplateRow, $deltaRows);
-        } elseif ($deltaRows < 0) {
-            $this->deleteRows($xpath, self::FIRST_DATA_ROW + $requiredRows, $lastTemplateRow);
-            $this->shiftMergeRows($xpath, $lastTemplateRow, $deltaRows);
-        }
-
-        return $deltaRows;
-    }
-
-    private function insertRows(DOMXPath $xpath, int $lastTemplateRow, int $count): void
-    {
-        $rowsToShift = [];
-
+        $existingRows = [];
         foreach ($xpath->query('//x:sheetData/x:row') as $row) {
-            if ((int) $row->getAttribute('r') > $lastTemplateRow) {
-                $rowsToShift[] = $row;
+            $r = (int) $row->getAttribute('r');
+            if ($r >= $firstDataRow && $r < $footerStartRow) {
+                $existingRows[] = $row;
             }
         }
+        $existingCount = count($existingRows);
+        $deltaRows = $rowCount - $existingCount;
 
-        foreach ($rowsToShift as $row) {
-            $this->renumberRow($row, (int) $row->getAttribute('r') + $count);
+        if ($deltaRows !== 0) {
+            $footerRows = [];
+            foreach ($xpath->query('//x:sheetData/x:row') as $row) {
+                if ((int) $row->getAttribute('r') >= $footerStartRow) {
+                    $footerRows[] = $row;
+                }
+            }
+            usort($footerRows, fn ($a, $b) => (int) $b->getAttribute('r') <=> (int) $a->getAttribute('r'));
+            foreach ($footerRows as $row) {
+                $this->renumberRow($row, (int) $row->getAttribute('r') + $deltaRows);
+            }
+
+            $this->shiftMergeRows($xpath, $footerStartRow - 1, $deltaRows);
         }
 
-        $templateRow = $xpath->query('//x:sheetData/x:row[@r="'.$lastTemplateRow.'"]')->item(0);
-        $firstShiftedRow = $rowsToShift[0] ?? null;
+        $protoRow = $xpath->query('//x:sheetData/x:row[@r="'.($firstDataRow - 1).'"]')->item(0)
+            ?? $xpath->query('//x:sheetData/x:row')->item(0);
 
-        if (! $templateRow instanceof DOMElement || ! $firstShiftedRow instanceof DOMElement) {
-            throw new RuntimeException('Struktur baris pada template laporan tidak valid.');
-        }
-
-        for ($i = 1; $i <= $count; $i++) {
-            $newRow = $templateRow->cloneNode(true);
-            $this->renumberRow($newRow, $lastTemplateRow + $i);
-            $firstShiftedRow->parentNode->insertBefore($newRow, $firstShiftedRow);
-        }
-    }
-
-    private function deleteRows(DOMXPath $xpath, int $fromRow, int $toRow): void
-    {
-        if ($fromRow > $toRow) {
-            return;
-        }
-
-        $count = $toRow - $fromRow + 1;
         $sheetData = $xpath->query('//x:sheetData')->item(0);
+        $newFooterStartRow = $footerStartRow + $deltaRows;
+        $firstFooterRow = $xpath->query('//x:sheetData/x:row[@r="'.$newFooterStartRow.'"]')->item(0);
 
-        foreach (iterator_to_array($xpath->query('//x:sheetData/x:row')) as $row) {
-            if (! $row instanceof DOMElement) {
-                continue;
-            }
+        for ($i = 0; $i < $rowCount; $i++) {
+            $targetRowNumber = $firstDataRow + $i;
+            $rowNode = $xpath->query('//x:sheetData/x:row[@r="'.$targetRowNumber.'"]')->item(0);
 
-            $rowNumber = (int) $row->getAttribute('r');
-
-            if ($rowNumber >= $fromRow && $rowNumber <= $toRow) {
-                $sheetData?->removeChild($row);
-            } elseif ($rowNumber > $toRow) {
-                $this->renumberRow($row, $rowNumber - $count);
+            if (! $rowNode instanceof DOMElement) {
+                $newRow = $protoRow->cloneNode(true);
+                $this->renumberRow($newRow, $targetRowNumber);
+                foreach ($newRow->getElementsByTagName('c') as $c) {
+                    $this->clearCell($c);
+                }
+                if ($firstFooterRow instanceof DOMElement) {
+                    $sheetData->insertBefore($newRow, $firstFooterRow);
+                } else {
+                    $sheetData->appendChild($newRow);
+                }
+            } else {
+                foreach ($rowNode->getElementsByTagName('c') as $c) {
+                    $this->clearCell($c);
+                }
             }
         }
+
+        if ($deltaRows < 0) {
+            foreach ($existingRows as $index => $row) {
+                if ($index >= $rowCount) {
+                    $sheetData->removeChild($row);
+                }
+            }
+        }
+
+        return $newFooterStartRow;
     }
 
     private function shiftMergeRows(DOMXPath $xpath, int $afterRow, int $delta): void
@@ -323,61 +299,18 @@ class LaporanStandarMutuExcelService
                 continue;
             }
 
-            $ref = $mergeCell->getAttribute('ref');
-            preg_match_all('/([A-Z]+)(\d+)/', $ref, $matches, PREG_SET_ORDER);
+            $reference = preg_replace_callback('/([A-Z]+)(\d+)/', function (array $matches) use ($afterRow, $delta) {
+                $row = (int) $matches[2];
 
-            if (count($matches) !== 2) {
-                continue;
-            }
+                if ($row > $afterRow) {
+                    $row += $delta;
+                }
 
-            $startRow = (int) $matches[0][2];
-            $endRow = (int) $matches[1][2];
+                return $matches[1].$row;
+            }, $mergeCell->getAttribute('ref'));
 
-            if ($startRow > $afterRow) {
-                $newStart = $startRow + $delta;
-                $newEnd = $endRow + $delta;
-                $mergeCell->setAttribute('ref', "{$matches[0][1]}{$newStart}:{$matches[1][1]}{$newEnd}");
-            }
+            $mergeCell->setAttribute('ref', $reference);
         }
-    }
-
-    private function removeTemplateDataMerges(DOMXPath $xpath, int $lastTemplateRow): void
-    {
-        $mergeCells = $xpath->query('//x:mergeCells')->item(0);
-
-        if (! $mergeCells instanceof DOMElement) {
-            return;
-        }
-
-        foreach (iterator_to_array($xpath->query('x:mergeCell', $mergeCells)) as $mergeCell) {
-            if (! $mergeCell instanceof DOMElement) {
-                continue;
-            }
-
-            if ($this->mergeTouchesDataArea($mergeCell->getAttribute('ref'), $lastTemplateRow)) {
-                $mergeCells->removeChild($mergeCell);
-            }
-        }
-
-        $mergeCells->setAttribute('count', (string) $mergeCells->childNodes->length);
-    }
-
-    private function mergeTouchesDataArea(string $reference, int $lastTemplateRow): bool
-    {
-        preg_match_all('/([A-Z]+)(\d+)/', $reference, $matches, PREG_SET_ORDER);
-
-        foreach ($matches as $match) {
-            $column = $match[1];
-            $row = (int) $match[2];
-
-            if (in_array($column, ['A', 'B'], true)
-                && $row >= self::FIRST_DATA_ROW
-                && $row <= $lastTemplateRow) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private function renumberRow(DOMElement $row, int $newNumber): void
