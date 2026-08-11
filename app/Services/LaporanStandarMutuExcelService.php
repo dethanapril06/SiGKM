@@ -121,11 +121,11 @@ class LaporanStandarMutuExcelService
             $this->setText($dom, $xpath, 'B'.$row, $indikator->standarMutu?->nama_standar ?? '-');
             $this->setText($dom, $xpath, 'C'.$row, $indikator->kode_indikator ?: (string) ($index + 1));
             $this->setText($dom, $xpath, 'D'.$row, $indikator->isi_indikator ?: '-');
-            $this->setText($dom, $xpath, 'E'.$row, $evaluasi ? $this->temuanText($evaluasi) : '');
-            $this->setText($dom, $xpath, 'F'.$row, $evaluasi ? $this->rencanaPerbaikanText($evaluasi) : '');
-            $this->setText($dom, $xpath, 'G'.$row, $evaluasi ? $this->targetCapaianText($evaluasi) : '');
-            $this->setText($dom, $xpath, 'H'.$row, $evaluasi ? $this->statusText($evaluasi) : '');
-            $this->setText($dom, $xpath, 'I'.$row, $evaluasi ? $this->keteranganText($evaluasi) : '');
+            $this->setText($dom, $xpath, 'E'.$row, $evaluasi ? $this->temuanText($evaluasi) : '-');
+            $this->setText($dom, $xpath, 'F'.$row, $evaluasi ? $this->rencanaPerbaikanText($evaluasi) : '-');
+            $this->setText($dom, $xpath, 'G'.$row, $evaluasi ? $this->targetCapaianText($evaluasi) : '-');
+            $this->setText($dom, $xpath, 'H'.$row, $evaluasi ? $this->statusText($evaluasi) : '-');
+            $this->setText($dom, $xpath, 'I'.$row, $evaluasi ? $this->keteranganText($evaluasi) : '-');
         }
     }
 
@@ -384,10 +384,12 @@ class LaporanStandarMutuExcelService
 
     private function keteranganText(EvaluasiIndikator $evaluasiIndikator): string
     {
-        return collect([
+        $text = collect([
             $evaluasiIndikator->catatan ? 'Catatan: '.$evaluasiIndikator->catatan : null,
             $evaluasiIndikator->bukti_capaian ? 'Bukti capaian tersedia' : null,
         ])->filter()->join("\n");
+
+        return $text ?: '-';
     }
 
     private function statusLabel(string $status): string
