@@ -320,7 +320,6 @@
 
         @if (auth()->user()->hasRole('koordinator-prodi'))
             <li class="menu-item {{ request()->routeIs('koordinator-prodi.dashboard') ? 'active' : '' }}">
-<<<<<<< HEAD
                 <a href="{{ route('koordinator-prodi.dashboard') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-home-circle"></i>
                     <div>Dashboard</div>
@@ -365,42 +364,6 @@
                         </a>
                     </li>
                 </ul>
-=======
-                <a href="{{ route('koordinator-prodi.dashboard') }}" class="menu-link"><i
-                        class="menu-icon tf-icons bx bx-home-circle"></i>
-                    <div>Dashboard</div>
-                </a>
-            </li>
-            <li class="menu-item {{ request()->routeIs('kinerja-program-studi.*') ? 'active' : '' }}">
-                <a href="{{ route('kinerja-program-studi.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-git-branch"></i>
-                    <div>Kinerja Program Studi</div>
-                </a>
-            </li>
-            <li class="menu-item {{ request()->routeIs('ami.*') ? 'active' : '' }}">
-                <a href="{{ route('ami.index') }}" class="menu-link"><i
-                        class="menu-icon tf-icons bx bx-folder"></i>
-                    <div>Rekapan AMI</div>
-                </a>
-            </li>
-            <li class="menu-item {{ request()->routeIs('laporan.perkuliahan') ? 'active' : '' }}">
-                <a href="{{ route('laporan.perkuliahan') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-spreadsheet"></i>
-                    <div>Ringkasan Perkuliahan</div>
-                </a>
-            </li>
-            <li class="menu-item {{ request()->routeIs('laporan.rtl.prodi') ? 'active' : '' }}">
-                <a href="{{ route('laporan.rtl.prodi') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-task"></i>
-                    <div>RTL Prodi</div>
-                </a>
-            </li>
-            <li class="menu-item {{ request()->routeIs('laporan.rtm.prodi') ? 'active' : '' }}">
-                <a href="{{ route('laporan.rtm.prodi') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-notepad"></i>
-                    <div>RTM Prodi</div>
-                </a>
->>>>>>> 08035baada202fb223c4a19e8f642c43ede48187
             </li>
         @endif
 
