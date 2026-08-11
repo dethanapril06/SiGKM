@@ -26,11 +26,15 @@ class GkmMembershipController extends Controller
 
     public function create(): View
     {
+        abort_unless(auth()->user()->hasRole('ketua-gkm'), 403);
+
         return view('master.gkm-membership.create');
     }
 
     public function store(Request $request): RedirectResponse
     {
+        abort_unless(auth()->user()->hasRole('ketua-gkm'), 403);
+
         $validated = $request->validate([
             'nama_anggota' => ['required', 'string', 'max:255'],
             'nip' => ['nullable', 'string', 'max:50'],
@@ -114,11 +118,15 @@ class GkmMembershipController extends Controller
 
     public function edit(GkmMembership $gkmMembership): View
     {
+        abort_unless(auth()->user()->hasRole('ketua-gkm'), 403);
+
         return view('master.gkm-membership.edit', compact('gkmMembership'));
     }
 
     public function update(Request $request, GkmMembership $gkmMembership): RedirectResponse
     {
+        abort_unless(auth()->user()->hasRole('ketua-gkm'), 403);
+
         $validated = $request->validate([
             'nama_anggota' => ['required', 'string', 'max:255'],
             'nip' => ['nullable', 'string', 'max:50'],
@@ -151,6 +159,8 @@ class GkmMembershipController extends Controller
 
     public function destroy(GkmMembership $gkmMembership): RedirectResponse
     {
+        abort_unless(auth()->user()->hasRole('ketua-gkm'), 403);
+
         $gkmMembership->delete();
 
         return redirect()

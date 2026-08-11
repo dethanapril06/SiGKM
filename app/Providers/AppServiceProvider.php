@@ -37,7 +37,7 @@ class AppServiceProvider extends ServiceProvider
         View::composer('layouts.partials.sidebar', function ($view) {
             $pendingCount = 0;
 
-            if (auth()->check() && auth()->user()->hasRole('ketua-gkm')) {
+            if (auth()->check() && auth()->user()->hasAnyRole(['ketua-gkm', 'anggota-gkm'])) {
                 $pendingCount = Laporan::where('jenis_laporan', 'perkuliahan')->where('status', 'diajukan')->count()
                     + NotulenRtm::where('status', 'diajukan')->count();
             }

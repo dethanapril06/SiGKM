@@ -1,12 +1,18 @@
 @extends('layouts.app')
 
 @section('content')
+    @php
+        $canManage = auth()->user()->hasRole('ketua-gkm');
+    @endphp
+
     <div class="d-flex justify-content-between align-items-center py-3 mb-4">
         <h4 class="fw-bold mb-0">Keanggotaan GKM</h4>
 
-        <a href="{{ route('gkm-membership.create') }}" class="btn btn-primary">
-            <i class="bx bx-plus"></i> Tambah Keanggotaan
-        </a>
+        @if ($canManage)
+            <a href="{{ route('gkm-membership.create') }}" class="btn btn-primary">
+                <i class="bx bx-plus"></i> Tambah Keanggotaan
+            </a>
+        @endif
     </div>
 
     @if (session('success'))
@@ -36,7 +42,9 @@
                         <th>Tanggal Mulai</th>
                         <th>Tanggal Selesai</th>
                         <th>Status</th>
-                        <th width="160">Aksi</th>
+                        @if ($canManage)
+                            <th width="160">Aksi</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody class="table-border-bottom-0">
@@ -65,27 +73,29 @@
                                     <span class="badge bg-label-secondary">Tidak Aktif</span>
                                 @endif
                             </td>
-                            <td>
-                                <a href="{{ route('gkm-membership.edit', $item->id) }}" class="btn btn-sm btn-icon btn-warning">
-                                    <i class="bx bx-edit"></i>
-                                </a>
+                            @if ($canManage)
+                                <td>
+                                    <a href="{{ route('gkm-membership.edit', $item->id) }}" class="btn btn-sm btn-icon btn-warning">
+                                        <i class="bx bx-edit"></i>
+                                    </a>
 
-                                <form action="{{ route('gkm-membership.destroy', $item->id) }}" method="POST"
-                                    class="d-inline" data-confirm-form data-confirm-title="Yakin ingin menghapus data ini?"
-                                    data-confirm-text="Data keanggotaan GKM yang dihapus tidak dapat dikembalikan."
-                                    data-confirm-button-text="Ya, hapus" data-confirm-button-color="#ff3e1d">
-                                    @csrf
-                                    @method('DELETE')
+                                    <form action="{{ route('gkm-membership.destroy', $item->id) }}" method="POST"
+                                        class="d-inline" data-confirm-form data-confirm-title="Yakin ingin menghapus data ini?"
+                                        data-confirm-text="Data keanggotaan GKM yang dihapus tidak dapat dikembalikan."
+                                        data-confirm-button-text="Ya, hapus" data-confirm-button-color="#ff3e1d">
+                                        @csrf
+                                        @method('DELETE')
 
-                                    <button type="submit" class="btn btn-sm btn-icon btn-danger">
-                                        <i class="bx bx-trash"></i>
-                                    </button>
-                                </form>
-                            </td>
+                                        <button type="submit" class="btn btn-sm btn-icon btn-danger">
+                                            <i class="bx bx-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            @endif
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center">
+                            <td colspan="{{ $canManage ? 7 : 6 }}" class="text-center">
                                 Data keanggotaan GKM belum tersedia.
                             </td>
                         </tr>
