@@ -127,37 +127,28 @@ class LaporanRtmExcelService
     {
         $standardNumbers = [];
 
-        foreach ($keputusanRtm->values() as $index => $keputusan) {
+        foreach ($keputusanRtm->values() as $index => $item) {
             $row = self::FIRST_DATA_ROW + $index;
-            $rtl = $keputusan->rencanaTindakLanjut;
-            $temuan = $rtl?->temuan;
-            $evaluatable = $temuan?->evaluasiIndikator?->evaluatable;
+            $standardKey = (string) ($item->standar_id ?? $item->standar_nama ?? 'tanpa-standar');
 
-            if (! $evaluatable instanceof IndikatorMutu) {
-                continue;
-            }
-
-            $standardKey = (string) ($evaluatable->standar_mutu_id ?? $evaluatable->standarMutu?->nama_standar ?? 'tanpa-standar');
             if (! array_key_exists($standardKey, $standardNumbers)) {
                 $standardNumbers[$standardKey] = count($standardNumbers) + 1;
             }
 
-            [$risiko, $dampak, $peringkat] = $this->riskColumns($temuan?->risikoTemuans ?? collect());
-
             $this->setNumber($dom, $xpath, 'A'.$row, $standardNumbers[$standardKey]);
-            $this->setText($dom, $xpath, 'B'.$row, $evaluatable->standarMutu?->nama_standar ?? '-');
-            $this->setText($dom, $xpath, 'C'.$row, $evaluatable->kode_indikator ?: (string) ($index + 1));
-            $this->setText($dom, $xpath, 'D'.$row, $evaluatable->isi_indikator ?: '-');
-            $this->setText($dom, $xpath, 'E'.$row, $temuan?->pernyataan ?: '-');
-            $this->setText($dom, $xpath, 'F'.$row, $risiko);
-            $this->setText($dom, $xpath, 'G'.$row, $dampak);
-            $this->setText($dom, $xpath, 'H'.$row, $peringkat);
-            $this->setText($dom, $xpath, 'I'.$row, $keputusan->uraian_keputusan ?: '-');
-            $this->setText($dom, $xpath, 'J'.$row, $rtl?->uraian_realisasi ?: '-');
-            $this->setText($dom, $xpath, 'K'.$row, $keputusan->strategi ?: '-');
-            $this->setText($dom, $xpath, 'L'.$row, $temuan?->nama_penanggung_jawab ?: '-');
-            $this->setText($dom, $xpath, 'M'.$row, $this->targetText($keputusan));
-            $this->setText($dom, $xpath, 'N'.$row, $this->statusLabel($temuan?->status));
+            $this->setText($dom, $xpath, 'B'.$row, $item->standar_nama ?? '-');
+            $this->setText($dom, $xpath, 'C'.$row, $item->indikator_kode ?: (string) ($index + 1));
+            $this->setText($dom, $xpath, 'D'.$row, $item->indikator_isi ?: '-');
+            $this->setText($dom, $xpath, 'E'.$row, $item->temuan ?: '-');
+            $this->setText($dom, $xpath, 'F'.$row, $item->risiko ?: '-');
+            $this->setText($dom, $xpath, 'G'.$row, $item->dampak ?: '-');
+            $this->setText($dom, $xpath, 'H'.$row, $item->peringkat ?: '-');
+            $this->setText($dom, $xpath, 'I'.$row, $item->keputusan_rtm ?: '-');
+            $this->setText($dom, $xpath, 'J'.$row, $item->tindak_lanjut ?: '-');
+            $this->setText($dom, $xpath, 'K'.$row, $item->strategi ?: '-');
+            $this->setText($dom, $xpath, 'L'.$row, $item->penanggung_jawab ?: '-');
+            $this->setText($dom, $xpath, 'M'.$row, $item->target_selesai ?: '-');
+            $this->setText($dom, $xpath, 'N'.$row, $this->statusLabel($item->status));
         }
     }
 
@@ -165,43 +156,30 @@ class LaporanRtmExcelService
     {
         $sasaranNumbers = [];
 
-        foreach ($keputusanRtm->values() as $index => $keputusan) {
+        foreach ($keputusanRtm->values() as $index => $item) {
             $row = self::FIRST_DATA_ROW + $index;
-            $rtl = $keputusan->rencanaTindakLanjut;
-            $temuan = $rtl?->temuan ?? $keputusan->temuan;
-            $ikks = $temuan?->evaluasiIndikator?->evaluatable;
-
-            if (! $ikks instanceof IndikatorKinerjaKegiatanSatuan) {
-                continue;
-            }
-
-            $ikk = $ikks->indikatorKinerjaKegiatan;
-            $iku = $ikk?->indikatorKinerjaUtama;
-            $sasaran = $iku?->sasaranStrategis;
-            $sasaranKey = (string) ($sasaran?->id ?? $sasaran?->uraian_sasaran ?? 'tanpa-sasaran');
+            $sasaranKey = (string) ($item->sasaran_id ?? $item->sasaran_kode ?? 'tanpa-sasaran');
 
             if (! array_key_exists($sasaranKey, $sasaranNumbers)) {
                 $sasaranNumbers[$sasaranKey] = count($sasaranNumbers) + 1;
             }
 
-            [$risiko, $dampak, $peringkat] = $this->riskColumns($temuan?->risikoTemuans ?? collect());
-
             $this->setNumber($dom, $xpath, 'A'.$row, $sasaranNumbers[$sasaranKey]);
-            $this->setText($dom, $xpath, 'B'.$row, $this->codeAndText($sasaran?->kode_sasaran, $sasaran?->uraian_sasaran));
-            $this->setText($dom, $xpath, 'C'.$row, $iku?->kode_iku ?: '-');
-            $this->setText($dom, $xpath, 'D'.$row, $iku?->uraian_iku ?: '-');
-            $this->setText($dom, $xpath, 'E'.$row, $this->codeAndText($ikk?->kode_ikk, $ikk?->uraian_ikk));
-            $this->setText($dom, $xpath, 'F'.$row, $this->codeAndText($ikks->kode_ikks, $ikks->uraian_ikks));
-            $this->setText($dom, $xpath, 'G'.$row, $temuan?->pernyataan ?: '-');
-            $this->setText($dom, $xpath, 'H'.$row, $risiko);
-            $this->setText($dom, $xpath, 'I'.$row, $dampak);
-            $this->setText($dom, $xpath, 'J'.$row, $peringkat);
-            $this->setText($dom, $xpath, 'K'.$row, $keputusan->uraian_keputusan ?: '-');
-            $this->setText($dom, $xpath, 'L'.$row, $rtl?->uraian_realisasi ?: '-');
-            $this->setText($dom, $xpath, 'M'.$row, $keputusan->strategi ?: '-');
-            $this->setText($dom, $xpath, 'N'.$row, $temuan?->nama_penanggung_jawab ?: '-');
-            $this->setText($dom, $xpath, 'O'.$row, $this->targetText($keputusan));
-            $this->setText($dom, $xpath, 'P'.$row, $this->statusLabel($temuan?->status));
+            $this->setText($dom, $xpath, 'B'.$row, $item->sasaran_text ?? '-');
+            $this->setText($dom, $xpath, 'C'.$row, $item->iku_kode ?? '-');
+            $this->setText($dom, $xpath, 'D'.$row, $item->iku_uraian ?? '-');
+            $this->setText($dom, $xpath, 'E'.$row, $item->ikk_text ?? '-');
+            $this->setText($dom, $xpath, 'F'.$row, $item->ikks_text ?? '-');
+            $this->setText($dom, $xpath, 'G'.$row, $item->temuan ?: '-');
+            $this->setText($dom, $xpath, 'H'.$row, $item->risiko ?: '-');
+            $this->setText($dom, $xpath, 'I'.$row, $item->dampak ?: '-');
+            $this->setText($dom, $xpath, 'J'.$row, $item->peringkat ?: '-');
+            $this->setText($dom, $xpath, 'K'.$row, $item->keputusan_rtm ?: '-');
+            $this->setText($dom, $xpath, 'L'.$row, $item->tindak_lanjut ?: '-');
+            $this->setText($dom, $xpath, 'M'.$row, $item->strategi ?: '-');
+            $this->setText($dom, $xpath, 'N'.$row, $item->penanggung_jawab ?: '-');
+            $this->setText($dom, $xpath, 'O'.$row, $item->target_selesai ?: '-');
+            $this->setText($dom, $xpath, 'P'.$row, $this->statusLabel($item->status));
         }
     }
 
@@ -479,36 +457,28 @@ class LaporanRtmExcelService
         ];
     }
 
-    private function facultyGroupKey(KeputusanRtm $keputusan): string
+    private function facultyGroupKey(object $item): string
     {
-        $evaluatable = $keputusan->rencanaTindakLanjut?->temuan?->evaluasiIndikator?->evaluatable;
-
-        return $evaluatable instanceof IndikatorMutu
-            ? (string) ($evaluatable->standar_mutu_id ?? $evaluatable->standarMutu?->nama_standar ?? 'tanpa-standar')
-            : 'tanpa-standar';
+        return (string) ($item->standar_id ?? $item->standar_nama ?? 'tanpa-standar');
     }
 
-    private function prodiGroupKey(KeputusanRtm $keputusan): string
+    private function prodiGroupKey(object $item): string
     {
-        $ikks = $keputusan->rencanaTindakLanjut?->temuan?->evaluasiIndikator?->evaluatable;
-
-        if (! $ikks instanceof IndikatorKinerjaKegiatanSatuan) {
-            return 'tanpa-sasaran';
-        }
-
-        $sasaran = $ikks->indikatorKinerjaKegiatan?->indikatorKinerjaUtama?->sasaranStrategis;
-
-        return (string) ($sasaran?->id ?? $sasaran?->uraian_sasaran ?? 'tanpa-sasaran');
-    }
-
-    private function targetText(KeputusanRtm $keputusan): string
-    {
-        return $keputusan->temuan?->target_selesai ?: '-';
+        return (string) ($item->sasaran_id ?? $item->sasaran_kode ?? 'tanpa-sasaran');
     }
 
     private function statusLabel(?string $status): string
     {
-        return str($status ?? 'draft')->replace('_', ' ')->title()->toString();
+        if (! $status || $status === '-') {
+            return '-';
+        }
+
+        return match ($status) {
+            'selesai', 'ditutup' => 'Selesai',
+            'proses', 'dalam_proses' => 'Proses',
+            'belum_dikerjakan', 'belum_tercapai', 'terbuka' => 'Belum Dikerjakan',
+            default => str($status)->replace('_', ' ')->title()->toString(),
+        };
     }
 
     private function codeAndText(?string $code, ?string $text): string
