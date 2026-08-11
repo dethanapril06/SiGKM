@@ -47,7 +47,7 @@
                         <div id="section_fakultas">
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Pilih Evaluasi Indikator Mutu <span class="text-danger">*</span></label>
-                                <select id="fakultas_evaluasi_id" class="form-select @error('evaluasi_indikator_id') is-invalid @enderror">
+                                <select id="fakultas_evaluasi_id" class="form-select select2 @error('evaluasi_indikator_id') is-invalid @enderror" data-placeholder="-- Cari atau Pilih Evaluasi Indikator Mutu --">
                                     <option value="">-- Pilih Evaluasi Indikator (Hampir Tercapai / Belum Tercapai) --</option>
                                     @foreach ($evaluasiFakultas as $ev)
                                         @php
@@ -64,12 +64,12 @@
                                             data-semester="{{ $sem }}"
                                             data-status="{{ $statusLabel }}"
                                             data-status-badge="{{ $ev->status_capaian === 'dalam_proses' ? 'warning' : 'danger' }}">
-                                            [{{ $standar?->kode_standar ?? '-' }} &bull; {{ $indikator?->kode_indikator ?? '-' }}] {{ \Illuminate\Support\Str::limit($indikator?->isi_indikator, 65) }} ({{ $sem }} | {{ $statusLabel }})
+                                            [{{ $standar?->kode_standar ?? '-' }} &bull; {{ $indikator?->kode_indikator ?? '-' }}] {{ $indikator?->isi_indikator }} ({{ $sem }} | {{ $statusLabel }})
                                         </option>
                                     @endforeach
                                 </select>
                                 <div class="form-text text-muted">
-                                    <i class="bx bx-info-circle me-1"></i> Menampilkan evaluasi indikator mutu dengan capaian <strong>Hampir Tercapai</strong> atau <strong>Belum Tercapai</strong>.
+                                    <i class="bx bx-info-circle me-1"></i> Menampilkan evaluasi indikator mutu dengan capaian <strong>Hampir Tercapai</strong> atau <strong>Belum Tercapai</strong>. Ketik kode standar, kode indikator, atau kata kunci untuk mencari.
                                 </div>
                             </div>
 
@@ -97,18 +97,18 @@
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6">
                                     <label class="form-label">1. Pilih Sasaran Strategis</label>
-                                    <select id="prodi_sasaran_id" class="form-select">
+                                    <select id="prodi_sasaran_id" class="form-select select2" data-placeholder="-- Pilih Sasaran Strategis --">
                                         <option value="">-- Pilih Sasaran Strategis --</option>
                                         @foreach ($sasaranStrategises as $ss)
                                             <option value="{{ $ss->id }}">
-                                                [{{ $ss->kode_sasaran }}] {{ \Illuminate\Support\Str::limit($ss->uraian_sasaran, 60) }}
+                                                [{{ $ss->kode_sasaran }}] {{ $ss->uraian_sasaran }}
                                             </option>
                                         @endforeach
                                     </select>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">2. Pilih IKU (Indikator Kinerja Utama)</label>
-                                    <select id="prodi_iku_id" class="form-select" disabled>
+                                    <select id="prodi_iku_id" class="form-select select2" data-placeholder="-- Pilih IKU --" disabled>
                                         <option value="">-- Pilih IKU --</option>
                                     </select>
                                 </div>
@@ -116,19 +116,19 @@
                             <div class="row g-3">
                                 <div class="col-md-4">
                                     <label class="form-label">3. Pilih IKK (Indikator Kinerja Kegiatan)</label>
-                                    <select id="prodi_ikk_id" class="form-select" disabled>
+                                    <select id="prodi_ikk_id" class="form-select select2" data-placeholder="-- Pilih IKK --" disabled>
                                         <option value="">-- Pilih IKK --</option>
                                     </select>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">4. Pilih IKKS (Satuan)</label>
-                                    <select id="prodi_ikks_id" class="form-select" disabled>
+                                    <select id="prodi_ikks_id" class="form-select select2" data-placeholder="-- Pilih IKKS --" disabled>
                                         <option value="">-- Pilih IKKS --</option>
                                     </select>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">5. Pilih Evaluasi Indikator <span class="text-danger">*</span></label>
-                                    <select id="prodi_evaluasi_id" class="form-select" disabled>
+                                    <select id="prodi_evaluasi_id" class="form-select select2" data-placeholder="-- Pilih Evaluasi Indikator --" disabled>
                                         <option value="">-- Pilih Evaluasi Indikator --</option>
                                     </select>
                                 </div>
@@ -194,8 +194,8 @@
 
                 <div class="mb-3">
                     <label class="form-label">Tingkat Risiko</label>
-                    <select name="tingkat_risiko_id"
-                        class="form-select @error('tingkat_risiko_id') is-invalid @enderror">
+                    <select name="tingkat_risiko_id" id="tingkat_risiko_id"
+                        class="form-select select2 @error('tingkat_risiko_id') is-invalid @enderror" data-placeholder="-- Tanpa Risiko --">
                         <option value="">-- Tanpa Risiko --</option>
                         @foreach ($tingkatRisiko as $risiko)
                             <option value="{{ $risiko->id }}"
@@ -238,206 +238,232 @@
     </div>
 
     {{-- JSON Data Serialization for Cascading Dropdowns --}}
+    @push('scripts')
     <script>
         const sasaranStrategisesData = @json($sasaranStrategises);
 
-        document.addEventListener('DOMContentLoaded', function () {
-            const scopeFakultasRadio = document.getElementById('scope_fakultas');
-            const scopeProdiRadio = document.getElementById('scope_prodi');
-            const sectionFakultas = document.getElementById('section_fakultas');
-            const sectionProdi = document.getElementById('section_prodi');
-            const hiddenEvaluasiIdInput = document.getElementById('evaluasi_indikator_id');
+        $(document).ready(function () {
+            const $scopeFakultasRadio = $('#scope_fakultas');
+            const $scopeProdiRadio = $('#scope_prodi');
+            const $sectionFakultas = $('#section_fakultas');
+            const $sectionProdi = $('#section_prodi');
+            const $hiddenEvaluasiIdInput = $('#evaluasi_indikator_id');
 
             // Fakultas Elements
-            const fakultasEvaluasiSelect = document.getElementById('fakultas_evaluasi_id');
-            const detailCard = document.getElementById('fakultas_evaluasi_detail');
-            const detailStandar = document.getElementById('detail_standar');
-            const detailSemester = document.getElementById('detail_semester');
-            const detailIndikator = document.getElementById('detail_indikator');
-            const detailStatus = document.getElementById('detail_status');
+            const $fakultasEvaluasiSelect = $('#fakultas_evaluasi_id');
+            const $detailCard = $('#fakultas_evaluasi_detail');
+            const $detailStandar = $('#detail_standar');
+            const $detailSemester = $('#detail_semester');
+            const $detailIndikator = $('#detail_indikator');
+            const $detailStatus = $('#detail_status');
+
+            // Prodi Elements
+            const $prodiSasaranSelect = $('#prodi_sasaran_id');
+            const $prodiIkuSelect = $('#prodi_iku_id');
+            const $prodiIkkSelect = $('#prodi_ikk_id');
+            const $prodiIkksSelect = $('#prodi_ikks_id');
+            const $prodiEvaluasiSelect = $('#prodi_evaluasi_id');
+
+            function initSelect2() {
+                $('.select2').each(function() {
+                    const $el = $(this);
+                    $el.select2({
+                        theme: 'bootstrap-5',
+                        width: '100%',
+                        placeholder: $el.data('placeholder') || $el.find('option:first').text() || '-- Pilih --',
+                        allowClear: true,
+                    });
+                });
+            }
+
+            initSelect2();
 
             function updateFakultasDetail() {
-                const selectedOpt = fakultasEvaluasiSelect.options[fakultasEvaluasiSelect.selectedIndex];
-                if (fakultasEvaluasiSelect.value && selectedOpt) {
-                    detailStandar.textContent = selectedOpt.dataset.standar || '-';
-                    detailSemester.textContent = selectedOpt.dataset.semester || '-';
-                    detailIndikator.textContent = selectedOpt.dataset.indikator || '-';
-                    const badgeClass = selectedOpt.dataset.statusBadge === 'warning' ? 'bg-warning text-dark' : 'bg-danger';
-                    detailStatus.innerHTML = `<span class="badge ${badgeClass}">${selectedOpt.dataset.status || '-'}</span>`;
-                    detailCard.classList.remove('d-none');
+                const val = $fakultasEvaluasiSelect.val();
+                const $selectedOpt = $fakultasEvaluasiSelect.find(':selected');
+
+                if (val && $selectedOpt.length && val !== "") {
+                    $detailStandar.text($selectedOpt.data('standar') || '-');
+                    $detailSemester.text($selectedOpt.data('semester') || '-');
+                    $detailIndikator.text($selectedOpt.data('indikator') || '-');
+                    const isWarning = $selectedOpt.data('status-badge') === 'warning';
+                    const badgeClass = isWarning ? 'bg-warning text-dark' : 'bg-danger';
+                    $detailStatus.html(`<span class="badge ${badgeClass}">${$selectedOpt.data('status') || '-'}</span>`);
+                    $detailCard.removeClass('d-none');
                 } else {
-                    detailCard.classList.add('d-none');
+                    $detailCard.addClass('d-none');
                 }
             }
 
-            fakultasEvaluasiSelect.addEventListener('change', function () {
-                if (scopeFakultasRadio.checked) {
-                    hiddenEvaluasiIdInput.value = this.value;
+            $fakultasEvaluasiSelect.on('change', function () {
+                if ($scopeFakultasRadio.is(':checked')) {
+                    $hiddenEvaluasiIdInput.val(this.value);
                 }
                 updateFakultasDetail();
             });
 
-            // Prodi Elements
-            const prodiSasaranSelect = document.getElementById('prodi_sasaran_id');
-            const prodiIkuSelect = document.getElementById('prodi_iku_id');
-            const prodiIkkSelect = document.getElementById('prodi_ikk_id');
-            const prodiIkksSelect = document.getElementById('prodi_ikks_id');
-            const prodiEvaluasiSelect = document.getElementById('prodi_evaluasi_id');
-
-            // Scope Radio Switcher
-            scopeFakultasRadio.addEventListener('change', function () {
-                if (this.checked) {
-                    sectionFakultas.classList.remove('d-none');
-                    sectionProdi.classList.add('d-none');
-                    hiddenEvaluasiIdInput.value = fakultasEvaluasiSelect.value;
+            // Scope Switcher
+            $('input[name="scope_type"]').on('change', function () {
+                if ($scopeFakultasRadio.is(':checked')) {
+                    $sectionFakultas.removeClass('d-none');
+                    $sectionProdi.addClass('d-none');
+                    $hiddenEvaluasiIdInput.val($fakultasEvaluasiSelect.val());
                     updateFakultasDetail();
+                    $fakultasEvaluasiSelect.select2({
+                        theme: 'bootstrap-5',
+                        width: '100%',
+                        placeholder: $fakultasEvaluasiSelect.data('placeholder') || '-- Pilih --',
+                        allowClear: true,
+                    });
+                } else {
+                    $sectionProdi.removeClass('d-none');
+                    $sectionFakultas.addClass('d-none');
+                    $hiddenEvaluasiIdInput.val($prodiEvaluasiSelect.val());
+                    $([$prodiSasaranSelect, $prodiIkuSelect, $prodiIkkSelect, $prodiIkksSelect, $prodiEvaluasiSelect]).each(function() {
+                        $(this).select2({
+                            theme: 'bootstrap-5',
+                            width: '100%',
+                            placeholder: $(this).data('placeholder') || '-- Pilih --',
+                            allowClear: true,
+                        });
+                    });
                 }
             });
 
-            scopeProdiRadio.addEventListener('change', function () {
-                if (this.checked) {
-                    sectionProdi.classList.remove('d-none');
-                    sectionFakultas.classList.add('d-none');
-                    hiddenEvaluasiIdInput.value = prodiEvaluasiSelect.value;
-                }
-            });
-
-            // Initialize Scope & Detail
-            if (scopeProdiRadio.checked) {
-                sectionProdi.classList.remove('d-none');
-                sectionFakultas.classList.add('d-none');
-                hiddenEvaluasiIdInput.value = prodiEvaluasiSelect.value;
+            // Initialize state
+            if ($scopeProdiRadio.is(':checked')) {
+                $sectionProdi.removeClass('d-none');
+                $sectionFakultas.addClass('d-none');
+                $hiddenEvaluasiIdInput.val($prodiEvaluasiSelect.val());
             } else {
-                sectionFakultas.classList.remove('d-none');
-                sectionProdi.classList.add('d-none');
-                if (fakultasEvaluasiSelect.value) {
-                    hiddenEvaluasiIdInput.value = fakultasEvaluasiSelect.value;
+                $sectionFakultas.removeClass('d-none');
+                $sectionProdi.addClass('d-none');
+                if ($fakultasEvaluasiSelect.val()) {
+                    $hiddenEvaluasiIdInput.val($fakultasEvaluasiSelect.val());
                     updateFakultasDetail();
                 }
             }
 
             // PRODI CASCADE
-            prodiSasaranSelect.addEventListener('change', function () {
+            $prodiSasaranSelect.on('change', function () {
                 const sasaranId = parseInt(this.value);
-                prodiIkuSelect.innerHTML = '<option value="">-- Pilih IKU --</option>';
-                prodiIkkSelect.innerHTML = '<option value="">-- Pilih IKK --</option>';
-                prodiIkksSelect.innerHTML = '<option value="">-- Pilih IKKS --</option>';
-                prodiEvaluasiSelect.innerHTML = '<option value="">-- Pilih Evaluasi Indikator --</option>';
-                prodiIkuSelect.disabled = true;
-                prodiIkkSelect.disabled = true;
-                prodiIkksSelect.disabled = true;
-                prodiEvaluasiSelect.disabled = true;
-                if (scopeProdiRadio.checked) hiddenEvaluasiIdInput.value = '';
+                $prodiIkuSelect.empty().append('<option value="">-- Pilih IKU --</option>').prop('disabled', true);
+                $prodiIkkSelect.empty().append('<option value="">-- Pilih IKK --</option>').prop('disabled', true);
+                $prodiIkksSelect.empty().append('<option value="">-- Pilih IKKS --</option>').prop('disabled', true);
+                $prodiEvaluasiSelect.empty().append('<option value="">-- Pilih Evaluasi Indikator --</option>').prop('disabled', true);
 
-                if (!sasaranId) return;
+                if ($scopeProdiRadio.is(':checked')) $hiddenEvaluasiIdInput.val('');
 
-                const selectedSasaran = sasaranStrategisesData.find(ss => ss.id === sasaranId);
-                if (selectedSasaran && selectedSasaran.indikator_kinerja_utamas) {
-                    selectedSasaran.indikator_kinerja_utamas.forEach(iku => {
-                        const opt = document.createElement('option');
-                        opt.value = iku.id;
-                        opt.textContent = `[${iku.kode_iku}] ${iku.uraian_iku}`;
-                        prodiIkuSelect.appendChild(opt);
-                    });
-                    prodiIkuSelect.disabled = false;
-                }
-            });
-
-            prodiIkuSelect.addEventListener('change', function () {
-                const ikuId = parseInt(this.value);
-                const sasaranId = parseInt(prodiSasaranSelect.value);
-                prodiIkkSelect.innerHTML = '<option value="">-- Pilih IKK --</option>';
-                prodiIkksSelect.innerHTML = '<option value="">-- Pilih IKKS --</option>';
-                prodiEvaluasiSelect.innerHTML = '<option value="">-- Pilih Evaluasi Indikator --</option>';
-                prodiIkkSelect.disabled = true;
-                prodiIkksSelect.disabled = true;
-                prodiEvaluasiSelect.disabled = true;
-                if (scopeProdiRadio.checked) hiddenEvaluasiIdInput.value = '';
-
-                if (!ikuId) return;
-
-                const selectedSasaran = sasaranStrategisesData.find(ss => ss.id === sasaranId);
-                if (selectedSasaran) {
-                    const selectedIku = selectedSasaran.indikator_kinerja_utamas.find(i => i.id === ikuId);
-                    if (selectedIku && selectedIku.indikator_kinerja_kegiatans) {
-                        selectedIku.indikator_kinerja_kegiatans.forEach(ikk => {
-                            const opt = document.createElement('option');
-                            opt.value = ikk.id;
-                            opt.textContent = `[${ikk.kode_ikk}] ${ikk.uraian_ikk}`;
-                            prodiIkkSelect.appendChild(opt);
+                if (sasaranId) {
+                    const selectedSasaran = sasaranStrategisesData.find(ss => ss.id === sasaranId);
+                    if (selectedSasaran && selectedSasaran.indikator_kinerja_utamas) {
+                        selectedSasaran.indikator_kinerja_utamas.forEach(iku => {
+                            $prodiIkuSelect.append(new Option(`[${iku.kode_iku}] ${iku.uraian_iku}`, iku.id));
                         });
-                        prodiIkkSelect.disabled = false;
+                        $prodiIkuSelect.prop('disabled', false);
                     }
                 }
+
+                $prodiIkuSelect.trigger('change');
+                $prodiIkkSelect.trigger('change');
+                $prodiIkksSelect.trigger('change');
+                $prodiEvaluasiSelect.trigger('change');
             });
 
-            prodiIkkSelect.addEventListener('change', function () {
-                const ikkId = parseInt(this.value);
-                const ikuId = parseInt(prodiIkuSelect.value);
-                const sasaranId = parseInt(prodiSasaranSelect.value);
-                prodiIkksSelect.innerHTML = '<option value="">-- Pilih IKKS --</option>';
-                prodiEvaluasiSelect.innerHTML = '<option value="">-- Pilih Evaluasi Indikator --</option>';
-                prodiIkksSelect.disabled = true;
-                prodiEvaluasiSelect.disabled = true;
-                if (scopeProdiRadio.checked) hiddenEvaluasiIdInput.value = '';
+            $prodiIkuSelect.on('change', function () {
+                const ikuId = parseInt(this.value);
+                const sasaranId = parseInt($prodiSasaranSelect.val());
+                $prodiIkkSelect.empty().append('<option value="">-- Pilih IKK --</option>').prop('disabled', true);
+                $prodiIkksSelect.empty().append('<option value="">-- Pilih IKKS --</option>').prop('disabled', true);
+                $prodiEvaluasiSelect.empty().append('<option value="">-- Pilih Evaluasi Indikator --</option>').prop('disabled', true);
 
-                if (!ikkId) return;
+                if ($scopeProdiRadio.is(':checked')) $hiddenEvaluasiIdInput.val('');
 
-                const selectedSasaran = sasaranStrategisesData.find(ss => ss.id === sasaranId);
-                if (selectedSasaran) {
-                    const selectedIku = selectedSasaran.indikator_kinerja_utamas.find(i => i.id === ikuId);
-                    if (selectedIku) {
-                        const selectedIkk = selectedIku.indikator_kinerja_kegiatans.find(k => k.id === ikkId);
-                        if (selectedIkk && selectedIkk.indikator_kinerja_kegiatan_satuan) {
-                            const ikks = selectedIkk.indikator_kinerja_kegiatan_satuan;
-                            const opt = document.createElement('option');
-                            opt.value = ikks.id;
-                            opt.textContent = `[${ikks.kode_ikks}] ${ikks.uraian_ikks}`;
-                            prodiIkksSelect.appendChild(opt);
-                            prodiIkksSelect.disabled = false;
+                if (ikuId && sasaranId) {
+                    const selectedSasaran = sasaranStrategisesData.find(ss => ss.id === sasaranId);
+                    if (selectedSasaran) {
+                        const selectedIku = selectedSasaran.indikator_kinerja_utamas.find(i => i.id === ikuId);
+                        if (selectedIku && selectedIku.indikator_kinerja_kegiatans) {
+                            selectedIku.indikator_kinerja_kegiatans.forEach(ikk => {
+                                $prodiIkkSelect.append(new Option(`[${ikk.kode_ikk}] ${ikk.uraian_ikk}`, ikk.id));
+                            });
+                            $prodiIkkSelect.prop('disabled', false);
                         }
                     }
                 }
+
+                $prodiIkkSelect.trigger('change');
+                $prodiIkksSelect.trigger('change');
+                $prodiEvaluasiSelect.trigger('change');
             });
 
-            prodiIkksSelect.addEventListener('change', function () {
-                const ikksId = parseInt(this.value);
-                const ikkId = parseInt(prodiIkkSelect.value);
-                const ikuId = parseInt(prodiIkuSelect.value);
-                const sasaranId = parseInt(prodiSasaranSelect.value);
-                prodiEvaluasiSelect.innerHTML = '<option value="">-- Pilih Evaluasi Indikator --</option>';
-                prodiEvaluasiSelect.disabled = true;
-                if (scopeProdiRadio.checked) hiddenEvaluasiIdInput.value = '';
+            $prodiIkkSelect.on('change', function () {
+                const ikkId = parseInt(this.value);
+                const ikuId = parseInt($prodiIkuSelect.val());
+                const sasaranId = parseInt($prodiSasaranSelect.val());
+                $prodiIkksSelect.empty().append('<option value="">-- Pilih IKKS --</option>').prop('disabled', true);
+                $prodiEvaluasiSelect.empty().append('<option value="">-- Pilih Evaluasi Indikator --</option>').prop('disabled', true);
 
-                if (!ikksId) return;
+                if ($scopeProdiRadio.is(':checked')) $hiddenEvaluasiIdInput.val('');
 
-                const selectedSasaran = sasaranStrategisesData.find(ss => ss.id === sasaranId);
-                if (selectedSasaran) {
-                    const selectedIku = selectedSasaran.indikator_kinerja_utamas.find(i => i.id === ikuId);
-                    if (selectedIku) {
-                        const selectedIkk = selectedIku.indikator_kinerja_kegiatans.find(k => k.id === ikkId);
-                        if (selectedIkk && selectedIkk.indikator_kinerja_kegiatan_satuan) {
-                            const ikks = selectedIkk.indikator_kinerja_kegiatan_satuan;
-                            if (ikks.evaluasi_indikators) {
-                                ikks.evaluasi_indikators.forEach(ev => {
-                                    const opt = document.createElement('option');
-                                    opt.value = ev.id;
-                                    const sem = ev.semester ? `${ev.semester.tahun_akademik?.nama || ''} ${ev.semester.nama}` : '';
-                                    opt.textContent = `${sem} | Capaian: ${ev.status_capaian.replace('_', ' ')}`;
-                                    prodiEvaluasiSelect.appendChild(opt);
-                                });
-                                prodiEvaluasiSelect.disabled = false;
+                if (ikkId && ikuId && sasaranId) {
+                    const selectedSasaran = sasaranStrategisesData.find(ss => ss.id === sasaranId);
+                    if (selectedSasaran) {
+                        const selectedIku = selectedSasaran.indikator_kinerja_utamas.find(i => i.id === ikuId);
+                        if (selectedIku) {
+                            const selectedIkk = selectedIku.indikator_kinerja_kegiatans.find(k => k.id === ikkId);
+                            if (selectedIkk && selectedIkk.indikator_kinerja_kegiatan_satuan) {
+                                const ikks = selectedIkk.indikator_kinerja_kegiatan_satuan;
+                                $prodiIkksSelect.append(new Option(`[${ikks.kode_ikks}] ${ikks.uraian_ikks}`, ikks.id));
+                                $prodiIkksSelect.prop('disabled', false);
                             }
                         }
                     }
                 }
+
+                $prodiIkksSelect.trigger('change');
+                $prodiEvaluasiSelect.trigger('change');
             });
 
-            prodiEvaluasiSelect.addEventListener('change', function () {
-                if (scopeProdiRadio.checked) {
-                    hiddenEvaluasiIdInput.value = this.value;
+            $prodiIkksSelect.on('change', function () {
+                const ikksId = parseInt(this.value);
+                const ikkId = parseInt($prodiIkkSelect.val());
+                const ikuId = parseInt($prodiIkuSelect.val());
+                const sasaranId = parseInt($prodiSasaranSelect.val());
+                $prodiEvaluasiSelect.empty().append('<option value="">-- Pilih Evaluasi Indikator --</option>').prop('disabled', true);
+
+                if ($scopeProdiRadio.is(':checked')) $hiddenEvaluasiIdInput.val('');
+
+                if (ikksId && ikkId && ikuId && sasaranId) {
+                    const selectedSasaran = sasaranStrategisesData.find(ss => ss.id === sasaranId);
+                    if (selectedSasaran) {
+                        const selectedIku = selectedSasaran.indikator_kinerja_utamas.find(i => i.id === ikuId);
+                        if (selectedIku) {
+                            const selectedIkk = selectedIku.indikator_kinerja_kegiatans.find(k => k.id === ikkId);
+                            if (selectedIkk && selectedIkk.indikator_kinerja_kegiatan_satuan) {
+                                const ikks = selectedIkk.indikator_kinerja_kegiatan_satuan;
+                                if (ikks.evaluasi_indikators && ikks.evaluasi_indikators.length) {
+                                    ikks.evaluasi_indikators.forEach(ev => {
+                                        const sem = ev.semester ? `${ev.semester.tahun_akademik?.nama || ''} ${ev.semester.nama}` : '';
+                                        const statusText = ev.status_capaian ? ev.status_capaian.replace('_', ' ') : '-';
+                                        $prodiEvaluasiSelect.append(new Option(`${sem} | Capaian: ${statusText}`, ev.id));
+                                    });
+                                    $prodiEvaluasiSelect.prop('disabled', false);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                $prodiEvaluasiSelect.trigger('change');
+            });
+
+            $prodiEvaluasiSelect.on('change', function () {
+                if ($scopeProdiRadio.is(':checked')) {
+                    $hiddenEvaluasiIdInput.val(this.value);
                 }
             });
         });
     </script>
+    @endpush
 @endsection
