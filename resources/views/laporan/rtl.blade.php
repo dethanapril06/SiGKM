@@ -6,14 +6,17 @@
         $title = $isFakultas ? 'Laporan RTL Fakultas' : 'Laporan RTL Prodi';
         $route = $isFakultas ? route('laporan.rtl.fakultas') : route('laporan.rtl.prodi');
         $exportRoute = $isFakultas ? route('laporan.rtl.fakultas.excel') : route('laporan.rtl.prodi.excel');
-        $closed = $rtl->filter(fn ($item) => ($item->temuan?->status ?? '') === 'ditutup')->count();
-        $open = $rtl->count() - $closed;
+        $totalIndikator = $rtl->count();
+        $totalTemuan = $rtl->filter(fn ($item) => $item->has_temuan)->count();
+        $closed = $rtl->filter(fn ($item) => $item->has_temuan && $item->status === 'ditutup')->count();
+        $open = $totalTemuan - $closed;
+        $withEvidence = $rtl->filter(fn ($item) => $item->has_evidence)->count();
     @endphp
 
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 py-3 mb-4">
         <div>
             <h4 class="fw-bold mb-1">{{ $title }}</h4>
-            <span class="text-muted">Data diambil dari realisasi RTL pada semester terpilih.</span>
+            <span class="text-muted">Data memuat seluruh indikator pada semester terpilih. Indikator tanpa temuan ditandai dengan "-".</span>
         </div>
         <button type="submit" form="laporan-rtl-filter" formaction="{{ $exportRoute }}" class="btn btn-success">
             <i class="bx bx-spreadsheet me-1"></i> Unduh Excel
@@ -50,9 +53,9 @@
         <div class="col-lg-3 col-md-6 col-12 mb-4">
             <div class="card">
                 <div class="card-body">
-                    <span class="fw-semibold d-block mb-1">Total RTL</span>
-                    <h3 class="card-title mb-2">{{ $rtl->count() }}</h3>
-                    <small class="text-muted">{{ $selectedSemester?->label ?? 'Semester belum tersedia' }}</small>
+                    <span class="fw-semibold d-block mb-1">Total Indikator</span>
+                    <h3 class="card-title mb-2">{{ $totalIndikator }}</h3>
+                    <small class="text-muted">{{ $totalTemuan }} dengan temuan / RTL</small>
                 </div>
             </div>
         </div>
@@ -78,7 +81,7 @@
             <div class="card">
                 <div class="card-body">
                     <span class="fw-semibold d-block mb-1">Dengan Bukti</span>
-                    <h3 class="card-title mb-2">{{ $rtl->filter(fn ($item) => $item->buktiTindakLanjuts->isNotEmpty())->count() }}</h3>
+                    <h3 class="card-title mb-2">{{ $withEvidence }}</h3>
                     <small class="text-muted">Bukti terlampir</small>
                 </div>
             </div>
@@ -93,7 +96,7 @@
                     {{ $isFakultas ? $fakultas : 'Program Studi '.$programStudi }}
                 </small>
             </div>
-            <span class="badge bg-label-primary">{{ $rtl->count() }} data</span>
+            <span class="badge bg-label-primary">{{ $totalIndikator }} baris</span>
         </div>
         <div class="table-responsive">
             <table class="table table-bordered align-middle mb-0">
@@ -118,50 +121,53 @@
                 </thead>
                 <tbody>
                     @forelse ($rtl as $item)
-                        @php
-                            $evaluatable = $item->temuan?->evaluasiIndikator?->evaluatable;
-                            $ikk = $isFakultas ? null : $evaluatable?->indikatorKinerjaKegiatan;
-                            $iku = $ikk?->indikatorKinerjaUtama;
-                            $sasaran = $iku?->sasaranStrategis;
-                        @endphp
                         <tr>
                             <td class="text-center">{{ $loop->iteration }}</td>
                             @if ($isFakultas)
                                 <td style="min-width: 220px; white-space: normal;">
-                                    <strong>{{ $evaluatable->standarMutu->kode_standar ?? '-' }}</strong>
-                                    <small class="d-block text-muted">{{ $evaluatable->standarMutu->nama_standar ?? '-' }}</small>
+                                    <strong>{{ $item->standar_kode }}</strong>
+                                    <small class="d-block text-muted">{{ $item->standar_nama }}</small>
                                 </td>
                                 <td style="min-width: 300px; white-space: normal;">
-                                    <span class="badge bg-label-primary">{{ $evaluatable->kode_indikator ?? '-' }}</span>
-                                    <span class="d-block mt-1">{{ $evaluatable->isi_indikator ?? '-' }}</span>
+                                    <span class="badge bg-label-primary">{{ $item->indikator_kode }}</span>
+                                    <span class="d-block mt-1">{{ $item->indikator_isi }}</span>
                                 </td>
                             @else
                                 <td style="min-width: 240px; white-space: normal;">
-                                    <strong>{{ $sasaran?->kode_sasaran ?? '-' }}</strong>
-                                    <span class="d-block text-muted">{{ $sasaran?->uraian_sasaran ?? '-' }}</span>
+                                    <strong>{{ $item->sasaran_kode }}</strong>
+                                    <span class="d-block text-muted">{{ $item->sasaran_uraian }}</span>
                                 </td>
                                 <td style="min-width: 240px; white-space: normal;">
-                                    <strong>{{ $iku?->kode_iku ?? '-' }}</strong>
-                                    <span class="d-block text-muted">{{ $iku?->uraian_iku ?? '-' }}</span>
+                                    <strong>{{ $item->iku_kode }}</strong>
+                                    <span class="d-block text-muted">{{ $item->iku_uraian }}</span>
                                 </td>
                                 <td style="min-width: 240px; white-space: normal;">
-                                    <strong>{{ $ikk?->kode_ikk ?? '-' }}</strong>
-                                    <span class="d-block text-muted">{{ $ikk?->uraian_ikk ?? '-' }}</span>
+                                    <strong>{{ $item->ikk_kode }}</strong>
+                                    <span class="d-block text-muted">{{ $item->ikk_uraian }}</span>
                                 </td>
                                 <td style="min-width: 240px; white-space: normal;">
-                                    <strong>{{ $evaluatable->kode_ikks ?? '-' }}</strong>
-                                    <span class="d-block text-muted">{{ $evaluatable->uraian_ikks ?? '-' }}</span>
+                                    <strong>{{ $item->ikks_kode }}</strong>
+                                    <span class="d-block text-muted">{{ $item->ikks_uraian }}</span>
                                 </td>
                             @endif
-                            <td style="min-width: 260px; white-space: normal;">{{ $item->temuan?->pernyataan ?? '-' }}</td>
+                            <td style="min-width: 260px; white-space: normal;">{{ $item->temuan }}</td>
                             <td style="min-width: 260px; white-space: normal;">
-                                <strong>Rencana:</strong> {{ $item->temuan?->rencana_awal ?? '-' }}<br>
-                                <strong class="mt-1 d-block">Realisasi:</strong> {{ $item->uraian_realisasi ?? '-' }}
+                                @if ($item->has_temuan)
+                                    <strong>Rencana:</strong> {{ $item->rencana_awal }}<br>
+                                    <strong class="mt-1 d-block">Realisasi:</strong> {{ $item->realisasi }}
+                                    @if (!empty($item->catatan))
+                                        <small class="d-block text-muted mt-1">Catatan: {{ $item->catatan }}</small>
+                                    @endif
+                                @else
+                                    -
+                                @endif
                             </td>
-                            <td style="min-width: 180px; white-space: normal;">{{ $item->temuan?->nama_penanggung_jawab ?? '-' }}</td>
-                            <td style="min-width: 150px; white-space: normal;">{{ $item->temuan?->target_selesai ?: '-' }}</td>
+                            <td style="min-width: 180px; white-space: normal;">{{ $item->penanggung_jawab }}</td>
+                            <td style="min-width: 150px; white-space: normal;">{{ $item->target_selesai }}</td>
                             <td>
-                                @if (($item->temuan?->status ?? '') === 'ditutup')
+                                @if (! $item->has_temuan)
+                                    <span class="badge bg-label-secondary">-</span>
+                                @elseif ($item->status === 'ditutup')
                                     <span class="badge bg-label-success">Selesai / Ditutup</span>
                                 @else
                                     <span class="badge bg-label-warning">Terbuka</span>
@@ -170,8 +176,8 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ $isFakultas ? 9 : 12 }}" class="text-center py-5 text-muted">
-                                Data RTL {{ $isFakultas ? 'fakultas' : 'prodi' }} belum tersedia pada semester ini.
+                            <td colspan="{{ $isFakultas ? 9 : 11 }}" class="text-center py-5 text-muted">
+                                Data indikator {{ $isFakultas ? 'fakultas' : 'prodi' }} belum tersedia pada semester ini.
                             </td>
                         </tr>
                     @endforelse

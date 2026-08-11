@@ -20,6 +20,7 @@ use App\Support\WorkflowStatus;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -429,30 +430,10 @@ class LaporanController extends Controller
             ?? $semesters->firstWhere('is_active', true)
             ?? $semesters->first();
 
-        $evaluatableType = $jenis === 'fakultas' ? 'indikator_mutu' : 'ikks';
         $rtl = collect();
 
         if ($selectedSemester) {
-            $rtl = RencanaTindakLanjut::with([
-                'buktiTindakLanjuts',
-                'temuan.evaluasiIndikator.semester.tahunAkademik',
-                'temuan.evaluasiIndikator.evaluatable' => function (MorphTo $morphTo) {
-                    $morphTo->morphWith([
-                        IndikatorMutu::class => ['standarMutu'],
-                        IndikatorKinerjaKegiatanSatuan::class => [
-                            'indikatorKinerjaKegiatan.indikatorKinerjaUtama.sasaranStrategis',
-                        ],
-                    ]);
-                },
-            ])
-                ->whereHas('temuan.evaluasiIndikator', function ($query) use ($selectedSemester, $evaluatableType) {
-                    $query
-                        ->where('semester_id', $selectedSemester->id)
-                        ->where('evaluatable_type', $evaluatableType);
-                })
-                ->get()
-                ->sortBy(fn ($item) => $this->rtlSortKey($item, $jenis))
-                ->values();
+            $rtl = $this->buildRtlCollection($selectedSemester, $jenis);
         }
 
         return [
@@ -464,6 +445,249 @@ class LaporanController extends Controller
             'programStudi' => config('sigkm.program_studi'),
             'tanggalLaporan' => now(),
         ];
+    }
+
+    private function buildRtlCollection(Semester $selectedSemester, string $jenis): Collection
+    {
+        if ($jenis === 'fakultas') {
+            $indikatorMutus = IndikatorMutu::with([
+                'standarMutu',
+                'evaluasiIndikators' => function ($query) use ($selectedSemester) {
+                    $query->where('semester_id', $selectedSemester->id)
+                        ->with([
+                            'temuans.rencanaTindakLanjuts.buktiTindakLanjuts',
+                        ]);
+                },
+            ])
+                ->active()
+                ->get()
+                ->sortBy(fn ($item) => sprintf(
+                    '%06d|%06d|%s',
+                    $item->standar_mutu_id ?? 0,
+                    (int) preg_replace('/\D+/', '', $item->kode_indikator ?? '0'),
+                    $item->kode_indikator ?? ''
+                ))
+                ->values();
+
+            $rows = collect();
+
+            foreach ($indikatorMutus as $indikator) {
+                $evaluasi = $indikator->evaluasiIndikators->first();
+                $temuans = $evaluasi?->temuans ?? collect();
+
+                if ($temuans->isNotEmpty()) {
+                    foreach ($temuans as $temuan) {
+                        $rtls = $temuan->rencanaTindakLanjuts;
+                        if ($rtls->isNotEmpty()) {
+                            foreach ($rtls as $rtl) {
+                                $rows->push((object) [
+                                    'standar_id' => $indikator->standar_mutu_id,
+                                    'standar_kode' => $indikator->standarMutu?->kode_standar ?? '-',
+                                    'standar_nama' => $indikator->standarMutu?->nama_standar ?? '-',
+                                    'indikator_kode' => $indikator->kode_indikator ?? '-',
+                                    'indikator_isi' => $indikator->isi_indikator ?? '-',
+                                    'temuan' => $temuan->pernyataan ?: '-',
+                                    'rencana_awal' => $temuan->rencana_awal ?: '-',
+                                    'realisasi' => $rtl->uraian_realisasi ?: '-',
+                                    'catatan' => $rtl->catatan ?: '',
+                                    'tindak_lanjut_text' => collect([
+                                        $temuan->rencana_awal ? 'Rencana awal: '.$temuan->rencana_awal : null,
+                                        $rtl->uraian_realisasi ? 'Realisasi: '.$rtl->uraian_realisasi : null,
+                                        $rtl->catatan ? 'Catatan: '.$rtl->catatan : null,
+                                    ])->filter()->join("\n") ?: '-',
+                                    'penanggung_jawab' => $rtl->penanggung_jawab ?: ($temuan->nama_penanggung_jawab ?: '-'),
+                                    'target_selesai' => $temuan->target_selesai ?: '-',
+                                    'status' => $temuan->status ?: 'terbuka',
+                                    'has_temuan' => true,
+                                    'has_evidence' => $rtl->buktiTindakLanjuts->isNotEmpty(),
+                                    'rtl_model' => $rtl,
+                                    'temuan_model' => $temuan,
+                                    'evaluatable' => $indikator,
+                                ]);
+                            }
+                        } else {
+                            $rows->push((object) [
+                                'standar_id' => $indikator->standar_mutu_id,
+                                'standar_kode' => $indikator->standarMutu?->kode_standar ?? '-',
+                                'standar_nama' => $indikator->standarMutu?->nama_standar ?? '-',
+                                'indikator_kode' => $indikator->kode_indikator ?? '-',
+                                'indikator_isi' => $indikator->isi_indikator ?? '-',
+                                'temuan' => $temuan->pernyataan ?: '-',
+                                'rencana_awal' => $temuan->rencana_awal ?: '-',
+                                'realisasi' => '-',
+                                'catatan' => '',
+                                'tindak_lanjut_text' => $temuan->rencana_awal ? 'Rencana awal: '.$temuan->rencana_awal : '-',
+                                'penanggung_jawab' => $temuan->nama_penanggung_jawab ?: '-',
+                                'target_selesai' => $temuan->target_selesai ?: '-',
+                                'status' => $temuan->status ?: 'terbuka',
+                                'has_temuan' => true,
+                                'has_evidence' => false,
+                                'rtl_model' => null,
+                                'temuan_model' => $temuan,
+                                'evaluatable' => $indikator,
+                            ]);
+                        }
+                    }
+                } else {
+                    $rows->push((object) [
+                        'standar_id' => $indikator->standar_mutu_id,
+                        'standar_kode' => $indikator->standarMutu?->kode_standar ?? '-',
+                        'standar_nama' => $indikator->standarMutu?->nama_standar ?? '-',
+                        'indikator_kode' => $indikator->kode_indikator ?? '-',
+                        'indikator_isi' => $indikator->isi_indikator ?? '-',
+                        'temuan' => '-',
+                        'rencana_awal' => '-',
+                        'realisasi' => '-',
+                        'catatan' => '',
+                        'tindak_lanjut_text' => '-',
+                        'penanggung_jawab' => '-',
+                        'target_selesai' => '-',
+                        'status' => '-',
+                        'has_temuan' => false,
+                        'has_evidence' => false,
+                        'rtl_model' => null,
+                        'temuan_model' => null,
+                        'evaluatable' => $indikator,
+                    ]);
+                }
+            }
+
+            return $rows;
+        }
+
+        $ikksList = IndikatorKinerjaKegiatanSatuan::with([
+            'indikatorKinerjaKegiatan.indikatorKinerjaUtama.sasaranStrategis',
+            'evaluasiIndikators' => function ($query) use ($selectedSemester) {
+                $query->where('semester_id', $selectedSemester->id)
+                    ->with([
+                        'temuans.rencanaTindakLanjuts.buktiTindakLanjuts',
+                    ]);
+            },
+        ])
+            ->where('is_active', true)
+            ->get()
+            ->sortBy(function ($item) {
+                $ikk = $item->indikatorKinerjaKegiatan;
+                $iku = $ikk?->indikatorKinerjaUtama;
+                $sasaran = $iku?->sasaranStrategis;
+
+                return collect([
+                    $sasaran?->kode_sasaran ?? '',
+                    $iku?->kode_iku ?? '',
+                    $ikk?->kode_ikk ?? '',
+                    $item->kode_ikks ?? '',
+                ])->join('|');
+            })
+            ->values();
+
+        $rows = collect();
+
+        foreach ($ikksList as $ikks) {
+            $ikk = $ikks->indikatorKinerjaKegiatan;
+            $iku = $ikk?->indikatorKinerjaUtama;
+            $sasaran = $iku?->sasaranStrategis;
+            $evaluasi = $ikks->evaluasiIndikators->first();
+            $temuans = $evaluasi?->temuans ?? collect();
+
+            if ($temuans->isNotEmpty()) {
+                foreach ($temuans as $temuan) {
+                    $rtls = $temuan->rencanaTindakLanjuts;
+                    if ($rtls->isNotEmpty()) {
+                        foreach ($rtls as $rtl) {
+                            $rows->push((object) [
+                                'sasaran_id' => $sasaran?->id,
+                                'sasaran_kode' => $sasaran?->kode_sasaran ?? '-',
+                                'sasaran_uraian' => $sasaran?->uraian_sasaran ?? '-',
+                                'sasaran_text' => collect([$sasaran?->kode_sasaran, $sasaran?->uraian_sasaran])->filter()->join(' - ') ?: '-',
+                                'iku_kode' => $iku?->kode_iku ?? '-',
+                                'iku_uraian' => $iku?->uraian_iku ?? '-',
+                                'ikk_kode' => $ikk?->kode_ikk ?? '-',
+                                'ikk_uraian' => $ikk?->uraian_ikk ?? '-',
+                                'ikk_text' => collect([$ikk?->kode_ikk, $ikk?->uraian_ikk])->filter()->join(' - ') ?: '-',
+                                'ikks_kode' => $ikks->kode_ikks ?? '-',
+                                'ikks_uraian' => $ikks->uraian_ikks ?? '-',
+                                'ikks_text' => collect([$ikks->kode_ikks, $ikks->uraian_ikks])->filter()->join(' - ') ?: '-',
+                                'temuan' => $temuan->pernyataan ?: '-',
+                                'rencana_awal' => $temuan->rencana_awal ?: '-',
+                                'realisasi' => $rtl->uraian_realisasi ?: '-',
+                                'catatan' => $rtl->catatan ?: '',
+                                'tindak_lanjut_text' => collect([
+                                    $temuan->rencana_awal ? 'Rencana awal: '.$temuan->rencana_awal : null,
+                                    $rtl->uraian_realisasi ? 'Realisasi: '.$rtl->uraian_realisasi : null,
+                                    $rtl->catatan ? 'Catatan: '.$rtl->catatan : null,
+                                ])->filter()->join("\n") ?: '-',
+                                'penanggung_jawab' => $rtl->penanggung_jawab ?: ($temuan->nama_penanggung_jawab ?: '-'),
+                                'target_selesai' => $temuan->target_selesai ?: '-',
+                                'status' => $temuan->status ?: 'terbuka',
+                                'has_temuan' => true,
+                                'has_evidence' => $rtl->buktiTindakLanjuts->isNotEmpty(),
+                                'rtl_model' => $rtl,
+                                'temuan_model' => $temuan,
+                                'evaluatable' => $ikks,
+                            ]);
+                        }
+                    } else {
+                        $rows->push((object) [
+                            'sasaran_id' => $sasaran?->id,
+                            'sasaran_kode' => $sasaran?->kode_sasaran ?? '-',
+                            'sasaran_uraian' => $sasaran?->uraian_sasaran ?? '-',
+                            'sasaran_text' => collect([$sasaran?->kode_sasaran, $sasaran?->uraian_sasaran])->filter()->join(' - ') ?: '-',
+                            'iku_kode' => $iku?->kode_iku ?? '-',
+                            'iku_uraian' => $iku?->uraian_iku ?? '-',
+                            'ikk_kode' => $ikk?->kode_ikk ?? '-',
+                            'ikk_uraian' => $ikk?->uraian_ikk ?? '-',
+                            'ikk_text' => collect([$ikk?->kode_ikk, $ikk?->uraian_ikk])->filter()->join(' - ') ?: '-',
+                            'ikks_kode' => $ikks->kode_ikks ?? '-',
+                            'ikks_uraian' => $ikks->uraian_ikks ?? '-',
+                            'ikks_text' => collect([$ikks->kode_ikks, $ikks->uraian_ikks])->filter()->join(' - ') ?: '-',
+                            'temuan' => $temuan->pernyataan ?: '-',
+                            'rencana_awal' => $temuan->rencana_awal ?: '-',
+                            'realisasi' => '-',
+                            'catatan' => '',
+                            'tindak_lanjut_text' => $temuan->rencana_awal ? 'Rencana awal: '.$temuan->rencana_awal : '-',
+                            'penanggung_jawab' => $temuan->nama_penanggung_jawab ?: '-',
+                            'target_selesai' => $temuan->target_selesai ?: '-',
+                            'status' => $temuan->status ?: 'terbuka',
+                            'has_temuan' => true,
+                            'has_evidence' => false,
+                            'rtl_model' => null,
+                            'temuan_model' => $temuan,
+                            'evaluatable' => $ikks,
+                        ]);
+                    }
+                }
+            } else {
+                $rows->push((object) [
+                    'sasaran_id' => $sasaran?->id,
+                    'sasaran_kode' => $sasaran?->kode_sasaran ?? '-',
+                    'sasaran_uraian' => $sasaran?->uraian_sasaran ?? '-',
+                    'sasaran_text' => collect([$sasaran?->kode_sasaran, $sasaran?->uraian_sasaran])->filter()->join(' - ') ?: '-',
+                    'iku_kode' => $iku?->kode_iku ?? '-',
+                    'iku_uraian' => $iku?->uraian_iku ?? '-',
+                    'ikk_kode' => $ikk?->kode_ikk ?? '-',
+                    'ikk_uraian' => $ikk?->uraian_ikk ?? '-',
+                    'ikk_text' => collect([$ikk?->kode_ikk, $ikk?->uraian_ikk])->filter()->join(' - ') ?: '-',
+                    'ikks_kode' => $ikks->kode_ikks ?? '-',
+                    'ikks_uraian' => $ikks->uraian_ikks ?? '-',
+                    'ikks_text' => collect([$ikks->kode_ikks, $ikks->uraian_ikks])->filter()->join(' - ') ?: '-',
+                    'temuan' => '-',
+                    'rencana_awal' => '-',
+                    'realisasi' => '-',
+                    'catatan' => '',
+                    'tindak_lanjut_text' => '-',
+                    'penanggung_jawab' => '-',
+                    'target_selesai' => '-',
+                    'status' => '-',
+                    'has_temuan' => false,
+                    'has_evidence' => false,
+                    'rtl_model' => null,
+                    'temuan_model' => null,
+                    'evaluatable' => $ikks,
+                ]);
+            }
+        }
+
+        return $rows;
     }
 
     private function rtmData(Request $request, string $jenis): array

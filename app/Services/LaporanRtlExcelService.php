@@ -145,26 +145,20 @@ class LaporanRtlExcelService
 
         foreach ($rtl->values() as $index => $item) {
             $row = self::FIRST_DATA_ROW + $index;
-            $evaluatable = $item->temuan?->evaluasiIndikator?->evaluatable;
-
-            if (! $evaluatable instanceof IndikatorMutu) {
-                continue;
-            }
-
-            $standardKey = (string) ($evaluatable->standar_mutu_id ?? $evaluatable->standarMutu?->nama_standar ?? 'tanpa-standar');
+            $standardKey = (string) ($item->standar_id ?? $item->standar_nama ?? 'tanpa-standar');
 
             if (! array_key_exists($standardKey, $standardNumbers)) {
                 $standardNumbers[$standardKey] = count($standardNumbers) + 1;
             }
 
             $this->setNumber($dom, $xpath, 'A'.$row, $standardNumbers[$standardKey]);
-            $this->setText($dom, $xpath, 'B'.$row, $evaluatable->standarMutu?->nama_standar ?? '-');
-            $this->setText($dom, $xpath, 'C'.$row, $evaluatable->kode_indikator ?: (string) ($index + 1));
-            $this->setText($dom, $xpath, 'D'.$row, $evaluatable->isi_indikator ?: '-');
-            $this->setText($dom, $xpath, 'E'.$row, $item->temuan?->pernyataan ?: '-');
-            $this->setText($dom, $xpath, 'F'.$row, $this->tindakLanjutText($item));
-            $this->setText($dom, $xpath, 'G'.$row, $item->temuan?->nama_penanggung_jawab ?: '-');
-            $this->setText($dom, $xpath, 'H'.$row, $this->targetText($item));
+            $this->setText($dom, $xpath, 'B'.$row, $item->standar_nama ?? '-');
+            $this->setText($dom, $xpath, 'C'.$row, $item->indikator_kode ?: (string) ($index + 1));
+            $this->setText($dom, $xpath, 'D'.$row, $item->indikator_isi ?: '-');
+            $this->setText($dom, $xpath, 'E'.$row, $item->temuan ?: '-');
+            $this->setText($dom, $xpath, 'F'.$row, $item->tindak_lanjut_text ?: '-');
+            $this->setText($dom, $xpath, 'G'.$row, $item->penanggung_jawab ?: '-');
+            $this->setText($dom, $xpath, 'H'.$row, $item->target_selesai ?: '-');
         }
     }
 
@@ -174,31 +168,22 @@ class LaporanRtlExcelService
 
         foreach ($rtl->values() as $index => $item) {
             $row = self::FIRST_DATA_ROW + $index;
-            $ikks = $item->temuan?->evaluasiIndikator?->evaluatable;
-
-            if (! $ikks instanceof IndikatorKinerjaKegiatanSatuan) {
-                continue;
-            }
-
-            $ikk = $ikks->indikatorKinerjaKegiatan;
-            $iku = $ikk?->indikatorKinerjaUtama;
-            $sasaran = $iku?->sasaranStrategis;
-            $sasaranKey = (string) ($sasaran?->id ?? $sasaran?->uraian_sasaran ?? 'tanpa-sasaran');
+            $sasaranKey = (string) ($item->sasaran_id ?? $item->sasaran_kode ?? 'tanpa-sasaran');
 
             if (! array_key_exists($sasaranKey, $sasaranNumbers)) {
                 $sasaranNumbers[$sasaranKey] = count($sasaranNumbers) + 1;
             }
 
             $this->setNumber($dom, $xpath, 'A'.$row, $sasaranNumbers[$sasaranKey]);
-            $this->setText($dom, $xpath, 'B'.$row, $this->codeAndText($sasaran?->kode_sasaran, $sasaran?->uraian_sasaran));
-            $this->setText($dom, $xpath, 'C'.$row, $iku?->kode_iku ?: '-');
-            $this->setText($dom, $xpath, 'D'.$row, $iku?->uraian_iku ?: '-');
-            $this->setText($dom, $xpath, 'E'.$row, $this->codeAndText($ikk?->kode_ikk, $ikk?->uraian_ikk));
-            $this->setText($dom, $xpath, 'F'.$row, $this->codeAndText($ikks->kode_ikks, $ikks->uraian_ikks));
-            $this->setText($dom, $xpath, 'G'.$row, $item->temuan?->pernyataan ?: '-');
-            $this->setText($dom, $xpath, 'H'.$row, $this->tindakLanjutText($item));
-            $this->setText($dom, $xpath, 'I'.$row, $item->temuan?->nama_penanggung_jawab ?: '-');
-            $this->setText($dom, $xpath, 'J'.$row, $this->targetText($item));
+            $this->setText($dom, $xpath, 'B'.$row, $item->sasaran_text ?? '-');
+            $this->setText($dom, $xpath, 'C'.$row, $item->iku_kode ?? '-');
+            $this->setText($dom, $xpath, 'D'.$row, $item->iku_uraian ?? '-');
+            $this->setText($dom, $xpath, 'E'.$row, $item->ikk_text ?? '-');
+            $this->setText($dom, $xpath, 'F'.$row, $item->ikks_text ?? '-');
+            $this->setText($dom, $xpath, 'G'.$row, $item->temuan ?: '-');
+            $this->setText($dom, $xpath, 'H'.$row, $item->tindak_lanjut_text ?: '-');
+            $this->setText($dom, $xpath, 'I'.$row, $item->penanggung_jawab ?: '-');
+            $this->setText($dom, $xpath, 'J'.$row, $item->target_selesai ?: '-');
         }
     }
 
@@ -525,45 +510,14 @@ class LaporanRtlExcelService
         $dimension?->setAttribute('ref', 'A1:'.$lastColumn.$lastRow);
     }
 
-    private function tindakLanjutText(RencanaTindakLanjut $rtl): string
+    private function facultyGroupKey(object $item): string
     {
-        return collect([
-            $rtl->temuan?->rencana_awal ? 'Rencana awal: '.$rtl->temuan->rencana_awal : null,
-            $rtl->uraian_realisasi ? 'Realisasi: '.$rtl->uraian_realisasi : null,
-            $rtl->catatan ? 'Catatan: '.$rtl->catatan : null,
-        ])->filter()->join("\n") ?: '-';
+        return (string) ($item->standar_id ?? $item->standar_nama ?? 'tanpa-standar');
     }
 
-    private function targetText(RencanaTindakLanjut $rtl): string
+    private function prodiGroupKey(object $item): string
     {
-        return $rtl->temuan?->target_selesai ?: '-';
-    }
-
-    private function codeAndText(?string $code, ?string $text): string
-    {
-        return collect([$code, $text])->filter()->join(' - ') ?: '-';
-    }
-
-    private function facultyGroupKey(RencanaTindakLanjut $rtl): string
-    {
-        $evaluatable = $rtl->temuan?->evaluasiIndikator?->evaluatable;
-
-        return $evaluatable instanceof IndikatorMutu
-            ? (string) ($evaluatable->standar_mutu_id ?? $evaluatable->standarMutu?->nama_standar ?? 'tanpa-standar')
-            : 'tanpa-standar';
-    }
-
-    private function prodiGroupKey(RencanaTindakLanjut $rtl): string
-    {
-        $ikks = $rtl->temuan?->evaluasiIndikator?->evaluatable;
-
-        if (! $ikks instanceof IndikatorKinerjaKegiatanSatuan) {
-            return 'tanpa-sasaran';
-        }
-
-        $sasaran = $ikks->indikatorKinerjaKegiatan?->indikatorKinerjaUtama?->sasaranStrategis;
-
-        return (string) ($sasaran?->id ?? $sasaran?->uraian_sasaran ?? 'tanpa-sasaran');
+        return (string) ($item->sasaran_id ?? $item->sasaran_kode ?? 'tanpa-sasaran');
     }
 
     private function mergeCellsNode(DOMDocument $dom, DOMXPath $xpath): DOMElement
