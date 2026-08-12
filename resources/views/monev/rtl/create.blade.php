@@ -37,16 +37,17 @@
                     <select name="temuan_id" class="form-select select2 @error('temuan_id') is-invalid @enderror">
                         <option value="">-- Pilih Temuan Evaluasi --</option>
                         @foreach ($temuan as $item)
+                            @php
+                                $kodeStandar = $item->kode_standar ?? '-';
+                                $kodeIndikator = $item->kode_indikator ?? '-';
+                                $sem = $item->evaluasiIndikator?->semester ? ($item->evaluasiIndikator->semester->tahunAkademik?->nama . ' - ' . $item->evaluasiIndikator->semester->nama) : '-';
+                            @endphp
                             <option value="{{ $item->id }}" {{ old('temuan_id') == $item->id ? 'selected' : '' }}>
                                 {{ $item->kode_temuan }}
-                                |
-                                {{ $item->evaluasiIndikator->semester->tahunAkademik->nama ?? '-' }}
-                                -
-                                {{ $item->evaluasiIndikator->semester->nama ?? '-' }}
-                                |
-                                Temuan: {{ \Illuminate\Support\Str::limit($item->pernyataan, 70) }}
-                                |
-                                Rencana Awal: {{ \Illuminate\Support\Str::limit($item->rencana_awal ?? '-', 60) }}
+                                | [{{ $kodeStandar }} &bull; {{ $kodeIndikator }}]
+                                | {{ $sem }}
+                                | Temuan: {{ \Illuminate\Support\Str::limit($item->pernyataan, 70) }}
+                                | Rencana Awal: {{ \Illuminate\Support\Str::limit($item->rencana_awal ?? '-', 60) }}
                             </option>
                         @endforeach
                     </select>

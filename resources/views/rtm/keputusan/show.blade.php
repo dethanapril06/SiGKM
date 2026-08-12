@@ -42,7 +42,7 @@
                 {{ $temuan?->evaluasiIndikator?->semester?->label }}
             </x-detail-row>
             <x-detail-row label="Indikator">
-                {{ $temuan?->evaluasiIndikator?->sumber_uraian }}
+                [{{ $temuan?->kode_standar ?? '-' }} &bull; {{ $temuan?->kode_indikator ?? '-' }}] {{ $temuan?->evaluasiIndikator?->sumber_uraian }}
             </x-detail-row>
             <x-detail-row label="Penanggung Jawab">
                 {{ $temuan?->nama_penanggung_jawab ?: '-' }}

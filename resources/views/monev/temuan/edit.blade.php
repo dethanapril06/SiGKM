@@ -100,7 +100,17 @@
                         <div id="section_prodi" class="{{ $isProdi ? '' : 'd-none' }}">
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6">
-                                    <label class="form-label">1. Pilih Sasaran Strategis</label>
+                                    <label class="form-label">Pilih Semester <span class="text-danger">*</span></label>
+                                    <select name="prodi_semester_id" id="prodi_semester_id" class="form-select select2" data-placeholder="-- Pilih Semester --">
+                                        @foreach ($semesters as $sem)
+                                            <option value="{{ $sem->id }}" @selected(old('prodi_semester_id', $currentSemesterId ?? $activeSemester?->id) == $sem->id)>
+                                                {{ $sem->tahunAkademik?->nama }} - {{ ucfirst($sem->nama) }} {{ $sem->is_active ? '(Aktif)' : '' }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">1. Pilih Sasaran Strategis <span class="text-danger">*</span></label>
                                     <select id="prodi_sasaran_id" class="form-select select2" data-placeholder="-- Pilih Sasaran Strategis --">
                                         <option value="">-- Pilih Sasaran Strategis --</option>
                                         @foreach ($sasaranStrategises as $ss)
@@ -110,14 +120,14 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-6">
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-4">
                                     <label class="form-label">2. Pilih IKU (Indikator Kinerja Utama)</label>
                                     <select id="prodi_iku_id" class="form-select select2" data-placeholder="-- Pilih IKU --" disabled>
                                         <option value="">-- Pilih IKU --</option>
                                     </select>
                                 </div>
-                            </div>
-                            <div class="row g-3">
                                 <div class="col-md-4">
                                     <label class="form-label">3. Pilih IKK (Indikator Kinerja Kegiatan)</label>
                                     <select id="prodi_ikk_id" class="form-select select2" data-placeholder="-- Pilih IKK --" disabled>
@@ -125,16 +135,13 @@
                                     </select>
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label">4. Pilih IKKS (Satuan)</label>
-                                    <select id="prodi_ikks_id" class="form-select select2" data-placeholder="-- Pilih IKKS --" disabled>
+                                    <label class="form-label">4. Pilih IKKS (Satuan) <span class="text-danger">*</span></label>
+                                    <select name="prodi_ikks_id" id="prodi_ikks_id" class="form-select select2 @error('prodi_ikks_id') is-invalid @enderror" data-placeholder="-- Pilih IKKS --" disabled>
                                         <option value="">-- Pilih IKKS --</option>
                                     </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">5. Pilih Evaluasi Indikator <span class="text-danger">*</span></label>
-                                    <select id="prodi_evaluasi_id" class="form-select select2" data-placeholder="-- Pilih Evaluasi Indikator --" disabled>
-                                        <option value="">-- Pilih Evaluasi Indikator --</option>
-                                    </select>
+                                    @error('prodi_ikks_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
                             </div>
                         </div>
@@ -180,9 +187,9 @@
                     @enderror
                 </div>
 
-                <div class="mb-3">
+                <div class="mb-3 {{ $isProdi ? 'd-none' : '' }}" id="target_capaian_wrapper">
                     <label class="form-label">Target Capaian</label>
-                    <textarea name="target_capaian" rows="3" class="form-control @error('target_capaian') is-invalid @enderror">{{ old('target_capaian', $targetTemuan->target_capaian) }}</textarea>
+                    <textarea name="target_capaian" id="target_capaian" rows="3" class="form-control @error('target_capaian') is-invalid @enderror">{{ old('target_capaian', $targetTemuan->target_capaian) }}</textarea>
                     @error('target_capaian')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -237,7 +244,10 @@
     @push('scripts')
     <script>
         const sasaranStrategisesData = @json($sasaranStrategises);
-        const currentEvaluasiId = parseInt(@json(old('evaluasi_indikator_id', $targetTemuan->evaluasi_indikator_id)));
+        const currentSasaranId = {{ $currentSasaran?->id ?? 'null' }};
+        const currentIkuId = {{ $currentIku?->id ?? 'null' }};
+        const currentIkkId = {{ $currentIkk?->id ?? 'null' }};
+        const currentIkksId = {{ $currentIkks?->id ?? 'null' }};
 
         $(document).ready(function () {
             const $scopeFakultasRadio = $('#scope_fakultas');
@@ -253,11 +263,11 @@
             const $detailIndikator = $('#detail_indikator');
             const $detailStatus = $('#detail_status');
 
+            const $prodiSemesterSelect = $('#prodi_semester_id');
             const $prodiSasaranSelect = $('#prodi_sasaran_id');
             const $prodiIkuSelect = $('#prodi_iku_id');
             const $prodiIkkSelect = $('#prodi_ikk_id');
             const $prodiIkksSelect = $('#prodi_ikks_id');
-            const $prodiEvaluasiSelect = $('#prodi_evaluasi_id');
 
             function initSelect2() {
                 $('.select2').each(function() {
@@ -301,6 +311,7 @@
                 if ($scopeFakultasRadio.is(':checked')) {
                     $sectionFakultas.removeClass('d-none');
                     $sectionProdi.addClass('d-none');
+                    $('#target_capaian_wrapper').removeClass('d-none');
                     $hiddenEvaluasiIdInput.val($fakultasEvaluasiSelect.val());
                     updateFakultasDetail();
                     $fakultasEvaluasiSelect.select2({
@@ -312,8 +323,9 @@
                 } else {
                     $sectionProdi.removeClass('d-none');
                     $sectionFakultas.addClass('d-none');
-                    $hiddenEvaluasiIdInput.val($prodiEvaluasiSelect.val());
-                    $([$prodiSasaranSelect, $prodiIkuSelect, $prodiIkkSelect, $prodiIkksSelect, $prodiEvaluasiSelect]).each(function() {
+                    $('#target_capaian_wrapper').addClass('d-none');
+                    $hiddenEvaluasiIdInput.val('');
+                    $([$prodiSemesterSelect, $prodiSasaranSelect, $prodiIkuSelect, $prodiIkkSelect, $prodiIkksSelect]).each(function() {
                         $(this).select2({
                             theme: 'bootstrap-5',
                             width: '100%',
@@ -327,9 +339,12 @@
             if ($scopeProdiRadio.is(':checked')) {
                 $sectionProdi.removeClass('d-none');
                 $sectionFakultas.addClass('d-none');
+                $('#target_capaian_wrapper').addClass('d-none');
+                $hiddenEvaluasiIdInput.val('');
             } else {
                 $sectionFakultas.removeClass('d-none');
                 $sectionProdi.addClass('d-none');
+                $('#target_capaian_wrapper').removeClass('d-none');
                 if ($fakultasEvaluasiSelect.val()) {
                     $hiddenEvaluasiIdInput.val($fakultasEvaluasiSelect.val());
                     updateFakultasDetail();
@@ -341,9 +356,6 @@
                 $prodiIkuSelect.empty().append('<option value="">-- Pilih IKU --</option>').prop('disabled', true);
                 $prodiIkkSelect.empty().append('<option value="">-- Pilih IKK --</option>').prop('disabled', true);
                 $prodiIkksSelect.empty().append('<option value="">-- Pilih IKKS --</option>').prop('disabled', true);
-                $prodiEvaluasiSelect.empty().append('<option value="">-- Pilih Evaluasi Indikator --</option>').prop('disabled', true);
-
-                if ($scopeProdiRadio.is(':checked')) $hiddenEvaluasiIdInput.val('');
 
                 if (sasaranId) {
                     const selectedSasaran = sasaranStrategisesData.find(ss => ss.id === sasaranId);
@@ -356,9 +368,6 @@
                 }
 
                 $prodiIkuSelect.trigger('change');
-                $prodiIkkSelect.trigger('change');
-                $prodiIkksSelect.trigger('change');
-                $prodiEvaluasiSelect.trigger('change');
             });
 
             $prodiIkuSelect.on('change', function () {
@@ -366,9 +375,6 @@
                 const sasaranId = parseInt($prodiSasaranSelect.val());
                 $prodiIkkSelect.empty().append('<option value="">-- Pilih IKK --</option>').prop('disabled', true);
                 $prodiIkksSelect.empty().append('<option value="">-- Pilih IKKS --</option>').prop('disabled', true);
-                $prodiEvaluasiSelect.empty().append('<option value="">-- Pilih Evaluasi Indikator --</option>').prop('disabled', true);
-
-                if ($scopeProdiRadio.is(':checked')) $hiddenEvaluasiIdInput.val('');
 
                 if (ikuId && sasaranId) {
                     const selectedSasaran = sasaranStrategisesData.find(ss => ss.id === sasaranId);
@@ -376,7 +382,7 @@
                         const selectedIku = selectedSasaran.indikator_kinerja_utamas.find(i => i.id === ikuId);
                         if (selectedIku && selectedIku.indikator_kinerja_kegiatans) {
                             selectedIku.indikator_kinerja_kegiatans.forEach(ikk => {
-                                $prodiIkkSelect.append(new Option(`[${ikk.kode_ikk}] ${ikk.uraian_ikk}`, iku.id));
+                                $prodiIkkSelect.append(new Option(`[${ikk.kode_ikk}] ${ikk.uraian_ikk}`, ikk.id));
                             });
                             $prodiIkkSelect.prop('disabled', false);
                         }
@@ -384,8 +390,6 @@
                 }
 
                 $prodiIkkSelect.trigger('change');
-                $prodiIkksSelect.trigger('change');
-                $prodiEvaluasiSelect.trigger('change');
             });
 
             $prodiIkkSelect.on('change', function () {
@@ -393,9 +397,6 @@
                 const ikuId = parseInt($prodiIkuSelect.val());
                 const sasaranId = parseInt($prodiSasaranSelect.val());
                 $prodiIkksSelect.empty().append('<option value="">-- Pilih IKKS --</option>').prop('disabled', true);
-                $prodiEvaluasiSelect.empty().append('<option value="">-- Pilih Evaluasi Indikator --</option>').prop('disabled', true);
-
-                if ($scopeProdiRadio.is(':checked')) $hiddenEvaluasiIdInput.val('');
 
                 if (ikkId && ikuId && sasaranId) {
                     const selectedSasaran = sasaranStrategisesData.find(ss => ss.id === sasaranId);
@@ -413,69 +414,17 @@
                 }
 
                 $prodiIkksSelect.trigger('change');
-                $prodiEvaluasiSelect.trigger('change');
             });
 
-            $prodiIkksSelect.on('change', function () {
-                const ikksId = parseInt(this.value);
-                const ikkId = parseInt($prodiIkkSelect.val());
-                const ikuId = parseInt($prodiIkuSelect.val());
-                const sasaranId = parseInt($prodiSasaranSelect.val());
-                $prodiEvaluasiSelect.empty().append('<option value="">-- Pilih Evaluasi Indikator --</option>').prop('disabled', true);
-
-                if ($scopeProdiRadio.is(':checked')) $hiddenEvaluasiIdInput.val('');
-
-                if (ikksId && ikkId && ikuId && sasaranId) {
-                    const selectedSasaran = sasaranStrategisesData.find(ss => ss.id === sasaranId);
-                    if (selectedSasaran) {
-                        const selectedIku = selectedSasaran.indikator_kinerja_utamas.find(i => i.id === ikuId);
-                        if (selectedIku) {
-                            const selectedIkk = selectedIku.indikator_kinerja_kegiatans.find(k => k.id === ikkId);
-                            if (selectedIkk && selectedIkk.indikator_kinerja_kegiatan_satuan) {
-                                const ikks = selectedIkk.indikator_kinerja_kegiatan_satuan;
-                                if (ikks.evaluasi_indikators && ikks.evaluasi_indikators.length) {
-                                    ikks.evaluasi_indikators.forEach(ev => {
-                                        const sem = ev.semester ? `${ev.semester.tahun_akademik?.nama || ''} ${ev.semester.nama}` : '';
-                                        const statusText = ev.status_capaian ? ev.status_capaian.replace('_', ' ') : '-';
-                                        const isMatch = ev.id === currentEvaluasiId;
-                                        $prodiEvaluasiSelect.append(new Option(`${sem} | Capaian: ${statusText}`, ev.id, isMatch, isMatch));
-                                    });
-                                    $prodiEvaluasiSelect.prop('disabled', false);
-                                    if ($prodiEvaluasiSelect.val() && $scopeProdiRadio.is(':checked')) {
-                                        $hiddenEvaluasiIdInput.val($prodiEvaluasiSelect.val());
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                $prodiEvaluasiSelect.trigger('change');
-            });
-
-            $prodiEvaluasiSelect.on('change', function () {
-                if ($scopeProdiRadio.is(':checked')) {
-                    $hiddenEvaluasiIdInput.val(this.value);
-                }
-            });
-
-            if (currentEvaluasiId && $scopeProdiRadio.is(':checked')) {
-                for (const ss of sasaranStrategisesData) {
-                    if (ss.indikator_kinerja_utamas) {
-                        for (const iku of ss.indikator_kinerja_utamas) {
-                            if (iku.indikator_kinerja_kegiatans) {
-                                for (const ikk of iku.indikator_kinerja_kegiatans) {
-                                    const ikks = ikk.indikator_kinerja_kegiatan_satuan;
-                                    if (ikks && ikks.evaluasi_indikators && ikks.evaluasi_indikators.some(ev => ev.id === currentEvaluasiId)) {
-                                        $prodiSasaranSelect.val(ss.id).trigger('change');
-                                        $prodiIkuSelect.val(iku.id).trigger('change');
-                                        $prodiIkkSelect.val(ikk.id).trigger('change');
-                                        $prodiIkksSelect.val(ikks.id).trigger('change');
-                                        $prodiEvaluasiSelect.val(currentEvaluasiId).trigger('change');
-                                        return;
-                                    }
-                                }
-                            }
+            // If editing a Prodi temuan, pre-populate cascade
+            if ($scopeProdiRadio.is(':checked') && currentSasaranId) {
+                $prodiSasaranSelect.val(currentSasaranId).trigger('change');
+                if (currentIkuId) {
+                    $prodiIkuSelect.val(currentIkuId).trigger('change');
+                    if (currentIkkId) {
+                        $prodiIkkSelect.val(currentIkkId).trigger('change');
+                        if (currentIkksId) {
+                            $prodiIkksSelect.val(currentIkksId).trigger('change');
                         }
                     }
                 }

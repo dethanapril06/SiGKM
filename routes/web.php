@@ -65,7 +65,7 @@ Route::middleware(['auth', 'role:ketua-gkm'])
 
     });
 
-Route::middleware(['auth', 'role:ketua-gkm,anggota-gkm'])
+Route::middleware(['auth', 'role:ketua-gkm'])
     ->get('/verifikasi', [VerifikasiController::class, 'index'])
     ->name('verifikasi.index');
 

@@ -29,7 +29,7 @@ class LaporanRtlExcelService
             'template' => 'templates/Template Laporan Rencana Tindak Lanjut FST.xlsx',
             'sheet' => 1,
             'sheet_name' => 'RTL Fakultas',
-            'columns' => range('A', 'H'),
+            'columns' => range('A', 'J'),
             'footer_date_cell' => 'F',
             'title_cell' => 'B8',
             'semester_cell' => 'B9',
@@ -50,7 +50,7 @@ class LaporanRtlExcelService
             'template' => 'templates/Template Laporan Rencana Tindak Lanjut Program Studi.xlsx',
             'sheet' => 1,
             'sheet_name' => 'RTL Prodi',
-            'columns' => range('A', 'J'),
+            'columns' => range('A', 'L'),
             'footer_date_cell' => 'H',
             'title_cell' => 'B8',
             'semester_cell' => 'B9',
@@ -156,9 +156,11 @@ class LaporanRtlExcelService
             $this->setText($dom, $xpath, 'C'.$row, $item->indikator_kode ?: (string) ($index + 1));
             $this->setText($dom, $xpath, 'D'.$row, $item->indikator_isi ?: '-');
             $this->setText($dom, $xpath, 'E'.$row, $item->temuan ?: '-');
-            $this->setText($dom, $xpath, 'F'.$row, $item->tindak_lanjut_text ?: '-');
+            $this->setText($dom, $xpath, 'F'.$row, $item->rencana_awal ?: '-');
             $this->setText($dom, $xpath, 'G'.$row, $item->penanggung_jawab ?: '-');
-            $this->setText($dom, $xpath, 'H'.$row, $item->target_selesai ?: '-');
+            $this->setText($dom, $xpath, 'H'.$row, $item->uraian_realisasi ?: '-');
+            $this->setText($dom, $xpath, 'I'.$row, $item->waktu_pelaksanaan ?: '-');
+            $this->setText($dom, $xpath, 'J'.$row, $item->target_selesai ?: '-');
         }
     }
 
@@ -181,9 +183,11 @@ class LaporanRtlExcelService
             $this->setText($dom, $xpath, 'E'.$row, $item->ikk_text ?? '-');
             $this->setText($dom, $xpath, 'F'.$row, $item->ikks_text ?? '-');
             $this->setText($dom, $xpath, 'G'.$row, $item->temuan ?: '-');
-            $this->setText($dom, $xpath, 'H'.$row, $item->tindak_lanjut_text ?: '-');
+            $this->setText($dom, $xpath, 'H'.$row, $item->rencana_awal ?: '-');
             $this->setText($dom, $xpath, 'I'.$row, $item->penanggung_jawab ?: '-');
-            $this->setText($dom, $xpath, 'J'.$row, $item->target_selesai ?: '-');
+            $this->setText($dom, $xpath, 'J'.$row, $item->uraian_realisasi ?: '-');
+            $this->setText($dom, $xpath, 'K'.$row, $item->waktu_pelaksanaan ?: '-');
+            $this->setText($dom, $xpath, 'L'.$row, $item->target_selesai ?: '-');
         }
     }
 

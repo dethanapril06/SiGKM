@@ -115,6 +115,8 @@
                         <th>Temuan</th>
                         <th>Tindak Lanjut</th>
                         <th>Penanggung Jawab</th>
+                        <th>Uraian Realisasi</th>
+                        <th>Waktu Pelaksanaan</th>
                         <th>Target Selesai</th>
                         <th>Status</th>
                     </tr>
@@ -151,18 +153,15 @@
                                 </td>
                             @endif
                             <td style="min-width: 260px; white-space: normal;">{{ $item->temuan }}</td>
-                            <td style="min-width: 260px; white-space: normal;">
-                                @if ($item->has_temuan)
-                                    <strong>Rencana:</strong> {{ $item->rencana_awal }}<br>
-                                    <strong class="mt-1 d-block">Realisasi:</strong> {{ $item->realisasi }}
-                                    @if (!empty($item->catatan))
-                                        <small class="d-block text-muted mt-1">Catatan: {{ $item->catatan }}</small>
-                                    @endif
-                                @else
-                                    -
+                            <td style="min-width: 240px; white-space: normal;">{{ $item->rencana_awal }}</td>
+                            <td style="min-width: 180px; white-space: normal;">{{ $item->penanggung_jawab }}</td>
+                            <td style="min-width: 240px; white-space: normal;">
+                                {{ $item->uraian_realisasi ?: '-' }}
+                                @if (!empty($item->catatan))
+                                    <small class="d-block text-muted mt-1">Catatan: {{ $item->catatan }}</small>
                                 @endif
                             </td>
-                            <td style="min-width: 180px; white-space: normal;">{{ $item->penanggung_jawab }}</td>
+                            <td style="min-width: 150px; white-space: normal;">{{ $item->waktu_pelaksanaan ?: '-' }}</td>
                             <td style="min-width: 150px; white-space: normal;">{{ $item->target_selesai }}</td>
                             <td>
                                 @if (! $item->has_temuan)
@@ -176,7 +175,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ $isFakultas ? 9 : 11 }}" class="text-center py-5 text-muted">
+                            <td colspan="{{ $isFakultas ? 11 : 13 }}" class="text-center py-5 text-muted">
                                 Data indikator {{ $isFakultas ? 'fakultas' : 'prodi' }} belum tersedia pada semester ini.
                             </td>
                         </tr>

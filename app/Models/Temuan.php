@@ -34,6 +34,16 @@ class Temuan extends Model
         return $this->evaluasiIndikator?->nama_penanggung_jawab;
     }
 
+    public function getKodeStandarAttribute(): ?string
+    {
+        return $this->evaluasiIndikator?->kode_standar;
+    }
+
+    public function getKodeIndikatorAttribute(): ?string
+    {
+        return $this->evaluasiIndikator?->kode_indikator;
+    }
+
     public function evaluasiIndikator(): BelongsTo
     {
         return $this->belongsTo(EvaluasiIndikator::class);

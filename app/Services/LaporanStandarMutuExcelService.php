@@ -338,13 +338,7 @@ class LaporanStandarMutuExcelService
             ->filter()
             ->values();
 
-        if ($temuan->isNotEmpty()) {
-            return $temuan->join("\n");
-        }
-
-        return $evaluasiIndikator->status_capaian === 'tercapai'
-            ? 'Tidak ada temuan'
-            : ($evaluasiIndikator->catatan ?: '-');
+        return $temuan->isNotEmpty() ? $temuan->join("\n") : '-';
     }
 
     private function rencanaPerbaikanText(EvaluasiIndikator $evaluasiIndikator): string
@@ -385,7 +379,7 @@ class LaporanStandarMutuExcelService
     private function keteranganText(EvaluasiIndikator $evaluasiIndikator): string
     {
         $text = collect([
-            $evaluasiIndikator->catatan ? 'Catatan: '.$evaluasiIndikator->catatan : null,
+            $evaluasiIndikator->catatan ?: null,
             $evaluasiIndikator->bukti_capaian ? 'Bukti capaian tersedia' : null,
         ])->filter()->join("\n");
 

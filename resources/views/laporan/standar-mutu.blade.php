@@ -142,7 +142,7 @@
                                     <span class="badge bg-label-danger">Belum Tercapai</span>
                                 @endif
                             </td>
-                            <td style="min-width: 240px; white-space: normal;">{{ $temuan->isNotEmpty() ? $temuan->join('; ') : ($evaluasiItem ? ($evaluasiItem->status_capaian === 'tercapai' ? 'Tidak ada temuan' : ($evaluasiItem->catatan ?: '-')) : '-') }}</td>
+                            <td style="min-width: 240px; white-space: normal;">{{ $temuan->isNotEmpty() ? $temuan->join('; ') : '-' }}</td>
                             <td style="min-width: 240px; white-space: normal;">{{ $plans->isNotEmpty() ? $plans->join('; ') : '-' }}</td>
                             <td style="min-width: 160px; white-space: normal;">{{ $targets->isNotEmpty() ? $targets->join('; ') : '-' }}</td>
                             <td style="min-width: 220px; white-space: normal;">{{ $evaluasiItem?->catatan ?: '-' }}</td>

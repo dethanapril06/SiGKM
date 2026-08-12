@@ -1,7 +1,8 @@
 @extends('layouts.app')
 @section('content')
     <div class="d-flex justify-content-between py-3 mb-4">
-        <h4 class="fw-bold">Detail Temuan {{ $temuan->kode_temuan }}</h4><a href="{{ route('temuan-evaluasi.fakultas') }}"
+        <h4 class="fw-bold">Detail Temuan {{ $temuan->kode_temuan }}</h4>
+        <a href="{{ $temuan->evaluasiIndikator?->evaluatable_type === 'ikks' ? route('temuan-evaluasi.prodi') : route('temuan-evaluasi.fakultas') }}"
             class="btn btn-secondary">Kembali</a>
     </div>
     <div class="card mb-4">
@@ -15,7 +16,7 @@
                 {{ $temuan->evaluasiIndikator?->semester?->label }}
             </x-detail-row>
             <x-detail-row label="Indikator">
-                {{ $temuan->evaluasiIndikator?->sumber_kode }} —
+                [{{ $temuan->kode_standar ?? '-' }} &bull; {{ $temuan->kode_indikator ?? '-' }}]
                 {{ $temuan->evaluasiIndikator?->sumber_uraian }}
             </x-detail-row>
             <x-detail-row label="Penanggung Jawab">
@@ -34,11 +35,13 @@
             <x-detail-row label="Target Selesai">
                 {{ $temuan->target_selesai ?: '-' }}
             </x-detail-row>
+            @if ($temuan->evaluasiIndikator?->evaluatable_type !== 'ikks')
             <x-detail-row label="Target Capaian">
                 <span style="white-space:pre-line">
                     {{ $temuan->target_capaian ?: '-' }}
                 </span>
             </x-detail-row>
+            @endif
             <x-detail-row label="Status">
                 <span class="badge bg-label-primary">
                     {{ ucfirst($temuan->status) }}

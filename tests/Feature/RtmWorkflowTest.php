@@ -132,3 +132,12 @@ it('accepts any Temuan for a decision in an RTM as long as it has not been decid
         'temuan_id' => $finding2->id,
     ])->assertRedirect(route('keputusan-rtm.fakultas'));
 });
+
+it('allows only ketua-gkm to access the verifikasi page', function () {
+    $member = rtmUser('anggota-gkm');
+    $chair = rtmUser('ketua-gkm');
+
+    $this->actingAs($member)->get(route('verifikasi.index'))->assertForbidden();
+    $this->actingAs($chair)->get(route('verifikasi.index'))->assertOk();
+});
+

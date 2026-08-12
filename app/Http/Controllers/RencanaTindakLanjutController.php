@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
+use App\Models\IndikatorKinerjaKegiatanSatuan;
+use App\Models\IndikatorMutu;
 use App\Models\Semester;
 
 class RencanaTindakLanjutController extends Controller
@@ -106,7 +108,12 @@ class RencanaTindakLanjutController extends Controller
     {
         $rtl->load([
             'temuan.evaluasiIndikator.semester.tahunAkademik',
-            'temuan.evaluasiIndikator.evaluatable',
+            'temuan.evaluasiIndikator.evaluatable' => function ($morphTo) {
+                $morphTo->morphWith([
+                    IndikatorMutu::class => ['standarMutu'],
+                    IndikatorKinerjaKegiatanSatuan::class => ['indikatorKinerjaKegiatan.indikatorKinerjaUtama.sasaranStrategis'],
+                ]);
+            },
             'buktiTindakLanjuts.pengunggah',
             'keputusanRtms',
         ]);
@@ -227,7 +234,12 @@ class RencanaTindakLanjutController extends Controller
 
         $temuan = Temuan::with([
             'evaluasiIndikator.semester.tahunAkademik',
-            'evaluasiIndikator.evaluatable',
+            'evaluasiIndikator.evaluatable' => function ($morphTo) {
+                $morphTo->morphWith([
+                    IndikatorMutu::class => ['standarMutu'],
+                    IndikatorKinerjaKegiatanSatuan::class => ['indikatorKinerjaKegiatan.indikatorKinerjaUtama.sasaranStrategis'],
+                ]);
+            },
         ])
             ->whereIn('status', [WorkflowStatus::TERBUKA, WorkflowStatus::DRAFT])
             ->when($typeFilter, function ($query) use ($typeFilter) {

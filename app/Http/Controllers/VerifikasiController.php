@@ -11,6 +11,10 @@ class VerifikasiController extends Controller
 {
     public function index(): View
     {
+        if (! auth()->user()->hasRole('ketua-gkm')) {
+            abort(403, 'Hanya Ketua GKM yang dapat mengakses halaman verifikasi data.');
+        }
+
         $laporanPerkuliahan = Laporan::with([
             'semester.tahunAkademik',
             'jadwalMonev.termin',

@@ -113,4 +113,22 @@ class EvaluasiIndikator extends Model
 
         return '-';
     }
+
+    public function getKodeStandarAttribute(): ?string
+    {
+        if ($this->evaluatable instanceof IndikatorMutu) {
+            return $this->evaluatable->standarMutu?->kode_standar;
+        }
+
+        if ($this->evaluatable instanceof IndikatorKinerjaKegiatanSatuan) {
+            return $this->evaluatable->indikatorKinerjaKegiatan?->kode_ikk;
+        }
+
+        return null;
+    }
+
+    public function getKodeIndikatorAttribute(): ?string
+    {
+        return $this->sumber_kode;
+    }
 }

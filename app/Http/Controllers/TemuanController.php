@@ -13,9 +13,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
+use App\Models\IndikatorKinerjaKegiatanSatuan;
+use App\Models\SasaranStrategis;
 use App\Models\Semester;
 use App\Models\StandarMutu;
-use App\Models\SasaranStrategis;
 
 class TemuanController extends Controller
 {
@@ -146,6 +147,10 @@ class TemuanController extends Controller
 
         $validated = $this->validatedData($request);
         $risikoData = $this->validatedRisikoData($request);
+        $evaluasi = EvaluasiIndikator::find($validated['evaluasi_indikator_id']);
+        if ($evaluasi?->evaluatable_type === 'ikks') {
+            $validated['target_capaian'] = null;
+        }
 
         DB::transaction(function () use ($validated, $risikoData) {
             $temuan = Temuan::create($validated + [
@@ -158,7 +163,6 @@ class TemuanController extends Controller
             }
         });
 
-        $evaluasi = EvaluasiIndikator::find($validated['evaluasi_indikator_id']);
         $redirectRoute = ($evaluasi?->evaluatable_type === 'ikks')
             ? 'temuan-evaluasi.prodi'
             : 'temuan-evaluasi.fakultas';
@@ -179,10 +183,31 @@ class TemuanController extends Controller
             abort(403, 'Anda hanya dapat mengubah temuan yang Anda buat.');
         }
 
-        $temuan->load(['risikoTemuans.tingkatRisiko']);
+        $temuan->load(['risikoTemuans.tingkatRisiko', 'evaluasiIndikator.evaluatable']);
+
+        $currentIkks = null;
+        $currentIkk = null;
+        $currentIku = null;
+        $currentSasaran = null;
+        $currentSemesterId = null;
+
+        if ($temuan->evaluasiIndikator?->evaluatable instanceof IndikatorKinerjaKegiatanSatuan) {
+            $currentIkks = $temuan->evaluasiIndikator->evaluatable;
+            $currentIkk = $currentIkks->indikatorKinerjaKegiatan;
+            $currentIku = $currentIkk?->indikatorKinerjaUtama;
+            $currentSasaran = $currentIku?->sasaranStrategis;
+            $currentSemesterId = $temuan->evaluasiIndikator->semester_id;
+        }
 
         return view('monev.temuan.edit', array_merge(
-            ['temuan' => $temuan],
+            [
+                'temuan' => $temuan,
+                'currentIkks' => $currentIkks,
+                'currentIkk' => $currentIkk,
+                'currentIku' => $currentIku,
+                'currentSasaran' => $currentSasaran,
+                'currentSemesterId' => $currentSemesterId,
+            ],
             $this->formData($temuan)
         ));
     }
@@ -200,6 +225,10 @@ class TemuanController extends Controller
 
         $validated = $this->validatedData($request, $temuan);
         $risikoData = $this->validatedRisikoData($request);
+        $evaluasi = EvaluasiIndikator::find($validated['evaluasi_indikator_id']);
+        if ($evaluasi?->evaluatable_type === 'ikks') {
+            $validated['target_capaian'] = null;
+        }
 
         DB::transaction(function () use ($temuan, $validated, $risikoData) {
             $temuan->update($validated);
@@ -214,7 +243,6 @@ class TemuanController extends Controller
             }
         });
 
-        $evaluasi = EvaluasiIndikator::find($validated['evaluasi_indikator_id']);
         $redirectRoute = ($evaluasi?->evaluatable_type === 'ikks')
             ? 'temuan-evaluasi.prodi'
             : 'temuan-evaluasi.fakultas';
@@ -289,27 +317,70 @@ class TemuanController extends Controller
             ->get();
 
         $sasaranStrategises = SasaranStrategis::where('is_active', true)
-            ->with(['indikatorKinerjaUtamas' => function ($q) use ($temuan) {
+            ->with(['indikatorKinerjaUtamas' => function ($q) {
                 $q->where('is_active', true)
-                    ->with(['indikatorKinerjaKegiatans' => function ($iq) use ($temuan) {
+                    ->with(['indikatorKinerjaKegiatans' => function ($iq) {
                         $iq->where('is_active', true)
-                            ->with(['indikatorKinerjaKegiatanSatuan' => function ($isq) use ($temuan) {
-                                $isq->where('is_active', true)
-                                    ->with(['evaluasiIndikators' => function ($eq) use ($temuan) {
-                                        $eq->whereIn('status_capaian', ['dalam_proses', 'belum_tercapai'])
-                                            ->when($temuan, fn ($q2) => $q2->orWhere('id', $temuan->evaluasi_indikator_id))
-                                            ->with('semester.tahunAkademik');
-                                    }]);
+                            ->with(['indikatorKinerjaKegiatanSatuan' => function ($isq) {
+                                $isq->where('is_active', true);
                             }]);
                     }]);
             }])
             ->get();
 
-        return compact('evaluasiIndikator', 'evaluasiFakultas', 'tingkatRisiko', 'standarMutus', 'sasaranStrategises');
+        $semesters = Semester::with('tahunAkademik')->orderByDesc('tanggal_mulai')->get();
+        $activeSemester = $semesters->firstWhere('is_active', true) ?? $semesters->first();
+
+        return compact('evaluasiIndikator', 'evaluasiFakultas', 'tingkatRisiko', 'standarMutus', 'sasaranStrategises', 'semesters', 'activeSemester');
     }
 
     private function validatedData(Request $request, ?Temuan $temuan = null): array
     {
+        $isProdi = $request->input('scope_type') === 'prodi';
+
+        if ($isProdi) {
+            $validated = $request->validate([
+                'prodi_semester_id' => ['required', 'exists:semesters,id'],
+                'prodi_ikks_id' => ['required', 'exists:indikator_kinerja_kegiatan_satuans,id'],
+                'kode_temuan' => [
+                    'required',
+                    'string',
+                    'max:50',
+                    Rule::unique('temuans', 'kode_temuan')->ignore($temuan),
+                ],
+                'pernyataan' => ['required', 'string'],
+                'rencana_awal' => ['nullable', 'string'],
+                'target_selesai' => ['nullable', 'string', 'max:255'],
+            ], [
+                'prodi_semester_id.required' => 'Semester wajib dipilih.',
+                'prodi_ikks_id.required' => 'IKKS wajib dipilih.',
+                'kode_temuan.required' => 'Kode temuan wajib diisi.',
+                'kode_temuan.unique' => 'Kode temuan sudah digunakan.',
+                'pernyataan.required' => 'Pernyataan temuan wajib diisi.',
+            ]);
+
+            $evaluasi = EvaluasiIndikator::firstOrCreate(
+                [
+                    'semester_id' => $validated['prodi_semester_id'],
+                    'evaluatable_type' => 'ikks',
+                    'evaluatable_id' => $validated['prodi_ikks_id'],
+                ],
+                [
+                    'status_capaian' => 'belum_tercapai',
+                    'input_by' => auth()->id(),
+                ]
+            );
+
+            return [
+                'evaluasi_indikator_id' => $evaluasi->id,
+                'kode_temuan' => $validated['kode_temuan'],
+                'pernyataan' => $validated['pernyataan'],
+                'rencana_awal' => $validated['rencana_awal'] ?? null,
+                'target_selesai' => $validated['target_selesai'] ?? null,
+                'target_capaian' => null,
+            ];
+        }
+
         return $request->validate([
             'evaluasi_indikator_id' => ['required', 'exists:evaluasi_indikators,id'],
             'kode_temuan' => [

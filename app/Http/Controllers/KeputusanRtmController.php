@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\IndikatorKinerjaKegiatanSatuan;
+use App\Models\IndikatorMutu;
 use App\Models\KeputusanRtm;
 use App\Models\NotulenRtm;
 use App\Models\Semester;
@@ -95,7 +97,12 @@ class KeputusanRtmController extends Controller
         $keputusanRtm->load([
             'notulenRtm.jadwalRtm.semester.tahunAkademik',
             'temuan.evaluasiIndikator.semester.tahunAkademik',
-            'temuan.evaluasiIndikator.evaluatable',
+            'temuan.evaluasiIndikator.evaluatable' => function ($morphTo) {
+                $morphTo->morphWith([
+                    IndikatorMutu::class => ['standarMutu'],
+                    IndikatorKinerjaKegiatanSatuan::class => ['indikatorKinerjaKegiatan.indikatorKinerjaUtama.sasaranStrategis'],
+                ]);
+            },
         ]);
 
         return view('rtm.keputusan.show', compact('keputusanRtm'));
@@ -161,12 +168,25 @@ class KeputusanRtmController extends Controller
 
         $temuanByNotulen = $notulenRtm->mapWithKeys(fn ($notulen) => [
             $notulen->id => $this->eligibleTemuanQuery($notulen->id, $keputusanRtm)
-                ->with('evaluasiIndikator.semester.tahunAkademik')
+                ->with([
+                    'evaluasiIndikator.semester.tahunAkademik',
+                    'evaluasiIndikator.evaluatable' => function ($morphTo) {
+                        $morphTo->morphWith([
+                            IndikatorMutu::class => ['standarMutu'],
+                            IndikatorKinerjaKegiatanSatuan::class => ['indikatorKinerjaKegiatan.indikatorKinerjaUtama.sasaranStrategis'],
+                        ]);
+                    },
+                ])
                 ->get()
-                ->map(fn ($temuan) => [
-                    'id' => $temuan->id,
-                    'label' => $temuan->kode_temuan.' - '.str($temuan->pernyataan)->limit(90),
-                ])->values(),
+                ->map(function ($temuan) {
+                    $kodeStandar = $temuan->kode_standar ?? '-';
+                    $kodeIndikator = $temuan->kode_indikator ?? '-';
+
+                    return [
+                        'id' => $temuan->id,
+                        'label' => $temuan->kode_temuan." | [{$kodeStandar} • {$kodeIndikator}] | ".str($temuan->pernyataan)->limit(90),
+                    ];
+                })->values(),
         ]);
 
         return compact('notulenRtm', 'temuanByNotulen');
