@@ -21,7 +21,7 @@
             <form method="GET" action="{{ route($activeRoute ?? 'keputusan-rtm.fakultas') }}">
                 <div class="row g-3 align-items-end">
                     <div class="col-md-5">
-                        <label for="semester_id" class="form-label">Semester RTM</label>
+                        <label for="semester_id" class="form-label">Semester</label>
                         <select id="semester_id" name="semester_id" class="form-select select2">
                             <option value="">-- Semua Semester --</option>
                             @foreach ($semesters ?? [] as $semester)
@@ -61,7 +61,7 @@
                 <thead>
                     <tr>
                         <th>No</th>
-                        <th>RTM</th>
+                        <th>Semester & RTM</th>
                         <th>Temuan yang Ditinjau</th>
                         <th>Keputusan</th>
                         <th>Strategi</th>
@@ -73,8 +73,17 @@
                         <tr>
                             <td>{{ $keputusanRtm->firstItem() + $loop->index }}</td>
                             <td>
-                                <strong>{{ $item->notulenRtm?->jadwalRtm?->judul }}</strong>
-                                <br><small class="text-muted">{{ $item->notulenRtm?->jadwalRtm?->semester?->label }}</small>
+                                <strong>{{ $item->semester?->label ?? $item->notulenRtm?->jadwalRtm?->semester?->label ?? $item->temuan?->evaluasiIndikator?->semester?->label ?? '-' }}</strong>
+                                <br>
+                                @if ($item->notulenRtm)
+                                    <small class="text-primary">
+                                        <i class="bx bx-calendar-event me-1"></i>{{ $item->notulenRtm->jadwalRtm?->judul ?? 'RTM' }}
+                                    </small>
+                                @else
+                                    <span class="badge bg-label-secondary mt-1">
+                                        <i class="bx bx-minus me-1"></i>Tanpa RTM
+                                    </span>
+                                @endif
                             </td>
                             <td style="min-width:240px;white-space:normal">
                                 <strong>{{ $item->temuan?->kode_temuan }}</strong>

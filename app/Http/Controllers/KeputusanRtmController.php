@@ -29,13 +29,19 @@ class KeputusanRtmController extends Controller
         $semesters = Semester::with('tahunAkademik')->orderByDesc('tanggal_mulai')->get();
 
         $keputusanRtm = KeputusanRtm::with([
+            'semester.tahunAkademik',
             'notulenRtm.jadwalRtm.semester.tahunAkademik',
             'temuan.evaluasiIndikator.semester.tahunAkademik',
             'temuan.evaluasiIndikator.evaluatable',
         ])
-            ->whereHas('temuan.evaluasiIndikator', function ($query) use ($selectedSemester) {
-                $query->where('evaluatable_type', 'indikator_mutu')
-                    ->when($selectedSemester, fn ($q) => $q->where('semester_id', $selectedSemester));
+            ->whereHas('temuan.evaluasiIndikator', function ($query) {
+                $query->where('evaluatable_type', 'indikator_mutu');
+            })
+            ->when($selectedSemester, function ($query) use ($selectedSemester) {
+                $query->where(function ($q) use ($selectedSemester) {
+                    $q->where('semester_id', $selectedSemester)
+                        ->orWhereHas('temuan.evaluasiIndikator', fn ($sub) => $sub->where('semester_id', $selectedSemester));
+                });
             })
             ->when($selectedStatus, function ($query) use ($selectedStatus) {
                 $query->whereHas('temuan', fn ($q) => $q->where('status', $selectedStatus));
@@ -62,13 +68,19 @@ class KeputusanRtmController extends Controller
         $semesters = Semester::with('tahunAkademik')->orderByDesc('tanggal_mulai')->get();
 
         $keputusanRtm = KeputusanRtm::with([
+            'semester.tahunAkademik',
             'notulenRtm.jadwalRtm.semester.tahunAkademik',
             'temuan.evaluasiIndikator.semester.tahunAkademik',
             'temuan.evaluasiIndikator.evaluatable',
         ])
-            ->whereHas('temuan.evaluasiIndikator', function ($query) use ($selectedSemester) {
-                $query->where('evaluatable_type', 'ikks')
-                    ->when($selectedSemester, fn ($q) => $q->where('semester_id', $selectedSemester));
+            ->whereHas('temuan.evaluasiIndikator', function ($query) {
+                $query->where('evaluatable_type', 'ikks');
+            })
+            ->when($selectedSemester, function ($query) use ($selectedSemester) {
+                $query->where(function ($q) use ($selectedSemester) {
+                    $q->where('semester_id', $selectedSemester)
+                        ->orWhereHas('temuan.evaluasiIndikator', fn ($sub) => $sub->where('semester_id', $selectedSemester));
+                });
             })
             ->when($selectedStatus, function ($query) use ($selectedStatus) {
                 $query->whereHas('temuan', fn ($q) => $q->where('status', $selectedStatus));
@@ -95,6 +107,7 @@ class KeputusanRtmController extends Controller
     public function show(KeputusanRtm $keputusanRtm): View
     {
         $keputusanRtm->load([
+            'semester.tahunAkademik',
             'notulenRtm.jadwalRtm.semester.tahunAkademik',
             'temuan.evaluasiIndikator.semester.tahunAkademik',
             'temuan.evaluasiIndikator.evaluatable' => function ($morphTo) {
@@ -110,9 +123,15 @@ class KeputusanRtmController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        KeputusanRtm::create($this->validated($request));
+        $validated = $this->validated($request);
+        KeputusanRtm::create($validated);
 
-        return redirect()->route('keputusan-rtm.fakultas')->with('success', 'Keputusan RTM berhasil dibuat.');
+        $temuan = Temuan::with('evaluasiIndikator')->find($validated['temuan_id']);
+        $redirectRoute = ($temuan?->evaluasiIndikator?->evaluatable_type === 'ikks')
+            ? 'keputusan-rtm.prodi'
+            : 'keputusan-rtm.fakultas';
+
+        return redirect()->route($redirectRoute)->with('success', 'Keputusan RTM berhasil dibuat.');
     }
 
     public function edit(KeputusanRtm $keputusanRtm): View
@@ -125,34 +144,54 @@ class KeputusanRtmController extends Controller
 
     public function update(Request $request, KeputusanRtm $keputusanRtm): RedirectResponse
     {
-        $keputusanRtm->update($this->validated($request, $keputusanRtm));
+        $validated = $this->validated($request, $keputusanRtm);
+        $keputusanRtm->update($validated);
 
-        return redirect()->route('keputusan-rtm.fakultas')->with('success', 'Keputusan RTM berhasil diperbarui.');
+        $temuan = Temuan::with('evaluasiIndikator')->find($validated['temuan_id']);
+        $redirectRoute = ($temuan?->evaluasiIndikator?->evaluatable_type === 'ikks')
+            ? 'keputusan-rtm.prodi'
+            : 'keputusan-rtm.fakultas';
+
+        return redirect()->route($redirectRoute)->with('success', 'Keputusan RTM berhasil diperbarui.');
     }
 
     public function destroy(KeputusanRtm $keputusanRtm): RedirectResponse
     {
+        $redirectRoute = ($keputusanRtm->temuan?->evaluasiIndikator?->evaluatable_type === 'ikks')
+            ? 'keputusan-rtm.prodi'
+            : 'keputusan-rtm.fakultas';
+
         $keputusanRtm->delete();
 
-        return back()->with('success', 'Keputusan RTM berhasil dihapus.');
+        return redirect()->route($redirectRoute)->with('success', 'Keputusan RTM berhasil dihapus.');
     }
 
     private function validated(Request $request, ?KeputusanRtm $keputusanRtm = null): array
     {
         $data = $request->validate([
-            'notulen_rtm_id' => ['required', Rule::exists('notulen_rtms', 'id')->where('status', 'diverifikasi')],
+            'semester_id' => ['required', 'exists:semesters,id'],
+            'notulen_rtm_id' => [
+                'nullable',
+                Rule::exists('notulen_rtms', 'id')->where('status', 'diverifikasi'),
+            ],
             'temuan_id' => ['required', 'exists:temuans,id'],
             'uraian_keputusan' => ['required', 'string'],
             'strategi' => ['nullable', 'string'],
+        ], [
+            'semester_id.required' => 'Semester wajib dipilih.',
+            'semester_id.exists' => 'Semester yang dipilih tidak valid.',
+            'temuan_id.required' => 'Temuan wajib dipilih.',
+            'temuan_id.exists' => 'Temuan yang dipilih tidak valid.',
+            'uraian_keputusan.required' => 'Uraian keputusan wajib diisi.',
         ]);
 
-        $eligible = $this->eligibleTemuanQuery((int) $data['notulen_rtm_id'], $keputusanRtm)
+        $eligible = $this->eligibleTemuanQuery((int) $data['semester_id'], $keputusanRtm)
             ->whereKey($data['temuan_id'])
             ->exists();
 
         if (! $eligible) {
             throw ValidationException::withMessages([
-                'temuan_id' => 'Temuan tidak valid atau sudah diputuskan pada RTM ini.',
+                'temuan_id' => 'Temuan tidak valid atau sudah diputuskan pada semester ini.',
             ]);
         }
 
@@ -161,13 +200,28 @@ class KeputusanRtmController extends Controller
 
     private function formData(?KeputusanRtm $keputusanRtm = null): array
     {
+        $semesters = Semester::with('tahunAkademik')->orderByDesc('tanggal_mulai')->get();
+
         $notulenRtm = NotulenRtm::with('jadwalRtm.semester.tahunAkademik')
             ->where('status', 'diverifikasi')
             ->latest('verified_at')
             ->get();
 
-        $temuanByNotulen = $notulenRtm->mapWithKeys(fn ($notulen) => [
-            $notulen->id => $this->eligibleTemuanQuery($notulen->id, $keputusanRtm)
+        $notulenBySemester = $semesters->mapWithKeys(function ($semester) use ($notulenRtm) {
+            $filtered = $notulenRtm->filter(function ($item) use ($semester) {
+                return (int) $item->jadwalRtm?->semester_id === (int) $semester->id;
+            })->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'label' => ($item->jadwalRtm?->judul ?? 'RTM').' ('.($item->jadwalRtm?->tanggal?->format('d/m/Y') ?? '-').')',
+                ];
+            })->values();
+
+            return [$semester->id => $filtered];
+        });
+
+        $temuanBySemester = $semesters->mapWithKeys(function ($semester) use ($keputusanRtm) {
+            $temuans = $this->eligibleTemuanQuery($semester->id, $keputusanRtm)
                 ->with([
                     'evaluasiIndikator.semester.tahunAkademik',
                     'evaluasiIndikator.evaluatable' => function ($morphTo) {
@@ -181,23 +235,35 @@ class KeputusanRtmController extends Controller
                 ->map(function ($temuan) {
                     $kodeStandar = $temuan->kode_standar ?? '-';
                     $kodeIndikator = $temuan->kode_indikator ?? '-';
+                    $semesterLabel = $temuan->evaluasiIndikator?->semester?->label ?? '';
 
                     return [
                         'id' => $temuan->id,
-                        'label' => $temuan->kode_temuan." | [{$kodeStandar} • {$kodeIndikator}] | ".str($temuan->pernyataan)->limit(90),
+                        'label' => $temuan->kode_temuan." | [{$kodeStandar} • {$kodeIndikator}] | ".str($temuan->pernyataan)->limit(80).($semesterLabel ? " ({$semesterLabel})" : ''),
                     ];
-                })->values(),
-        ]);
+                })->values();
 
-        return compact('notulenRtm', 'temuanByNotulen');
+            return [$semester->id => $temuans];
+        });
+
+        return compact('semesters', 'notulenRtm', 'notulenBySemester', 'temuanBySemester');
     }
 
-    private function eligibleTemuanQuery(int $notulenId, ?KeputusanRtm $current = null)
+    private function eligibleTemuanQuery(int $semesterId, ?KeputusanRtm $current = null)
     {
+        $targetSemester = Semester::find($semesterId);
+
         return Temuan::query()
-            ->where(function ($query) use ($notulenId, $current) {
-                $query->whereDoesntHave('keputusanRtms', fn ($q) => $q->where('notulen_rtm_id', $notulenId));
-                if ($current && (int) $current->notulen_rtm_id === $notulenId) {
+            ->where(function ($query) use ($targetSemester) {
+                if ($targetSemester?->tanggal_mulai) {
+                    $query->whereHas('evaluasiIndikator.semester', function ($q) use ($targetSemester) {
+                        $q->where('tanggal_mulai', '<=', $targetSemester->tanggal_mulai);
+                    })->orWhereDoesntHave('evaluasiIndikator');
+                }
+            })
+            ->where(function ($query) use ($semesterId, $current) {
+                $query->whereDoesntHave('keputusanRtms', fn ($q) => $q->where('semester_id', $semesterId));
+                if ($current && (int) $current->semester_id === $semesterId) {
                     $query->orWhere('id', $current->temuan_id);
                 }
             });

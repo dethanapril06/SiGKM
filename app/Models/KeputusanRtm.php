@@ -12,6 +12,7 @@ class KeputusanRtm extends Model
     use HasFactory;
 
     protected $fillable = [
+        'semester_id',
         'notulen_rtm_id',
         'temuan_id',
         'uraian_keputusan',
@@ -21,6 +22,11 @@ class KeputusanRtm extends Model
     protected function casts(): array
     {
         return [];
+    }
+
+    public function semester(): BelongsTo
+    {
+        return $this->belongsTo(Semester::class);
     }
 
     public function notulenRtm(): BelongsTo

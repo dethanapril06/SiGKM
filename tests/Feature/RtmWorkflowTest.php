@@ -85,12 +85,13 @@ it('allows an Anggota GKM to submit a notulen and Ketua GKM to verify it', funct
         ->and($notulen->fresh()->verified_by)->toBe($chair->id);
 });
 
-it('accepts any Temuan for a decision in an RTM as long as it has not been decided in the same RTM', function () {
+it('accepts any Temuan for a decision based on semester with optional RTM', function () {
     $member = rtmUser('anggota-gkm');
     $previous = rtmSemester('ganjil', '2025-08-01', '2026-01-31');
     $current = rtmSemester('genap', '2026-02-01', '2026-07-31');
     $finding1 = findingFor($previous, 'TMN-PREV');
     $finding2 = findingFor($current, 'TMN-CURR');
+    $finding3 = findingFor($current, 'TMN-NO-RTM');
     
     $schedule = JadwalRtm::create([
         'semester_id' => $current->id,
@@ -106,31 +107,49 @@ it('accepts any Temuan for a decision in an RTM as long as it has not been decid
     ]);
 
     $payload = [
+        'semester_id' => $current->id,
         'notulen_rtm_id' => $notulen->id,
         'uraian_keputusan' => 'Keputusan perbaikan.',
         'strategi' => 'Monitoring bulanan.',
-        'status' => 'belum_dikerjakan',
     ];
 
-    // Dapat menggunakan temuan dari semester lalu
+    // Dapat menggunakan temuan dari semester lalu pada semester berjalan
     $this->actingAs($member)->post(route('keputusan-rtm.store'), $payload + [
         'temuan_id' => $finding1->id,
     ])->assertRedirect(route('keputusan-rtm.fakultas'));
 
     $this->assertDatabaseHas('keputusan_rtms', [
+        'semester_id' => $current->id,
+        'notulen_rtm_id' => $notulen->id,
         'temuan_id' => $finding1->id,
         'strategi' => 'Monitoring bulanan.',
     ]);
 
-    // Tidak boleh duplikat pada notulen yang sama
+    // Tidak boleh duplikat temuan pada semester yang sama
     $this->actingAs($member)->post(route('keputusan-rtm.store'), $payload + [
         'temuan_id' => $finding1->id,
     ])->assertSessionHasErrors('temuan_id');
 
-    // Dapat menggunakan temuan dari semester berjalan
+    // Dapat menggunakan temuan dari semester berjalan dengan RTM
     $this->actingAs($member)->post(route('keputusan-rtm.store'), $payload + [
         'temuan_id' => $finding2->id,
     ])->assertRedirect(route('keputusan-rtm.fakultas'));
+
+    // Pilihan RTM bersifat opsional (null)
+    $this->actingAs($member)->post(route('keputusan-rtm.store'), [
+        'semester_id' => $current->id,
+        'notulen_rtm_id' => null,
+        'temuan_id' => $finding3->id,
+        'uraian_keputusan' => 'Keputusan tanpa RTM.',
+        'strategi' => null,
+    ])->assertRedirect(route('keputusan-rtm.fakultas'));
+
+    $this->assertDatabaseHas('keputusan_rtms', [
+        'semester_id' => $current->id,
+        'notulen_rtm_id' => null,
+        'temuan_id' => $finding3->id,
+        'uraian_keputusan' => 'Keputusan tanpa RTM.',
+    ]);
 });
 
 it('allows only ketua-gkm to access the verifikasi page', function () {
@@ -140,4 +159,3 @@ it('allows only ketua-gkm to access the verifikasi page', function () {
     $this->actingAs($member)->get(route('verifikasi.index'))->assertForbidden();
     $this->actingAs($chair)->get(route('verifikasi.index'))->assertOk();
 });
-
