@@ -87,6 +87,7 @@ it('creates and updates a prodi temuan directly with IKKS without pre-existing e
         'prodi_semester_id' => $semester->id,
         'prodi_ikks_id' => $ikks->id,
         'kode_temuan' => 'TM-PRODI-001',
+        'nama_penanggung_jawab' => 'Koordinator Prodi TI',
         'pernyataan' => 'Temuan langsung dari IKKS',
         'rencana_awal' => 'Rencana awal',
         'target_selesai' => '2026-12-31',
@@ -96,6 +97,7 @@ it('creates and updates a prodi temuan directly with IKKS without pre-existing e
 
     $temuan = \App\Models\Temuan::where('kode_temuan', 'TM-PRODI-001')->first();
     expect($temuan)->not->toBeNull()
+        ->and($temuan->nama_penanggung_jawab)->toBe('Koordinator Prodi TI')
         ->and($temuan->evaluasiIndikator)->not->toBeNull()
         ->and($temuan->evaluasiIndikator->evaluatable_type)->toBe('ikks')
         ->and($temuan->evaluasiIndikator->evaluatable_id)->toBe($ikks->id)

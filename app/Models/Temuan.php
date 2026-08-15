@@ -16,6 +16,7 @@ class Temuan extends Model
     protected $fillable = [
         'kode_temuan',
         'evaluasi_indikator_id',
+        'nama_penanggung_jawab',
         'pernyataan',
         'rencana_awal',
         'target_selesai',
@@ -29,9 +30,9 @@ class Temuan extends Model
         return [];
     }
 
-    public function getNamaPenanggungJawabAttribute(): ?string
+    public function getNamaPenanggungJawabAttribute(?string $value): ?string
     {
-        return $this->evaluasiIndikator?->nama_penanggung_jawab;
+        return $value ?: $this->evaluasiIndikator?->nama_penanggung_jawab;
     }
 
     public function getKodeStandarAttribute(): ?string

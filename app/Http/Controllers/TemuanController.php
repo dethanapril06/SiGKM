@@ -348,6 +348,7 @@ class TemuanController extends Controller
                     'max:50',
                     Rule::unique('temuans', 'kode_temuan')->ignore($temuan),
                 ],
+                'nama_penanggung_jawab' => ['nullable', 'string', 'max:255'],
                 'pernyataan' => ['required', 'string'],
                 'rencana_awal' => ['nullable', 'string'],
                 'target_selesai' => ['nullable', 'string', 'max:255'],
@@ -374,6 +375,7 @@ class TemuanController extends Controller
             return [
                 'evaluasi_indikator_id' => $evaluasi->id,
                 'kode_temuan' => $validated['kode_temuan'],
+                'nama_penanggung_jawab' => $validated['nama_penanggung_jawab'] ?? null,
                 'pernyataan' => $validated['pernyataan'],
                 'rencana_awal' => $validated['rencana_awal'] ?? null,
                 'target_selesai' => $validated['target_selesai'] ?? null,
@@ -389,6 +391,7 @@ class TemuanController extends Controller
                 'max:50',
                 Rule::unique('temuans', 'kode_temuan')->ignore($temuan),
             ],
+            'nama_penanggung_jawab' => ['nullable', 'string', 'max:255'],
             'pernyataan' => ['required', 'string'],
             'rencana_awal' => ['nullable', 'string'],
             'target_selesai' => ['nullable', 'string', 'max:255'],

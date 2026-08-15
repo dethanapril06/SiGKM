@@ -57,16 +57,6 @@
                     @enderror
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Penanggung Jawab (PJ Realisasi)</label>
-                    <input type="text" name="penanggung_jawab"
-                        class="form-control @error('penanggung_jawab') is-invalid @enderror"
-                        value="{{ old('penanggung_jawab') }}"
-                        placeholder="Masukkan nama penanggung jawab realisasi RTL">
-                    @error('penanggung_jawab')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
 
                 <div class="mb-3">
                     <label class="form-label">Uraian Realisasi Tindak Lanjut <span class="text-danger">*</span></label>

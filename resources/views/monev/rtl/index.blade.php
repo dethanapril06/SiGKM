@@ -104,10 +104,10 @@
                             </td>
                             <td>
                                 <strong>{{ \Illuminate\Support\Str::limit($item->uraian_realisasi ?? '-', 60) }}</strong>
-                                @if ($item->penanggung_jawab)
+                                @if ($item->temuan?->nama_penanggung_jawab || $item->penanggung_jawab)
                                     <br>
                                     <small class="text-primary">
-                                        PJ: {{ $item->penanggung_jawab }}
+                                        PJ: {{ $item->temuan?->nama_penanggung_jawab ?: $item->penanggung_jawab }}
                                     </small>
                                 @endif
                                 @if ($item->catatan)

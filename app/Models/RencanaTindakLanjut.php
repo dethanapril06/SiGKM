@@ -32,6 +32,11 @@ class RencanaTindakLanjut extends Model
         return $this->belongsTo(Temuan::class);
     }
 
+    public function getPenanggungJawabAttribute(?string $value): ?string
+    {
+        return $this->temuan?->nama_penanggung_jawab ?? $value;
+    }
+
     public function buktiTindakLanjuts(): HasMany
     {
         return $this->hasMany(BuktiTindakLanjut::class);

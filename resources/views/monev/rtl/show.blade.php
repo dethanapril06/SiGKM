@@ -18,9 +18,9 @@
                 {{ $rtl->temuan?->evaluasiIndikator?->sumber_kode }} —
                 {{ $rtl->temuan?->evaluasiIndikator?->sumber_uraian }}
             </x-detail-row>
-            <x-detail-row label="Penanggung Jawab Realisasi">
+            <x-detail-row label="Penanggung Jawab">
                 <span>
-                    {{ $rtl->penanggung_jawab ?? '-' }}
+                    {{ $rtl->temuan?->nama_penanggung_jawab ?: ($rtl->penanggung_jawab ?: '-') }}
                 </span>
             </x-detail-row>
             <x-detail-row label="Rencana Awal RTL">
