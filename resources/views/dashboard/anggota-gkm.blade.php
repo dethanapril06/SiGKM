@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('content')
-<div class="d-flex justify-content-between align-items-center py-3 mb-4"><div><h4 class="fw-bold mb-1">Dashboard Anggota GKM</h4><p class="text-muted mb-0">Ringkasan pekerjaan input Monev dan RTM Anda.</p></div><div><a href="{{ route('ringkasan-perkuliahan.create') }}" class="btn btn-primary">Input Ringkasan</a> <a href="{{ route('notulen-rtm.create') }}" class="btn btn-outline-primary">Buat Notulen</a></div></div>
+<div class="d-flex justify-content-between align-items-center py-3 mb-4"><div><h4 class="fw-bold mb-1">Dashboard Anggota GKM</h4><p class="text-muted mb-0">Ringkasan mutu, evaluasi, dan progres Monev serta RTM.</p></div><div><a href="{{ route('ringkasan-perkuliahan.create') }}" class="btn btn-primary">Input Ringkasan</a> <a href="{{ route('notulen-rtm.create') }}" class="btn btn-outline-primary">Buat Notulen</a></div></div>
 <div class="row">@foreach($stats as $item)<x-dashboard-stat :item="$item" />@endforeach</div>
 <div class="row mb-4"><div class="col-lg-5 mb-4"><div class="card h-100"><h5 class="card-header">Perlu Diselesaikan</h5><div class="card-body">
 @foreach(['ringkasan_draft'=>'Ringkasan Draft','ringkasan_ditolak'=>'Ringkasan Ditolak','temuan_draft'=>'Temuan Draft','notulen_draft'=>'Notulen Draft','notulen_ditolak'=>'Notulen Ditolak'] as $key=>$label)<div class="d-flex justify-content-between mb-2"><span>{{ $label }}</span><span class="badge bg-label-{{ str_contains($key,'ditolak') ? 'danger' : 'secondary' }}">{{ $statusPekerjaan[$key] }}</span></div>@endforeach
