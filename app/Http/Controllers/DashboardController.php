@@ -94,8 +94,7 @@ class DashboardController extends Controller
                 ['label' => 'Total AMI', 'value' => Ami::count(), 'icon' => 'bx-folder-open', 'color' => 'success'],
             ],
             'pending' => [
-                'ringkasan' => Laporan::where('jenis_laporan', 'perkuliahan')->where('status', 'diajukan')->count(),
-                'rtl' => Temuan::where('status', 'terbuka')->count(),
+                'laporan_perkuliahan' => Laporan::where('jenis_laporan', 'perkuliahan')->where('status', 'diajukan')->count(),
                 'notulen' => NotulenRtm::where('status', 'diajukan')->count(),
             ],
             'capaian' => $this->capaian(),
