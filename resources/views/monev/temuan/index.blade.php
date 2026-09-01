@@ -44,19 +44,21 @@
                         </select>
                     </div>
                     <div class="col-md-4">
-                        <label for="status" class="form-label">Status Temuan</label>
-                        <select id="status" name="status" class="form-select">
-                            <option value="">-- Semua Status --</option>
-                            <option value="draft" @selected(($selectedStatus ?? null) === 'draft')>Draft</option>
-                            <option value="terbuka" @selected(($selectedStatus ?? null) === 'terbuka')>Terbuka</option>
-                            <option value="ditutup" @selected(($selectedStatus ?? null) === 'ditutup')>Ditutup</option>
+                        <label for="tingkat_risiko_id" class="form-label">Tingkat Risiko</label>
+                        <select id="tingkat_risiko_id" name="tingkat_risiko_id" class="form-select">
+                            <option value="">-- Semua Risiko --</option>
+                            @foreach ($tingkatRisikos ?? [] as $risiko)
+                                <option value="{{ $risiko->id }}" @selected(($selectedRisiko ?? null) == $risiko->id)>
+                                    {{ $risiko->nama_tingkat }}
+                                </option>
+                            @endforeach
                         </select>
                     </div>
                     <div class="col-md-3 d-flex gap-2">
                         <button type="submit" class="btn btn-primary">
                             <i class="bx bx-filter-alt me-1"></i> Filter
                         </button>
-                        @if (($selectedSemester ?? null) || ($selectedStatus ?? null))
+                        @if (($selectedSemester ?? null) || ($selectedRisiko ?? null))
                             <a href="{{ route($activeRoute ?? 'temuan-evaluasi.fakultas') }}" class="btn btn-outline-secondary">
                                 <i class="bx bx-reset me-1"></i> Reset
                             </a>

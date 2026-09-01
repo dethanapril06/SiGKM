@@ -16,6 +16,7 @@ use Illuminate\View\View;
 use App\Models\IndikatorKinerjaKegiatanSatuan;
 use App\Models\IndikatorMutu;
 use App\Models\Semester;
+use App\Models\TingkatRisiko;
 
 class RencanaTindakLanjutController extends Controller
 {
@@ -27,21 +28,23 @@ class RencanaTindakLanjutController extends Controller
     public function indexFakultas(Request $request): View
     {
         $selectedSemester = $request->query('semester_id');
-        $selectedStatus = $request->query('status');
+        $selectedRisiko = $request->query('tingkat_risiko_id');
 
         $semesters = Semester::with('tahunAkademik')->orderByDesc('tanggal_mulai')->get();
+        $tingkatRisikos = TingkatRisiko::orderBy('nama_tingkat')->get();
 
         $rtl = RencanaTindakLanjut::with([
             'temuan.evaluasiIndikator.semester.tahunAkademik',
             'temuan.evaluasiIndikator.evaluatable',
+            'temuan.risikoTemuans.tingkatRisiko',
             'buktiTindakLanjuts.pengunggah',
         ])
             ->whereHas('temuan.evaluasiIndikator', function ($query) use ($selectedSemester) {
                 $query->where('evaluatable_type', 'indikator_mutu')
                     ->when($selectedSemester, fn ($q) => $q->where('semester_id', $selectedSemester));
             })
-            ->when($selectedStatus, function ($query) use ($selectedStatus) {
-                $query->whereHas('temuan', fn ($q) => $q->where('status', $selectedStatus));
+            ->when($selectedRisiko, function ($query) use ($selectedRisiko) {
+                $query->whereHas('temuan.risikoTemuans', fn ($q) => $q->where('tingkat_risiko_id', $selectedRisiko));
             })
             ->latest()
             ->paginate(10)
@@ -52,29 +55,32 @@ class RencanaTindakLanjutController extends Controller
             'judul' => 'RTL Fakultas',
             'activeRoute' => 'rtl.fakultas',
             'semesters' => $semesters,
+            'tingkatRisikos' => $tingkatRisikos,
             'selectedSemester' => $selectedSemester,
-            'selectedStatus' => $selectedStatus,
+            'selectedRisiko' => $selectedRisiko,
         ]);
     }
 
     public function indexProdi(Request $request): View
     {
         $selectedSemester = $request->query('semester_id');
-        $selectedStatus = $request->query('status');
+        $selectedRisiko = $request->query('tingkat_risiko_id');
 
         $semesters = Semester::with('tahunAkademik')->orderByDesc('tanggal_mulai')->get();
+        $tingkatRisikos = TingkatRisiko::orderBy('nama_tingkat')->get();
 
         $rtl = RencanaTindakLanjut::with([
             'temuan.evaluasiIndikator.semester.tahunAkademik',
             'temuan.evaluasiIndikator.evaluatable',
+            'temuan.risikoTemuans.tingkatRisiko',
             'buktiTindakLanjuts.pengunggah',
         ])
             ->whereHas('temuan.evaluasiIndikator', function ($query) use ($selectedSemester) {
                 $query->where('evaluatable_type', 'ikks')
                     ->when($selectedSemester, fn ($q) => $q->where('semester_id', $selectedSemester));
             })
-            ->when($selectedStatus, function ($query) use ($selectedStatus) {
-                $query->whereHas('temuan', fn ($q) => $q->where('status', $selectedStatus));
+            ->when($selectedRisiko, function ($query) use ($selectedRisiko) {
+                $query->whereHas('temuan.risikoTemuans', fn ($q) => $q->where('tingkat_risiko_id', $selectedRisiko));
             })
             ->latest()
             ->paginate(10)
@@ -85,8 +91,9 @@ class RencanaTindakLanjutController extends Controller
             'judul' => 'RTL Program Studi',
             'activeRoute' => 'rtl.prodi',
             'semesters' => $semesters,
+            'tingkatRisikos' => $tingkatRisikos,
             'selectedSemester' => $selectedSemester,
-            'selectedStatus' => $selectedStatus,
+            'selectedRisiko' => $selectedRisiko,
         ]);
     }
 

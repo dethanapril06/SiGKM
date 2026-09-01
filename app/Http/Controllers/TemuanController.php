@@ -28,9 +28,10 @@ class TemuanController extends Controller
     public function indexFakultas(Request $request): View
     {
         $selectedSemester = $request->query('semester_id');
-        $selectedStatus = $request->query('status');
+        $selectedRisiko = $request->query('tingkat_risiko_id');
 
         $semesters = Semester::with('tahunAkademik')->orderByDesc('tanggal_mulai')->get();
+        $tingkatRisikos = TingkatRisiko::orderBy('nama_tingkat')->get();
 
         $temuanEvaluasi = Temuan::with([
             'evaluasiIndikator.semester.tahunAkademik',
@@ -43,8 +44,8 @@ class TemuanController extends Controller
                     ->whereIn('status_capaian', ['dalam_proses', 'belum_tercapai'])
                     ->when($selectedSemester, fn ($q) => $q->where('semester_id', $selectedSemester));
             })
-            ->when($selectedStatus, function ($query) use ($selectedStatus) {
-                $query->where('status', $selectedStatus);
+            ->when($selectedRisiko, function ($query) use ($selectedRisiko) {
+                $query->whereHas('risikoTemuans', fn ($q) => $q->where('tingkat_risiko_id', $selectedRisiko));
             })
             ->when(auth()->user()->hasRole('anggota-gkm'), function ($query) {
                 $query->where('created_by', auth()->id());
@@ -61,8 +62,9 @@ class TemuanController extends Controller
             'judul' => 'Temuan Evaluasi — Fakultas',
             'activeRoute' => 'temuan-evaluasi.fakultas',
             'semesters' => $semesters,
+            'tingkatRisikos' => $tingkatRisikos,
             'selectedSemester' => $selectedSemester,
-            'selectedStatus' => $selectedStatus,
+            'selectedRisiko' => $selectedRisiko,
         ]);
     }
 
@@ -70,9 +72,10 @@ class TemuanController extends Controller
     {
         $user = auth()->user();
         $selectedSemester = $request->query('semester_id');
-        $selectedStatus = $request->query('status');
+        $selectedRisiko = $request->query('tingkat_risiko_id');
 
         $semesters = Semester::with('tahunAkademik')->orderByDesc('tanggal_mulai')->get();
+        $tingkatRisikos = TingkatRisiko::orderBy('nama_tingkat')->get();
 
         $temuanEvaluasi = Temuan::with([
             'evaluasiIndikator.semester.tahunAkademik',
@@ -84,8 +87,8 @@ class TemuanController extends Controller
                 $query->where('evaluatable_type', 'ikks')
                     ->when($selectedSemester, fn ($q) => $q->where('semester_id', $selectedSemester));
             })
-            ->when($selectedStatus, function ($query) use ($selectedStatus) {
-                $query->where('status', $selectedStatus);
+            ->when($selectedRisiko, function ($query) use ($selectedRisiko) {
+                $query->whereHas('risikoTemuans', fn ($q) => $q->where('tingkat_risiko_id', $selectedRisiko));
             })
             ->when($user->hasRole('anggota-gkm'), function ($query) use ($user) {
                 $query->where('created_by', $user->id);
@@ -102,8 +105,9 @@ class TemuanController extends Controller
             'judul' => 'Temuan Evaluasi — Program Studi',
             'activeRoute' => 'temuan-evaluasi.prodi',
             'semesters' => $semesters,
+            'tingkatRisikos' => $tingkatRisikos,
             'selectedSemester' => $selectedSemester,
-            'selectedStatus' => $selectedStatus,
+            'selectedRisiko' => $selectedRisiko,
         ]);
     }
 
