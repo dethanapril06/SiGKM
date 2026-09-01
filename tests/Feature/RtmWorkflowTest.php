@@ -85,6 +85,33 @@ it('allows an Anggota GKM to submit a notulen and Ketua GKM to verify it', funct
         ->and($notulen->fresh()->verified_by)->toBe($chair->id);
 });
 
+it('allows updating Jadwal RTM successfully', function () {
+    $chair = rtmUser('ketua-gkm');
+    $semester = rtmSemester('ganjil', '2026-08-01', '2027-01-31');
+    $schedule = JadwalRtm::create([
+        'semester_id' => $semester->id,
+        'judul' => 'RTM Awal',
+        'tanggal' => '2027-02-10',
+        'waktu_mulai' => '09:00:00',
+        'waktu_selesai' => '11:00:00',
+        'status' => 'terjadwal',
+    ]);
+
+    $this->actingAs($chair)->put(route('jadwal-rtm.update', $schedule), [
+        'semester_id' => $semester->id,
+        'judul' => 'RTM Diperbarui',
+        'tanggal' => '2027-02-11',
+        'waktu_mulai' => '09:30',
+        'waktu_selesai' => '11:30',
+        'lokasi' => 'Ruang Rapat',
+        'agenda' => 'Pembahasan RTL',
+        'status' => 'terjadwal',
+    ])->assertRedirect(route('jadwal-rtm.index'));
+
+    expect($schedule->fresh()->judul)->toBe('RTM Diperbarui')
+        ->and($schedule->fresh()->lokasi)->toBe('Ruang Rapat');
+});
+
 it('accepts any Temuan for a decision based on semester with optional RTM', function () {
     $member = rtmUser('anggota-gkm');
     $previous = rtmSemester('ganjil', '2025-08-01', '2026-01-31');
