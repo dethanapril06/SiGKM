@@ -320,24 +320,33 @@ class SiakadSyncService
                 $nidn = trim($attr['nidn'] ?? '') ?: null;
                 $namaLengkap = $this->formatNamaDosen($namaAsli, $attr['gelar_depan'] ?? null, $attr['gelar_belakang'] ?? null);
 
-                // Cari dosen yang sudah ada berdasarkan NIDN, NIP, atau Nama
-                $dosen = null;
-                if ($nidn) {
-                    $dosen = Dosen::where('nidn', $nidn)->first();
-                }
-                if (! $dosen && $nip) {
-                    $dosen = Dosen::where('nip', $nip)->first();
-                }
-                if (! $dosen) {
-                    $dosen = Dosen::where('nama_dosen', $namaLengkap)->first();
-                }
+                // Cari dosen yang sudah ada berdasarkan NIDN, NIP, atau kemiripan nama
+                $dosen = $this->findExistingDosen($namaLengkap, $nip, $nidn)
+                    ?: $this->findExistingDosen($namaAsli, $nip, $nidn);
 
                 if ($dosen) {
-                    $dosen->update([
-                        'nama_dosen' => $namaLengkap,
-                        'nip' => $nip ?? $dosen->nip,
-                        'nidn' => $nidn ?? $dosen->nidn,
-                    ]);
+                    $updates = [];
+                    // Pertahankan nama yang sudah ada di database agar tidak tertimpa variasi nama dari API
+                    if (empty(trim($dosen->nama_dosen ?? '')) && ! empty($namaLengkap)) {
+                        $updates['nama_dosen'] = $namaLengkap;
+                    }
+
+                    // Update NIP jika di database belum ada atau yang baru merupakan NIP 18 digit resmi
+                    if ($nip && $dosen->nip !== $nip) {
+                        $isBetterNip = ! $dosen->nip || (strlen($nip) === 18 && strlen($dosen->nip) !== 18);
+                        if ($isBetterNip && ! Dosen::where('nip', $nip)->whereKeyNot($dosen->id)->exists()) {
+                            $updates['nip'] = $nip;
+                        }
+                    }
+
+                    // Update NIDN jika di database belum ada
+                    if ($nidn && ! $dosen->nidn && ! Dosen::where('nidn', $nidn)->whereKeyNot($dosen->id)->exists()) {
+                        $updates['nidn'] = $nidn;
+                    }
+
+                    if (! empty($updates)) {
+                        $dosen->update($updates);
+                    }
                     $stats['updated']++;
                 } else {
                     Dosen::create([
@@ -708,6 +717,156 @@ class SiakadSyncService
     }
 
     /**
+     * Bersihkan bagian gelar akademik dari nama dosen untuk keperluan pembandingan nama.
+     */
+    public function cleanNameBeforeDegrees(string $name): string
+    {
+        $parts = explode(',', $name);
+        $base = trim($parts[0]);
+        $base = preg_replace('/^(prof\b|dr\b|dra\b|drs\b|ir\b)[.,\s]*/i', '', $base);
+        $clean = preg_replace('/[.,\/\-_()]/u', ' ', mb_strtolower($base)) ?? mb_strtolower($base);
+
+        return trim($clean);
+    }
+
+    /**
+     * Ekstrak token kata nama pokok (tanpa gelar dan inisial 1 huruf).
+     *
+     * @return array<string>
+     */
+    public function extractNameTokens(string $name): array
+    {
+        $clean = $this->cleanNameBeforeDegrees($name);
+        $words = preg_split('/\s+/u', $clean, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        $tokens = [];
+        foreach ($words as $w) {
+            $wClean = trim($w);
+            if (mb_strlen($wClean) <= 1) {
+                continue;
+            }
+            $tokens[] = $wClean;
+        }
+
+        return array_values($tokens);
+    }
+
+    /**
+     * Cek apakah dua kata nama serupa (mempertimbangkan typo minor atau perbedaan 1 huruf).
+     */
+    public function isWordSimilar(string $w1, string $w2): bool
+    {
+        if ($w1 === $w2) {
+            return true;
+        }
+        $len1 = strlen($w1);
+        $len2 = strlen($w2);
+        if (abs($len1 - $len2) > 2) {
+            return false;
+        }
+
+        $dist = levenshtein($w1, $w2);
+        if ($dist <= 1) {
+            return true;
+        }
+        if ($dist <= 2 && (soundex($w1) === soundex($w2) || metaphone($w1) === metaphone($w2))) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Cek apakah dua nama dosen merujuk pada orang yang sama berdasarkan nama awal dan nama akhir.
+     */
+    public function isNameMatch(string $nameA, string $nameB): bool
+    {
+        if (strcasecmp(trim($nameA), trim($nameB)) === 0) {
+            return true;
+        }
+
+        $tokensA = $this->extractNameTokens($nameA);
+        $tokensB = $this->extractNameTokens($nameB);
+
+        if (empty($tokensA) || empty($tokensB)) {
+            return strcasecmp(trim($nameA), trim($nameB)) === 0;
+        }
+
+        $strA = implode(' ', $tokensA);
+        $strB = implode(' ', $tokensB);
+        if ($strA === $strB || str_contains($strA, $strB) || str_contains($strB, $strA)) {
+            return true;
+        }
+
+        $firstA = $tokensA[0];
+        $lastA = end($tokensA);
+        $firstB = $tokensB[0];
+        $lastB = end($tokensB);
+
+        return $this->isWordSimilar($firstA, $firstB) && $this->isWordSimilar($lastA, $lastB);
+    }
+
+    /**
+     * Cari dosen yang sudah ada di database berdasarkan NIDN, NIP, atau kemiripan nama
+     * (termasuk pencocokan cerdas kata awal dan kata akhir untuk menghindari pendobelan).
+     */
+    public function findExistingDosen(?string $nama, ?string $nip = null, ?string $nidn = null): ?Dosen
+    {
+        $nip = trim($nip ?? '') ?: null;
+        $nidn = trim($nidn ?? '') ?: null;
+
+        if (! $nidn && $nip && strlen($nip) === 10 && ctype_digit($nip)) {
+            $nidn = $nip;
+        }
+
+        // 1. Prioritas NIDN (cross-check kolom nidn dan nip)
+        if ($nidn) {
+            $dosen = Dosen::where('nidn', $nidn)->orWhere('nip', $nidn)->first();
+            if ($dosen) {
+                return $dosen;
+            }
+        }
+
+        // 2. Prioritas NIP (cross-check kolom nip dan nidn)
+        if ($nip) {
+            $dosen = Dosen::where('nip', $nip)->orWhere('nidn', $nip)->first();
+            if ($dosen) {
+                return $dosen;
+            }
+        }
+
+        // 3. Pencocokan eksak nama
+        $nama = trim($nama ?? '');
+        if ($nama === '') {
+            return null;
+        }
+
+        $dosen = Dosen::where('nama_dosen', $nama)->first();
+        if ($dosen) {
+            return $dosen;
+        }
+
+        // 4. Pencocokan LIKE nama pokok
+        $baseName = $this->cleanNameBeforeDegrees($nama);
+        if ($baseName !== '') {
+            $matches = Dosen::where('nama_dosen', 'like', '%' . $baseName . '%')->limit(2)->get();
+            if ($matches->count() === 1) {
+                return $matches->first();
+            }
+        }
+
+        // 5. Pencocokan cerdas nama awal dan nama akhir (token fuzzy matching)
+        $allDosens = Dosen::all(['id', 'nama_dosen', 'nip', 'nidn']);
+        foreach ($allDosens as $candidate) {
+            if ($this->isNameMatch($nama, $candidate->nama_dosen ?? '')) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Cari Dosen di database berdasarkan NIDN/NIP/Nama (termasuk kasus nip_pengisi_materi berisi 10 digit NIDN),
      * atau buat baru jika belum ada tanpa menimpa gelar lengkap dosen yang sudah ada.
      */
@@ -734,28 +893,19 @@ class SiakadSyncService
 
         $namaLengkap = $this->formatNamaDosen($namaAsli, $gelarDepan, $gelarBelakang);
 
-        $dosen = null;
-        if ($nidn) {
-            $dosen = Dosen::where('nidn', $nidn)->orWhere('nip', $nidn)->first();
-        }
-        if (! $dosen && $nip) {
-            $dosen = Dosen::where('nip', $nip)->orWhere('nidn', $nip)->first();
-        }
-        if (! $dosen) {
-            $dosen = Dosen::where('nama_dosen', $namaLengkap)->first();
-        }
-        if (! $dosen) {
-            $matches = Dosen::where('nama_dosen', 'like', '%' . $namaAsli . '%')->limit(2)->get();
-            if ($matches->count() === 1) {
-                $dosen = $matches->first();
-            }
-        }
+        $dosen = $this->findExistingDosen($namaLengkap, $nip, $nidn)
+            ?: $this->findExistingDosen($namaAsli, $nip, $nidn);
 
         if ($dosen) {
             $updates = [];
-            if ($nip && ! $dosen->nip && ! Dosen::where('nip', $nip)->whereKeyNot($dosen->id)->exists()) {
-                $updates['nip'] = $nip;
+            // Update NIP jika di database belum ada atau yang baru merupakan NIP 18 digit resmi
+            if ($nip && $dosen->nip !== $nip) {
+                $isBetterNip = ! $dosen->nip || (strlen($nip) === 18 && strlen($dosen->nip) !== 18);
+                if ($isBetterNip && ! Dosen::where('nip', $nip)->whereKeyNot($dosen->id)->exists()) {
+                    $updates['nip'] = $nip;
+                }
             }
+            // Update NIDN jika di database belum ada
             if ($nidn && ! $dosen->nidn && ! Dosen::where('nidn', $nidn)->whereKeyNot($dosen->id)->exists()) {
                 $updates['nidn'] = $nidn;
             }

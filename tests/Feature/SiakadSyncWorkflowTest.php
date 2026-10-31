@@ -50,6 +50,46 @@ it('syncs dosen successfully using SiakadSyncService', function () {
         ->and($dosen->nama_dosen)->toBe('Dr. Tester Dosen, M.Kom.');
 });
 
+it('matches existing dosen by smart first and last name without creating duplicate or overwriting existing custom name', function () {
+    // 1. Dosen sudah ada di database dengan nama "Yelly N Nubuasa" tanpa NIP/NIDN
+    $existing = Dosen::create([
+        'nama_dosen' => 'Yelly N Nubuasa',
+        'nip' => null,
+        'nidn' => null,
+    ]);
+
+    // 2. Data datang dari API dengan variasi nama "Yely Nabuasa" dan membawa NIDN baru
+    Http::fake([
+        '*/siakadcloud/v1/dosen*' => Http::response([
+            'meta' => ['total' => 1, 'currentPage' => 1, 'lastPage' => 1],
+            'data' => [
+                [
+                    'attributes' => [
+                        'nama' => 'Yely Nabuasa',
+                        'nip' => '0024038307',
+                        'nidn' => '0024038307',
+                        'gelar_depan' => '',
+                        'gelar_belakang' => '',
+                    ],
+                ],
+            ],
+        ], 200),
+    ]);
+
+    $service = app(SiakadSyncService::class);
+    $stats = $service->syncDosen();
+
+    // 3. Harus di-update, bukan dibuat baru
+    expect($stats['updated'])->toBe(1)
+        ->and($stats['created'])->toBe(0)
+        ->and(Dosen::count())->toBe(1);
+
+    // 4. Nama di database TIDAK tertimpa, tetapi NIP & NIDN diperbarui
+    $reloaded = $existing->fresh();
+    expect($reloaded->nama_dosen)->toBe('Yelly N Nubuasa')
+        ->and($reloaded->nidn)->toBe('0024038307');
+});
+
 it('fetches realization data from sessions for ringkasan perkuliahan', function () {
     $ta = TahunAkademik::firstOrCreate(['nama' => '2026/2027']);
     $sem = Semester::firstOrCreate(
