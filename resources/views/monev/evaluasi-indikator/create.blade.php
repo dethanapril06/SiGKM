@@ -36,12 +36,31 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Sumber Indikator</label>
-                    <select name="evaluatable_key" class="form-select select2 @error('evaluatable_key') is-invalid @enderror" data-placeholder="-- Pilih Sumber Indikator --">
+                    <label for="standar_mutu_id" class="form-label">
+                        Standar Mutu <span class="text-muted fw-normal">(Filter Indikator)</span>
+                    </label>
+                    <select id="standar_mutu_id" name="standar_mutu_id" class="form-select select2" data-placeholder="-- Pilih Standar Mutu untuk Memfilter Indikator --">
+                        <option value="">-- Tampilkan Semua Standar Mutu --</option>
+                        @foreach ($standarMutu as $sm)
+                            <option value="{{ $sm->id }}" @selected(old('standar_mutu_id') == $sm->id)>
+                                {{ $sm->kode_standar }} - {{ $sm->nama_standar }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <small class="text-muted">
+                        Pilih Standar Mutu terlebih dahulu agar daftar pilihan Sumber Indikator (IKU/IKT) di bawah terfilter otomatis menjadi lebih sedikit dan mudah dipilih.
+                    </small>
+                </div>
+
+                <div class="mb-3">
+                    <label for="evaluatable_key" class="form-label">Sumber Indikator</label>
+                    <select id="evaluatable_key" name="evaluatable_key" class="form-select select2 @error('evaluatable_key') is-invalid @enderror" data-placeholder="-- Pilih Sumber Indikator --">
                         <option value="">-- Pilih Sumber Indikator --</option>
 
                         @foreach ($indikatorMutu as $item)
-                            <option value="indikator_mutu:{{ $item->id }}" @selected(old('evaluatable_key') === 'indikator_mutu:'.$item->id)>
+                            <option value="indikator_mutu:{{ $item->id }}"
+                                data-standar="{{ $item->standar_mutu_id }}"
+                                @selected(old('evaluatable_key') === 'indikator_mutu:'.$item->id)>
                                 {{ $item->kode_indikator ? $item->kode_indikator . ' - ' : '' }}
                                 {{ $item->isi_indikator }}
                             </option>
@@ -127,11 +146,67 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         $(document).ready(function() {
-            $('.select2').select2({
-                theme: 'bootstrap-5',
-                placeholder: $(this).data('placeholder') || '-- Pilih --',
-                allowClear: true
+            $('.select2').each(function() {
+                $(this).select2({
+                    theme: 'bootstrap-5',
+                    placeholder: $(this).data('placeholder') || '-- Pilih --',
+                    allowClear: true
+                });
             });
+
+            const $standarSelect = $('#standar_mutu_id');
+            const $indikatorSelect = $('#evaluatable_key');
+
+            // Simpan seluruh data opsi indikator asli
+            const allOptions = [];
+            $indikatorSelect.find('option').each(function() {
+                const $opt = $(this);
+                if ($opt.val()) {
+                    allOptions.push({
+                        value: $opt.val(),
+                        text: $opt.text().trim(),
+                        standar: String($opt.data('standar') || '')
+                    });
+                }
+            });
+
+            function filterIndikatorOptions(standarId, selectedVal) {
+                $indikatorSelect.empty();
+                $indikatorSelect.append(new Option('-- Pilih Sumber Indikator --', '', false, false));
+
+                allOptions.forEach(function(item) {
+                    if (!standarId || item.standar === String(standarId)) {
+                        const isSelected = Boolean(selectedVal && item.value === selectedVal);
+                        const newOption = new Option(item.text, item.value, isSelected, isSelected);
+                        $(newOption).attr('data-standar', item.standar);
+                        $indikatorSelect.append(newOption);
+                    }
+                });
+
+                $indikatorSelect.trigger('change.select2');
+            }
+
+            // Jalankan filter saat Standar Mutu berubah
+            $standarSelect.on('change', function() {
+                const selectedStandar = $(this).val();
+                filterIndikatorOptions(selectedStandar, null);
+            });
+
+            // Inisialisasi awal (mendukung old input jika terjadi validasi gagal)
+            const initialVal = '{{ old('evaluatable_key') }}';
+            let initialStandar = $standarSelect.val();
+
+            if (!initialStandar && initialVal) {
+                const found = allOptions.find(opt => opt.value === initialVal);
+                if (found && found.standar) {
+                    initialStandar = found.standar;
+                    $standarSelect.val(initialStandar).trigger('change.select2');
+                }
+            }
+
+            if (initialStandar) {
+                filterIndikatorOptions(initialStandar, initialVal);
+            }
         });
     </script>
 @endpush

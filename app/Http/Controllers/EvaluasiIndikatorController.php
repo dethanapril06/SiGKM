@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\EvaluasiIndikator;
 use App\Models\IndikatorMutu;
 use App\Models\Semester;
+use App\Models\StandarMutu;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -140,16 +141,21 @@ class EvaluasiIndikatorController extends Controller
 
         $indikatorMutu = IndikatorMutu::with('standarMutu')
             ->when($activeOnly, fn ($query) => $query->where('is_active', true))
-            ->latest()
+            ->orderBy('kode_indikator')
             ->get();
 
-        return compact('semester', 'indikatorMutu');
+        $standarMutu = StandarMutu::when($activeOnly, fn ($query) => $query->where('is_active', true))
+            ->orderBy('kode_standar')
+            ->get();
+
+        return compact('semester', 'indikatorMutu', 'standarMutu');
     }
 
     private function validatedData(Request $request): array
     {
         $validated = $request->validate([
             'semester_id' => ['required', 'exists:semesters,id'],
+            'standar_mutu_id' => ['nullable', 'exists:standar_mutus,id'],
             'evaluatable_key' => ['required', 'regex:/^indikator_mutu:[1-9][0-9]*$/'],
             'status_capaian' => ['required', 'in:tercapai,dalam_proses,belum_tercapai'],
             'nama_penanggung_jawab' => ['nullable', 'string', 'max:255'],
@@ -172,6 +178,7 @@ class EvaluasiIndikatorController extends Controller
         }
 
         unset($validated['evaluatable_key']);
+        unset($validated['standar_mutu_id']);
         $validated['evaluatable_type'] = $type;
         $validated['evaluatable_id'] = (int) $id;
 
