@@ -415,14 +415,27 @@ class SiakadSyncService
                     continue;
                 }
 
-                $mk = MataKuliah::where('kode_mk', $kode)->first();
+                $existing = MataKuliah::where('kode_mk', $kode)->first()
+                    ?: MataKuliah::where('nama_mk', $nama)->first();
 
-                if ($mk) {
-                    $mk->update([
-                        'nama_mk' => $nama,
-                        'sks' => $sks > 0 ? $sks : $mk->sks,
-                        'is_active' => true,
-                    ]);
+                if ($existing) {
+                    $updates = [];
+                    if ($nama !== '' && $existing->nama_mk !== $nama) {
+                        $updates['nama_mk'] = $nama;
+                    }
+                    if ($kode !== '' && $existing->kode_mk !== $kode && ! MataKuliah::where('kode_mk', $kode)->whereKeyNot($existing->id)->exists()) {
+                        $updates['kode_mk'] = $kode;
+                    }
+                    if ($sks > 0 && $existing->sks !== $sks) {
+                        $updates['sks'] = $sks;
+                    }
+                    if (! $existing->is_active) {
+                        $updates['is_active'] = true;
+                    }
+
+                    if (! empty($updates)) {
+                        $existing->update($updates);
+                    }
                     $stats['updated']++;
                 } else {
                     MataKuliah::create([
@@ -597,15 +610,8 @@ class SiakadSyncService
                     continue;
                 }
 
-                // B. Pastikan Mata Kuliah ada di sistem
-                $mataKuliah = MataKuliah::firstOrCreate(
-                    ['kode_mk' => $kodeMk],
-                    [
-                        'nama_mk' => $namaMk ?: $kodeMk,
-                        'sks' => max(1, $sks),
-                        'is_active' => true,
-                    ]
-                );
+                // B. Pastikan Mata Kuliah ada di sistem (update jika sudah ada berdasarkan kode atau nama)
+                $mataKuliah = $this->resolveOrCreateMataKuliah($kodeMk, $namaMk, $sks);
 
                 // C. Pastikan Kelas ada di sistem
                 $kelas = Kelas::firstOrCreate(
@@ -714,6 +720,52 @@ class SiakadSyncService
         }
 
         return $dosens;
+    }
+
+    /**
+     * Cari atau perbarui Mata Kuliah berdasarkan kode_mk atau nama_mk untuk menghindari duplikasi.
+     */
+    public function resolveOrCreateMataKuliah(string $kodeMk, string $namaMk, int $sks = 0): MataKuliah
+    {
+        $kodeMk = trim($kodeMk);
+        $namaMk = trim($namaMk);
+
+        // 1. Cari berdasarkan kode_mk
+        $mk = MataKuliah::where('kode_mk', $kodeMk)->first();
+
+        // 2. Jika belum ketemu dengan kode, cari berdasarkan nama_mk
+        if (! $mk && $namaMk !== '') {
+            $mk = MataKuliah::where('nama_mk', $namaMk)->first();
+        }
+
+        if ($mk) {
+            $updates = [];
+            if ($namaMk !== '' && $mk->nama_mk !== $namaMk) {
+                $updates['nama_mk'] = $namaMk;
+            }
+            if ($kodeMk !== '' && $mk->kode_mk !== $kodeMk && ! MataKuliah::where('kode_mk', $kodeMk)->whereKeyNot($mk->id)->exists()) {
+                $updates['kode_mk'] = $kodeMk;
+            }
+            if ($sks > 0 && $mk->sks !== $sks) {
+                $updates['sks'] = $sks;
+            }
+            if (! $mk->is_active) {
+                $updates['is_active'] = true;
+            }
+
+            if (! empty($updates)) {
+                $mk->update($updates);
+            }
+
+            return $mk;
+        }
+
+        return MataKuliah::create([
+            'kode_mk' => $kodeMk,
+            'nama_mk' => $namaMk ?: $kodeMk,
+            'sks' => max(1, $sks),
+            'is_active' => true,
+        ]);
     }
 
     /**

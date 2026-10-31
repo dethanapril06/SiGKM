@@ -90,6 +90,44 @@ it('matches existing dosen by smart first and last name without creating duplica
         ->and($reloaded->nidn)->toBe('0024038307');
 });
 
+it('updates existing mata kuliah when code or name matches without creating duplicates', function () {
+    // 1. Sudah ada mata kuliah di database
+    $existing = MataKuliah::create([
+        'kode_mk' => 'STKOM41310',
+        'nama_mk' => 'ALGORITMA DAN PEMROGAMAN I',
+        'sks' => 2,
+        'is_active' => true,
+    ]);
+
+    // 2. Data dari API SIAKAD datang dengan kode yang sama dan SKS yang diperbarui
+    Http::fake([
+        '*/siakadcloud/v1/mata-kuliah*' => Http::response([
+            'meta' => ['total' => 1, 'currentPage' => 1, 'lastPage' => 1],
+            'data' => [
+                [
+                    'attributes' => [
+                        'kode' => 'STKOM41310',
+                        'nama' => 'ALGORITMA DAN PEMROGRAMAN I',
+                        'sks' => '3',
+                    ],
+                ],
+            ],
+        ], 200),
+    ]);
+
+    $service = app(SiakadSyncService::class);
+    $stats = $service->syncMataKuliah();
+
+    // 3. Harus di-update, bukan dibuat baru
+    expect($stats['updated'])->toBe(1)
+        ->and($stats['created'])->toBe(0)
+        ->and(MataKuliah::count())->toBe(1);
+
+    $reloaded = $existing->fresh();
+    expect($reloaded->sks)->toBe(3)
+        ->and($reloaded->nama_mk)->toBe('ALGORITMA DAN PEMROGRAMAN I');
+});
+
 it('fetches realization data from sessions for ringkasan perkuliahan', function () {
     $ta = TahunAkademik::firstOrCreate(['nama' => '2026/2027']);
     $sem = Semester::firstOrCreate(
