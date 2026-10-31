@@ -17,6 +17,7 @@ class Perkuliahan extends Model
         'semester_id',
         'mata_kuliah_id',
         'kelas_id',
+        'siakad_kelas_id',
         'status',
     ];
 
@@ -43,7 +44,6 @@ class Perkuliahan extends Model
     public function dosens(): BelongsToMany
     {
         return $this->belongsToMany(Dosen::class, 'pengajars')
-            ->withPivot('is_koordinator')
             ->withTimestamps();
     }
 

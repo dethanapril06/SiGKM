@@ -21,6 +21,7 @@ use App\Http\Controllers\RencanaTindakLanjutController;
 use App\Http\Controllers\RingkasanPerkuliahanController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SemesterController;
+use App\Http\Controllers\SiakadSyncController;
 use App\Http\Controllers\StandarMutuController;
 use App\Http\Controllers\TahunAkademikController;
 use App\Http\Controllers\TemuanController;
@@ -110,6 +111,20 @@ Route::middleware(['auth', 'role:ketua-gkm,anggota-gkm'])
 
         Route::resource('perkuliahan', PerkuliahanController::class)
             ->except(['show']);
+
+        // SIAKAD Master Data Sync Routes
+        Route::post('/sync-siakad/periode', [SiakadSyncController::class, 'syncPeriode'])
+            ->name('sync-siakad.periode');
+        Route::post('/sync-siakad/dosen', [SiakadSyncController::class, 'syncDosen'])
+            ->name('sync-siakad.dosen');
+        Route::post('/sync-siakad/mata-kuliah', [SiakadSyncController::class, 'syncMataKuliah'])
+            ->name('sync-siakad.mata-kuliah');
+        Route::post('/sync-siakad/kelas', [SiakadSyncController::class, 'syncKelas'])
+            ->name('sync-siakad.kelas');
+        Route::post('/sync-siakad/perkuliahan', [SiakadSyncController::class, 'syncPerkuliahan'])
+            ->name('sync-siakad.perkuliahan');
+        Route::post('/sync-siakad/all', [SiakadSyncController::class, 'syncAll'])
+            ->name('sync-siakad.all');
 
         Route::resource('termin', TerminController::class)
             ->except(['show']);
@@ -217,6 +232,11 @@ Route::middleware(['auth', 'role:ketua-gkm,anggota-gkm,koordinator-prodi'])
 
         Route::patch('/ringkasan-perkuliahan/{ringkasanPerkuliahan}/reject', [RingkasanPerkuliahanController::class, 'reject'])
             ->name('ringkasan-perkuliahan.reject');
+
+        Route::get('/ringkasan-perkuliahan/{perkuliahan}/fetch-siakad', [RingkasanPerkuliahanController::class, 'fetchSiakad'])
+            ->name('ringkasan-perkuliahan.fetch-siakad');
+        Route::post('/ringkasan-perkuliahan/sync-siakad', [RingkasanPerkuliahanController::class, 'syncSiakad'])
+            ->name('ringkasan-perkuliahan.sync-siakad');
 
         Route::resource('ringkasan-perkuliahan', RingkasanPerkuliahanController::class)
             ->parameters(['ringkasan-perkuliahan' => 'ringkasanPerkuliahan']);

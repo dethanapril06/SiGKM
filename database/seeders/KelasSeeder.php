@@ -22,6 +22,10 @@ class KelasSeeder extends Seeder
                 'nama_kelas' => 'B',
                 'keterangan' => 'Kelas B Reguler',
             ],
+            [
+                'nama_kelas' => 'C',
+                'keterangan' => 'Kelas C Reguler',
+            ],
         ];
 
         foreach ($kelas as $data) {

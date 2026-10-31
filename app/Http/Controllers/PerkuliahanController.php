@@ -28,7 +28,12 @@ class PerkuliahanController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('master.perkuliahan.index', compact('perkuliahan'));
+        $semesters = Semester::with('tahunAkademik')
+            ->orderByDesc('is_active')
+            ->latest()
+            ->get();
+
+        return view('master.perkuliahan.index', compact('perkuliahan', 'semesters'));
     }
 
     public function create(): View

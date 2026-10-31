@@ -28,7 +28,6 @@ class Dosen extends Model
     public function perkuliahans(): BelongsToMany
     {
         return $this->belongsToMany(Perkuliahan::class, 'pengajars')
-            ->withPivot('is_koordinator')
             ->withTimestamps();
     }
 

@@ -8,12 +8,15 @@ use App\Models\Perkuliahan;
 use App\Models\RingkasanPerkuliahan;
 use App\Models\Semester;
 use App\Models\Termin;
+use App\Services\SiakadSyncService;
 use App\Services\WorkflowNotificationService;
 use App\Support\WorkflowStatus;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Throwable;
 
 class RingkasanPerkuliahanController extends Controller
 {
@@ -67,10 +70,19 @@ class RingkasanPerkuliahanController extends Controller
             ->paginate(10)
             ->withQueryString();
 
+        $jadwalMonevs = JadwalMonev::with(['semester.tahunAkademik', 'termin'])
+            ->where('status', 'aktif')
+            ->latest()
+            ->get();
+        if ($jadwalMonevs->isEmpty()) {
+            $jadwalMonevs = JadwalMonev::with(['semester.tahunAkademik', 'termin'])->latest()->take(5)->get();
+        }
+
         return view('monev.ringkasan-perkuliahan.index', compact(
             'ringkasanPerkuliahan',
             'semesters',
             'termins',
+            'jadwalMonevs',
             'selectedSemester',
             'selectedTermin',
             'selectedKesesuaian',
@@ -360,5 +372,193 @@ class RingkasanPerkuliahanController extends Controller
             'bx-book-content',
             'warning',
         );
+    }
+
+    /**
+     * Endpoint AJAX untuk menarik realisasi perkuliahan langsung dari SIAKAD Cloud.
+     */
+    public function fetchSiakad(Perkuliahan $perkuliahan, SiakadSyncService $syncService): JsonResponse
+    {
+        @set_time_limit(120);
+        if (session()->isStarted()) {
+            session()->save();
+        }
+
+        try {
+            $data = $syncService->fetchRealizationData($perkuliahan);
+
+            return response()->json([
+                'success' => empty($data['error']) || $data['found'],
+                'message' => ! empty($data['error']) && ! $data['found']
+                    ? 'Koneksi ke API SIAKAD kendala/timeout: ' . $data['error']
+                    : null,
+                'data' => $data,
+            ]);
+        } catch (Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menarik data SIAKAD: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Sinkronisasi data realisasi Ringkasan Perkuliahan dari SIAKAD untuk suatu Jadwal Monev.
+     * Mendukung mode bertahap (AJAX per-kelas: mode=init & perkuliahan_id) agar bebas timeout HTTP,
+     * serta mode penuh untuk pemanggilan langsung.
+     */
+    public function syncSiakad(Request $request, SiakadSyncService $syncService): RedirectResponse|JsonResponse
+    {
+        @set_time_limit(0);
+
+        $validated = $request->validate([
+            'jadwal_monev_id' => ['required', 'exists:jadwal_monevs,id'],
+            'mode' => ['nullable', 'in:init'],
+            'perkuliahan_id' => ['nullable', 'exists:perkuliahans,id'],
+            'perkuliahan_ids' => ['nullable', 'array', 'max:15'],
+            'perkuliahan_ids.*' => ['integer', 'exists:perkuliahans,id'],
+            'only_missing' => ['nullable', 'boolean'],
+        ], [
+            'jadwal_monev_id.required' => 'Jadwal monev wajib dipilih untuk sinkronisasi.',
+        ]);
+
+        $jadwalMonev = JadwalMonev::with('semester')->findOrFail($validated['jadwal_monev_id']);
+
+        $laporanTerbukti = Laporan::where('jenis_laporan', 'perkuliahan')
+            ->where('jadwal_monev_id', $jadwalMonev->id)
+            ->first();
+
+        if ($laporanTerbukti && $laporanTerbukti->status === WorkflowStatus::DIVERIFIKASI) {
+            $lockedMsg = 'Laporan Pelaksanaan Perkuliahan untuk periode ini telah diverifikasi dan dikunci.';
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $lockedMsg], 422);
+            }
+
+            return redirect()->back()->with('error', $lockedMsg);
+        }
+
+        // 1. Mode inisialisasi antrean sinkronisasi bertahap (AJAX)
+        if (($validated['mode'] ?? null) === 'init') {
+            $existingMap = RingkasanPerkuliahan::where('jadwal_monev_id', $jadwalMonev->id)
+                ->get(['perkuliahan_id', 'status'])
+                ->keyBy('perkuliahan_id');
+
+            $onlyMissing = $request->boolean('only_missing');
+
+            $perkuliahans = Perkuliahan::with(['mataKuliah', 'kelas'])
+                ->where('semester_id', $jadwalMonev->semester_id)
+                ->where('status', 'aktif')
+                ->orderBy('id')
+                ->get();
+
+            $items = [];
+            $alreadySyncedCount = 0;
+
+            foreach ($perkuliahans as $p) {
+                $existingRow = $existingMap->get($p->id);
+                $hasRingkasan = $existingRow !== null;
+                $isVerified = $existingRow?->status === 'diverifikasi';
+
+                if ($hasRingkasan) {
+                    $alreadySyncedCount++;
+                }
+
+                if ($isVerified || ($onlyMissing && $hasRingkasan)) {
+                    continue;
+                }
+
+                $kode = $p->mataKuliah?->kode_mk ?? '-';
+                $namaMk = $p->mataKuliah?->nama_mk ?? '-';
+                $namaKelas = $p->kelas?->nama_kelas ?? '-';
+
+                $items[] = [
+                    'id' => $p->id,
+                    'label' => "{$kode} - {$namaMk} (Kelas {$namaKelas})",
+                    'has_ringkasan' => $hasRingkasan,
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'total_active' => $perkuliahans->count(),
+                'already_synced' => $alreadySyncedCount,
+                'items' => $items,
+            ]);
+        }
+
+        $userId = auth()->id();
+        if (session()->isStarted()) {
+            session()->save();
+        }
+
+        // 2a. Mode sinkronisasi batch Keep-Alive (beberapa kelas dalam 1 koneksi TLS)
+        if (! empty($validated['perkuliahan_ids'])) {
+            $batchModels = Perkuliahan::with(['mataKuliah', 'kelas', 'semester.tahunAkademik'])
+                ->whereIn('id', $validated['perkuliahan_ids'])
+                ->get();
+
+            $batchRes = $syncService->syncBatchRingkasanPerkuliahan($jadwalMonev, $batchModels, $userId);
+
+            return response()->json([
+                'success' => true,
+                'batch' => $batchRes,
+            ]);
+        }
+
+        // 2b. Mode sinkronisasi satu kelas spesifik (AJAX per langkah, langsung tersimpan ke DB)
+        if (! empty($validated['perkuliahan_id'])) {
+            $perkuliahan = Perkuliahan::with(['mataKuliah', 'kelas', 'semester.tahunAkademik'])
+                ->findOrFail($validated['perkuliahan_id']);
+
+            try {
+                $res = $syncService->syncSingleRingkasanPerkuliahan($jadwalMonev, $perkuliahan, $userId);
+                $kode = $perkuliahan->mataKuliah?->kode_mk ?? '-';
+                $namaMk = $perkuliahan->mataKuliah?->nama_mk ?? '-';
+                $namaKelas = $perkuliahan->kelas?->nama_kelas ?? '-';
+
+                return response()->json([
+                    'success' => $res['outcome'] !== 'failed',
+                    'outcome' => $res['outcome'],
+                    'label' => "{$kode} - {$namaMk} (Kelas {$namaKelas})",
+                    'jumlah_pertemuan' => $res['realisasi']['jumlah_pertemuan'] ?? null,
+                    'message' => $res['message'],
+                ]);
+            } catch (Throwable $e) {
+                return response()->json([
+                    'success' => false,
+                    'outcome' => 'failed',
+                    'message' => $e->getMessage(),
+                ], 200);
+            }
+        }
+
+        // 3. Mode penuh (fallback non-AJAX / CLI / pengujian)
+        try {
+            $stats = $syncService->syncRingkasanPerkuliahanForJadwalMonev($jadwalMonev, $userId);
+
+            $message = "Sinkronisasi Realisasi Monev dari SIAKAD selesai. " .
+                "Total kelas: {$stats['total']}, Ditambahkan: {$stats['created']}, Diperbarui: {$stats['updated']}, Dilewati: {$stats['skipped']}.";
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'stats' => $stats,
+                ]);
+            }
+
+            return redirect()->back()->with('success', $message);
+        } catch (Throwable $e) {
+            $errorMsg = 'Gagal sinkronisasi data monev dari SIAKAD: ' . $e->getMessage();
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMsg,
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', $errorMsg);
+        }
     }
 }

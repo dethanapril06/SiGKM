@@ -4,9 +4,18 @@
     <div class="d-flex justify-content-between align-items-center py-3 mb-4">
         <h4 class="fw-bold mb-0">Dosen</h4>
 
-        <a href="{{ route('dosen.create') }}" class="btn btn-primary">
-            <i class="bx bx-plus"></i> Tambah Dosen
-        </a>
+        <div class="d-flex gap-2">
+            <form action="{{ route('sync-siakad.dosen') }}" method="POST" class="d-inline" onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').innerHTML = '<i class=\'bx bx-loader-alt bx-spin me-1\'></i> Menyinkronkan...';">
+                @csrf
+                <button type="submit" class="btn btn-outline-primary" title="Sinkronisasi Dosen dari SIAKAD Cloud Undana">
+                    <i class="bx bx-sync me-1"></i> Sinkronkan SIAKAD
+                </button>
+            </form>
+
+            <a href="{{ route('dosen.create') }}" class="btn btn-primary">
+                <i class="bx bx-plus"></i> Tambah Dosen
+            </a>
+        </div>
     </div>
 
     @if (session('success'))
@@ -18,7 +27,14 @@
 
     @if (session('error'))
         <div class="alert alert-danger alert-dismissible" role="alert">
-            {{ session('error') }}
+            <i class="bx bx-x-circle me-1"></i> {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    @if (session('warning'))
+        <div class="alert alert-warning alert-dismissible" role="alert">
+            <i class="bx bx-error-circle me-1"></i> {{ session('warning') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
